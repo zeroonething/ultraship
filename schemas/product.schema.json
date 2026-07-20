@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "UltraShip product definition",
+  "description": "Owns product vision, users, problems, outcomes, requirements, constraints, public contract, non-goals, and deployment context. No other file may define these.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id", "name", "classification", "vision", "users", "problems", "outcomes",
+    "requirements", "constraints", "public_contract", "deployment_context",
+    "success_measures", "non_goals", "assumptions", "mvp_boundary"
+  ],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+    "name": { "type": "string" },
+    "classification": {
+      "enum": [
+        "independent-product", "related-product", "platform", "shared-service",
+        "shared-library", "feature", "experiment", "proof-of-concept",
+        "internal-tool", "unknown"
+      ]
+    },
+    "vision": { "type": "string" },
+    "users": { "type": "array", "items": { "type": "string" } },
+    "problems": { "type": "array", "items": { "type": "string" } },
+    "outcomes": { "type": "array", "items": { "type": "string" } },
+    "requirements": { "type": "array", "items": { "type": "string" } },
+    "constraints": { "type": "array", "items": { "type": "string" } },
+    "public_contract": { "type": "string" },
+    "deployment_context": { "type": "string" },
+    "success_measures": { "type": "array", "items": { "type": "string" } },
+    "non_goals": { "type": "array", "items": { "type": "string" } },
+    "assumptions": { "type": "array", "items": { "type": "string" } },
+    "mvp_boundary": { "type": "string" }
+  }
+}

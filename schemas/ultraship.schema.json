@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "UltraShip framework configuration",
+  "description": "Owns framework schema version, workspace configuration, and provider-neutral execution preferences.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "framework_version", "resource_profile"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "framework_version": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?$"
+    },
+    "resource_profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider_tool", "billing_mode", "model_policy", "available", "preferences", "telemetry"],
+      "properties": {
+        "provider_tool": { "type": ["string", "null"] },
+        "billing_mode": { "type": ["string", "null"], "enum": ["subscription", "api-credits", "local", null] },
+        "model_policy": { "enum": ["auto", "economical", "premium"] },
+        "available": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["time_minutes", "token_budget", "monetary_budget_usd", "human_review_minutes"],
+          "properties": {
+            "time_minutes": { "type": ["number", "null"] },
+            "token_budget": { "type": ["number", "null"] },
+            "monetary_budget_usd": { "type": ["number", "null"] },
+            "human_review_minutes": { "type": ["number", "null"] }
+          }
+        },
+        "preferences": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["minimize_cost", "allow_additional_spend", "allow_model_routing", "allow_parallel_agents"],
+          "properties": {
+            "minimize_cost": { "type": "boolean" },
+            "allow_additional_spend": { "type": "boolean" },
+            "allow_model_routing": { "type": "boolean" },
+            "allow_parallel_agents": { "type": "boolean" }
+          }
+        },
+        "telemetry": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["source", "confidence"],
+          "properties": {
+            "source": {
+              "description": "Where usage figures came from. There is no provider telemetry in 0.1.0, so anything beyond a user estimate is a fabrication.",
+              "enum": ["unknown", "user-estimate"]
+            },
+            "confidence": { "enum": ["low", "medium", "high"] }
+          }
+        }
+      }
+    }
+  }
+}

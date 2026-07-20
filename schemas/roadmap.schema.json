@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "UltraShip product roadmap",
+  "description": "Owns planned versions, their ordering, outcomes, and status. Detail level encodes rolling-wave planning: only near-term versions are specified.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["product", "status", "versions"],
+  "properties": {
+    "product": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+    "status": { "enum": ["active", "paused", "archived"] },
+    "versions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["version", "outcome", "detail", "status"],
+        "properties": {
+          "version": {
+            "type": "string",
+            "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?$"
+          },
+          "outcome": {
+            "description": "What a user or operator can do once this version ships. A version with no outcome is a technical layer, not a Minimum Complete Release.",
+            "type": "string"
+          },
+          "detail": { "enum": ["specified", "outline", "hypothesis"] },
+          "status": { "enum": ["planned", "active", "released", "superseded"] }
+        }
+      }
+    }
+  }
+}
