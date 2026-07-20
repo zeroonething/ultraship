@@ -141,3 +141,48 @@ test('a workspace with no products still renders without throwing', () => {
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('multi-line and pipe-bearing values stay inside their table cell', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'ultraship-views-cells-'));
+  try {
+    const { root } = init(dir);
+    const p = paths(root);
+
+    const workspace = readYaml(p.workspace);
+    workspace.active_product = 'wordy';
+    writeYaml(p.workspace, workspace);
+
+    mkdirSync(p.releases('wordy'), { recursive: true });
+    writeYaml(p.product('wordy'), {
+      id: 'wordy', name: 'Wordy', classification: 'independent-product',
+      vision: 'v', users: [], problems: [], outcomes: [], requirements: [],
+      constraints: [], public_contract: '', deployment_context: '',
+      success_measures: [], non_goals: [], assumptions: [],
+      // A folded YAML scalar round-trips with a trailing newline, and a pipe
+      // would end the cell early. Both must survive the table intact.
+      mvp_boundary: 'One developer ships one release\nend to end | start to finish\n',
+    });
+    writeYaml(p.roadmap('wordy'), {
+      product: 'wordy', status: 'active',
+      versions: [{
+        version: '0.1.0',
+        outcome: 'Ship it\nproperly | completely\n',
+        detail: 'specified', status: 'planned',
+      }],
+    });
+
+    renderViews(root);
+
+    for (const [file, marker] of [['workspace-brief.md', 'wordy'], ['master-roadmap.md', '0.1.0']]) {
+      const row = readFileSync(join(p.views, file), 'utf8')
+        .split('\n')
+        .find((line) => line.startsWith('| ') && line.includes(marker));
+      assert.ok(row, `${file} should contain a row for ${marker}`);
+      assert.doesNotMatch(row, /\n/, `${file} row must not break across lines`);
+      assert.match(row, /start to finish|completely/, `${file} row must keep the whole value`);
+      assert.match(row, /\\\|/, `${file} must escape pipes inside a cell`);
+    }
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
