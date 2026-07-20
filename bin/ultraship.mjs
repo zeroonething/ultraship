@@ -7,6 +7,7 @@ import { init } from '../lib/init.mjs';
 import { requireRoot } from '../lib/paths.mjs';
 import { snapshot } from '../lib/state.mjs';
 import { validateWorkspace } from '../lib/validate.mjs';
+import { renderViews } from '../lib/views.mjs';
 
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 
@@ -35,6 +36,11 @@ const COMMANDS = {
     const result = validateWorkspace(requireRoot(process.cwd()));
     out(result);
     return result.ok ? 0 : 1;
+  },
+
+  views() {
+    out({ written: renderViews(requireRoot(process.cwd())) });
+    return 0;
   },
 
   semver(argv) {
