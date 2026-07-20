@@ -4,6 +4,8 @@
 import { readFileSync } from 'node:fs';
 import { next as semverNext } from '../lib/semver.mjs';
 import { init } from '../lib/init.mjs';
+import { requireRoot } from '../lib/paths.mjs';
+import { snapshot } from '../lib/state.mjs';
 
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 
@@ -20,6 +22,11 @@ const COMMANDS = {
   init() {
     const { root, created } = init(process.cwd());
     out({ root, created: created.length });
+    return 0;
+  },
+
+  state() {
+    out(snapshot(requireRoot(process.cwd())));
     return 0;
   },
 
