@@ -8,6 +8,7 @@
   "homepage": "https://github.com/aakashpawar1999/ultraship",
   "repository": "https://github.com/aakashpawar1999/ultraship",
   "license": "MIT",
+  "hooks": "./hooks/hooks.json",
   "keywords": [
     "skills",
     "release-management",
