@@ -49,3 +49,46 @@ test('brainstorm classifies every idea and never guesses', () => {
   assert.match(doc, /independent-product/);
   assert.match(doc, /unknown/);
 });
+
+test('plan exists and is namespaced correctly', () => {
+  assert.ok(existsSync(join(ROOT, 'skills', 'plan', 'SKILL.md')));
+  assert.match(skill('plan'), /^name: plan$/m);
+});
+
+test('plan reads the shared release contract rather than restating it', () => {
+  const doc = skill('plan');
+  assert.match(doc, /shared\/release-contract\.md/);
+  assert.match(doc, /shared\/skill-contract\.md/);
+});
+
+test('plan refuses to rerun after the roadmap exists', () => {
+  const doc = skill('plan');
+  assert.match(doc, /PLANNED/);
+  assert.match(doc, /ultraship:iterate/);
+});
+
+test('plan rejects versions that are technical layers', () => {
+  const doc = skill('plan');
+  assert.match(doc, /user_can/);
+  assert.match(doc, /technical layer/i);
+  assert.match(doc, /Invalid roadmap/);
+});
+
+test('plan uses rolling-wave detail levels', () => {
+  const doc = skill('plan');
+  for (const level of ['specified', 'outline', 'hypothesis']) {
+    assert.match(doc, new RegExp(level), `plan must document the ${level} detail level`);
+  }
+});
+
+test('plan requires a fallback scope decided in advance', () => {
+  const doc = skill('plan');
+  assert.match(doc, /fallback_scope/);
+  assert.match(doc, /emergency/i);
+});
+
+test('plan keeps SemVer off tasks and uses the CLI for version math', () => {
+  const doc = skill('plan');
+  assert.match(doc, /ultraship semver next/);
+  assert.match(doc, /US-<PRODUCT>-<VERSION>-T<NUMBER>/);
+});
