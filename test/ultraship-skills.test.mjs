@@ -184,3 +184,60 @@ test('iterate gives deferred work a canonical destination', () => {
   assert.match(doc, /deferred/);
   assert.match(doc, /roadmap\.yaml/);
 });
+
+test('complete exists and is namespaced correctly', () => {
+  assert.ok(existsSync(join(ROOT, 'skills', 'complete', 'SKILL.md')));
+  assert.match(skill('complete'), /^name: complete$/m);
+});
+
+test('complete requires evidence rather than assertion', () => {
+  const doc = skill('complete');
+  assert.match(doc, /ultraship:verification-before-completion/);
+  assert.match(doc, /looks good/i);
+  assert.match(doc, /evidence/);
+});
+
+test('complete documents every gate category', () => {
+  const doc = skill('complete');
+  for (const gate of ['Product', 'Functional', 'Engineering', 'Security', 'Operational', 'Delivery', 'Truth']) {
+    assert.match(doc, new RegExp(`### ${gate}`), `complete must document ${gate} gates`);
+  }
+});
+
+test('complete refuses to claim a deployment it did not perform', () => {
+  const doc = skill('complete');
+  assert.match(doc, /credential/i);
+  assert.match(doc, /release-ready/);
+  assert.match(doc, /Never claim/i);
+});
+
+test('complete routes failures to the right skill', () => {
+  const doc = skill('complete');
+  assert.match(doc, /ultraship:develop/);
+  assert.match(doc, /ultraship:iterate/);
+  assert.match(doc, /## When a gate fails/);
+});
+
+test('complete records the release and pins it', () => {
+  const doc = skill('complete');
+  assert.match(doc, /releases\.lock/);
+  assert.match(doc, /immutable: true/);
+  assert.match(doc, /sha256|SHA-256/);
+});
+
+test('complete may fix blocking defects but not change scope', () => {
+  const doc = skill('complete');
+  assert.match(doc, /release-blocking/i);
+  assert.match(doc, /scope/);
+});
+
+test('complete records known limitations rather than hiding them', () => {
+  assert.match(skill('complete'), /known_limitations/);
+});
+
+test('all five UltraShip skills are present and namespaced', () => {
+  for (const name of ['brainstorm', 'plan', 'develop', 'iterate', 'complete']) {
+    assert.match(skill(name), new RegExp(`^name: ${name}$`, 'm'));
+    assert.match(skill(name), /shared\/skill-contract\.md/);
+  }
+});
