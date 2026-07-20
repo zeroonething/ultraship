@@ -6,6 +6,7 @@ import { next as semverNext } from '../lib/semver.mjs';
 import { init } from '../lib/init.mjs';
 import { requireRoot } from '../lib/paths.mjs';
 import { snapshot } from '../lib/state.mjs';
+import { transition } from '../lib/transition.mjs';
 import { validateWorkspace } from '../lib/validate.mjs';
 import { renderViews } from '../lib/views.mjs';
 
@@ -29,6 +30,13 @@ const COMMANDS = {
 
   state() {
     out(snapshot(requireRoot(process.cwd())));
+    return 0;
+  },
+
+  transition(argv) {
+    const [to] = argv;
+    if (!to) return fail('Usage: ultraship transition <STATE>');
+    out(transition(requireRoot(process.cwd()), to));
     return 0;
   },
 

@@ -20,10 +20,30 @@ canonical source of truth.
 
 **Build small. Adapt fast. Ship often.**
 
-## Status
+## Install
 
-Under construction. The canonical state engine described below works; the five
-skills are not built yet.
+```
+/plugin marketplace add aakashpawar1999/ultraship
+/plugin install ultraship
+```
+
+Requires Node 20 or newer. There is nothing else to install — the one dependency
+is vendored.
+
+## The workflow
+
+Run these in order. Each one tells you the next.
+
+```
+/ultraship:brainstorm     idea        → product.yaml
+/ultraship:plan           product     → roadmap + release contract
+/ultraship:develop        contract    → working vertical slices
+/ultraship:iterate        evidence    → recorded plan change
+/ultraship:complete       gates pass  → immutable release
+```
+
+`iterate` runs whenever evidence says the plan is wrong — zero times or many.
+`complete` may reject a release and send it back.
 
 ## The state engine
 
@@ -34,6 +54,7 @@ command reads and checks it. It never calls a model and never touches the networ
 | --- | --- |
 | `ultraship init` | Scaffold `.ultraship/` in the current directory. |
 | `ultraship state` | Print the workspace state, active release, and legal next steps as JSON. |
+| `ultraship transition <STATE>` | Move the workspace to a new state, refusing any move the state model forbids. |
 | `ultraship validate` | Check every canonical file against its schema and the cross-file rules. |
 | `ultraship semver next <version> <bump>` | Compute the next version. `bump` is `major`, `minor`, `patch`, `release`, or a pre-release identifier. |
 | `ultraship views` | Regenerate the readable Markdown summaries in `.ultraship/views/`. |
