@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "UltraShip checkpoint",
+  "description": "Owns a safe continuation record for work that cannot finish in the current capacity. A checkpoint never asserts the version is complete.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["product", "version", "timestamp", "reason", "repository_state", "completed_acceptance", "remaining_acceptance", "active_hypotheses", "next_task", "required_context"],
+  "properties": {
+    "product": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?$"
+    },
+    "timestamp": { "type": "string" },
+    "reason": { "enum": ["capacity", "blocker", "task-complete", "unknown-discovered", "scope-change", "user-request"] },
+    "repository_state": { "enum": ["passing", "failing", "unknown"] },
+    "completed_acceptance": { "type": "array", "items": { "type": "string" } },
+    "remaining_acceptance": { "type": "array", "items": { "type": "string" } },
+    "active_hypotheses": { "type": "array", "items": { "type": "string" } },
+    "next_task": { "type": ["string", "null"] },
+    "required_context": { "type": "array", "items": { "type": "string" } }
+  }
+}

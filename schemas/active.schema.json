@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "UltraShip active execution pointer",
+  "description": "Owns the active product version, execution state, current checkpoint, blockers, and the resource-fit assessment.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["product", "version", "execution_state", "checkpoint", "blockers", "release_fit"],
+  "properties": {
+    "product": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?$"
+    },
+    "execution_state": { "enum": ["DEVELOPING", "ITERATING", "COMPLETING", "BLOCKED", "PAUSED"] },
+    "checkpoint": { "type": ["string", "null"] },
+    "blockers": { "type": "array", "items": { "type": "string" } },
+    "release_fit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["assessment", "reasons", "major_cost_drivers", "recommended_scope_change"],
+      "properties": {
+        "assessment": {
+          "description": "Qualitative only. UltraShip 0.1.0 has no provider telemetry, so a numeric figure here would be invented.",
+          "enum": ["high", "probable", "uncertain", "unlikely"]
+        },
+        "reasons": { "type": "array", "items": { "type": "string" } },
+        "major_cost_drivers": { "type": "array", "items": { "type": "string" } },
+        "recommended_scope_change": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

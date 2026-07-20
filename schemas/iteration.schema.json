@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "UltraShip iteration record",
+  "description": "Owns an explicit change made after initialization, its evidence, impact, and versioning consequence.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "timestamp", "category", "trigger", "evidence", "before", "change", "impact", "versioning", "approval", "canonical_updates"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^US-[A-Z0-9-]+-(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?-I\\d{2,}$"
+    },
+    "timestamp": { "type": "string" },
+    "category": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "enum": [
+          "task-level", "implementation-level", "release-level", "product-level",
+          "portfolio-level", "architecture-level", "dependency-level",
+          "resource-level", "post-release"
+        ]
+      }
+    },
+    "trigger": { "type": "string" },
+    "evidence": { "type": "array", "items": { "type": "string" } },
+    "before": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scope", "assumptions", "implementation"],
+      "properties": {
+        "scope": { "type": "array", "items": { "type": "string" } },
+        "assumptions": { "type": "array", "items": { "type": "string" } },
+        "implementation": { "type": "string" }
+      }
+    },
+    "change": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["summary", "added", "removed", "deferred", "replaced"],
+      "properties": {
+        "summary": { "type": "string" },
+        "added": { "type": "array", "items": { "type": "string" } },
+        "removed": { "type": "array", "items": { "type": "string" } },
+        "deferred": { "type": "array", "items": { "type": "string" } },
+        "replaced": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "impact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["products", "versions", "tasks", "dependencies", "resource_effect"],
+      "properties": {
+        "products": { "type": "array", "items": { "type": "string" } },
+        "versions": { "type": "array", "items": { "type": "string" } },
+        "tasks": { "type": "array", "items": { "type": "string" } },
+        "dependencies": { "type": "array", "items": { "type": "string" } },
+        "resource_effect": { "type": "string" }
+      }
+    },
+    "versioning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["previous_target", "new_target", "consequence"],
+      "properties": {
+        "previous_target": {
+          "type": "string",
+          "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?$"
+        },
+        "new_target": {
+          "type": "string",
+          "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?$"
+        },
+        "consequence": {
+          "enum": ["no-version-change", "patch-bump", "minor-bump", "major-bump", "release-split", "release-merge", "reorder"]
+        }
+      }
+    },
+    "approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "reference"],
+      "properties": {
+        "source": {
+          "description": "Who authorized the change. develop must not silently reduce scope, so agent-sourced approvals stay visible in the record.",
+          "enum": ["user", "agent"]
+        },
+        "reference": { "type": "string" }
+      }
+    },
+    "canonical_updates": { "type": "array", "items": { "type": "string" } }
+  }
+}

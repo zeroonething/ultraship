@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "UltraShip release",
+  "description": "Owns the release contract, the final delivered scope, completion evidence, release status, and known limitations. Fields from released_at onward are written only at completion; lib/validate.mjs requires them once status is released.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "product", "version", "status", "release_type", "outcome", "scope",
+    "acceptance", "delivery", "dependencies", "resource_profile", "risks",
+    "open_questions"
+  ],
+  "properties": {
+    "product": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?$"
+    },
+    "status": { "enum": ["planned", "active", "released", "superseded"] },
+    "release_type": { "enum": ["major", "minor", "patch"] },
+    "outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["user_can", "business_value", "evidence_of_value"],
+      "properties": {
+        "user_can": {
+          "description": "The real thing a user or operator can do once this ships. A release with no user_can is a technical layer.",
+          "type": "string"
+        },
+        "business_value": { "type": "string" },
+        "evidence_of_value": { "type": "string" }
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["included", "excluded", "fallback_scope"],
+      "properties": {
+        "included": { "type": "array", "items": { "type": "string" } },
+        "excluded": { "type": "array", "items": { "type": "string" } },
+        "fallback_scope": {
+          "description": "Smallest still-complete version of this release, decided in advance so iterate never has to invent an emergency plan.",
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "acceptance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["functional", "non_functional", "operational"],
+      "properties": {
+        "functional": { "type": "array", "items": { "type": "string" } },
+        "non_functional": { "type": "array", "items": { "type": "string" } },
+        "operational": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "delivery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target_mode", "environment", "deployment_method", "migrations", "observability", "rollback"],
+      "properties": {
+        "target_mode": { "enum": ["release-ready", "staging-deployed", "production-deployed", "published"] },
+        "environment": { "type": "string" },
+        "deployment_method": { "type": "string" },
+        "migrations": { "type": "array", "items": { "type": "string" } },
+        "observability": { "type": "array", "items": { "type": "string" } },
+        "rollback": { "type": "string" }
+      }
+    },
+    "dependencies": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["products", "services", "human_approvals"],
+      "properties": {
+        "products": { "type": "array", "items": { "type": "string" } },
+        "services": { "type": "array", "items": { "type": "string" } },
+        "human_approvals": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "resource_profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["complexity", "uncertainty", "likely_cost_drivers", "preferred_tools", "constraints"],
+      "properties": {
+        "complexity": { "enum": ["small", "medium", "large", "unknown"] },
+        "uncertainty": { "enum": ["low", "medium", "high", "unknown"] },
+        "likely_cost_drivers": { "type": "array", "items": { "type": "string" } },
+        "preferred_tools": { "type": "array", "items": { "type": "string" } },
+        "constraints": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "risks": { "type": "array", "items": { "type": "string" } },
+    "open_questions": { "type": "array", "items": { "type": "string" } },
+
+    "released_at": { "type": "string" },
+    "mode": { "enum": ["release-ready", "staging-deployed", "production-deployed", "published"] },
+    "delivered": { "type": "string" },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tests", "builds", "reviews", "deployments", "health_checks"],
+      "properties": {
+        "tests": { "type": "array", "items": { "type": "string" } },
+        "builds": { "type": "array", "items": { "type": "string" } },
+        "reviews": { "type": "array", "items": { "type": "string" } },
+        "deployments": { "type": "array", "items": { "type": "string" } },
+        "health_checks": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "known_limitations": { "type": "array", "items": { "type": "string" } },
+    "supersedes": { "type": ["string", "null"] },
+    "next_recommended_version": { "type": ["string", "null"] },
+    "immutable": { "const": true }
+  }
+}
