@@ -3,6 +3,7 @@
 // machine-readable result to stdout; diagnostics go to stderr.
 import { readFileSync } from 'node:fs';
 import { next as semverNext } from '../lib/semver.mjs';
+import { init } from '../lib/init.mjs';
 
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 
@@ -16,6 +17,12 @@ function fail(message) {
 }
 
 const COMMANDS = {
+  init() {
+    const { root, created } = init(process.cwd());
+    out({ root, created: created.length });
+    return 0;
+  },
+
   semver(argv) {
     const [sub, version, bump] = argv;
     if (sub !== 'next') return fail('Usage: ultraship semver next <version> <bump>');
