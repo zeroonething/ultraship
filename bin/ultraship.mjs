@@ -6,6 +6,7 @@ import { next as semverNext } from '../lib/semver.mjs';
 import { init } from '../lib/init.mjs';
 import { requireRoot } from '../lib/paths.mjs';
 import { snapshot } from '../lib/state.mjs';
+import { validateWorkspace } from '../lib/validate.mjs';
 
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 
@@ -28,6 +29,12 @@ const COMMANDS = {
   state() {
     out(snapshot(requireRoot(process.cwd())));
     return 0;
+  },
+
+  validate() {
+    const result = validateWorkspace(requireRoot(process.cwd()));
+    out(result);
+    return result.ok ? 0 : 1;
   },
 
   semver(argv) {
