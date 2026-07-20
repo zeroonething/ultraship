@@ -34,6 +34,7 @@ command reads and checks it. It never calls a model and never touches the networ
 | --- | --- |
 | `ultraship init` | Scaffold `.ultraship/` in the current directory. |
 | `ultraship state` | Print the workspace state, active release, and legal next steps as JSON. |
+| `ultraship transition <STATE>` | Move the workspace to a new state, refusing any move the state model forbids. |
 | `ultraship validate` | Check every canonical file against its schema and the cross-file rules. |
 | `ultraship semver next <version> <bump>` | Compute the next version. `bump` is `major`, `minor`, `patch`, `release`, or a pre-release identifier. |
 | `ultraship views` | Regenerate the readable Markdown summaries in `.ultraship/views/`. |
