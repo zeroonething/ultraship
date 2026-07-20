@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "UltraShip execution tasks",
+  "description": "Owns active engineering tasks, their status, dependencies, and mapping to acceptance criteria. Task IDs are never SemVer values.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["product", "version", "tasks"],
+  "properties": {
+    "product": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?$"
+    },
+    "tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "summary", "why_required", "status", "depends_on", "acceptance_criteria", "files", "evidence"],
+        "properties": {
+          "id": {
+            "description": "US-<PRODUCT>-<VERSION>-T<NUMBER>. Tasks get IDs, not version numbers.",
+            "type": "string",
+            "pattern": "^US-[A-Z0-9-]+-(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?-T\\d{2,}$"
+          },
+          "summary": { "type": "string" },
+          "why_required": {
+            "description": "Why the release cannot ship without this task.",
+            "type": "string"
+          },
+          "status": { "enum": ["todo", "in-progress", "done", "deferred", "blocked"] },
+          "depends_on": { "type": "array", "items": { "type": "string" } },
+          "acceptance_criteria": { "type": "array", "items": { "type": "string" } },
+          "files": { "type": "array", "items": { "type": "string" } },
+          "evidence": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    }
+  }
+}

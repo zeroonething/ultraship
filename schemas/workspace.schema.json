@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "UltraShip workspace",
+  "description": "Owns workspace identity, umbrella vision, overall constraints, and the active product pointer.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "state", "vision", "constraints", "active_product", "blockers"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+    "name": { "type": "string" },
+    "state": {
+      "enum": [
+        "UNINITIALIZED", "BRAINSTORMING", "BRAINSTORMED", "PLANNING", "PLANNED",
+        "DEVELOPING", "ITERATING", "COMPLETING", "RELEASED", "BLOCKED", "PAUSED"
+      ]
+    },
+    "resumes_to": {
+      "description": "State to return to when leaving BLOCKED or PAUSED.",
+      "type": ["string", "null"]
+    },
+    "vision": { "type": "string" },
+    "constraints": { "type": "array", "items": { "type": "string" } },
+    "active_product": { "type": ["string", "null"] },
+    "blockers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "summary", "needs"],
+        "properties": {
+          "id": { "type": "string" },
+          "summary": { "type": "string" },
+          "needs": { "type": "string" }
+        }
+      }
+    }
+  }
+}
