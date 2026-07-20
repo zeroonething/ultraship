@@ -141,3 +141,46 @@ test('develop checkpoints instead of manufacturing completion', () => {
   assert.match(doc, /checkpoint/i);
   assert.match(doc, /remaining_acceptance/);
 });
+
+test('iterate exists and is namespaced correctly', () => {
+  assert.ok(existsSync(join(ROOT, 'skills', 'iterate', 'SKILL.md')));
+  assert.match(skill('iterate'), /^name: iterate$/m);
+});
+
+test('iterate records an approval source for every change', () => {
+  const doc = skill('iterate');
+  assert.match(doc, /approval/);
+  assert.match(doc, /source: user/);
+});
+
+test('iterate refuses to rewrite released records', () => {
+  const doc = skill('iterate');
+  assert.match(doc, /immutable/i);
+  assert.match(doc, /new version/i);
+  assert.match(doc, /## Prohibited/);
+});
+
+test('iterate refuses to lower completion gates', () => {
+  const doc = skill('iterate');
+  assert.match(doc, /gate/i);
+  assert.match(doc, /Scope may shrink/i);
+});
+
+test('iterate documents the resource-pressure order', () => {
+  const doc = skill('iterate');
+  assert.match(doc, /fallback[_ ]scope/i);
+  assert.match(doc, /split the release/i);
+});
+
+test('iterate documents its versioning consequences', () => {
+  const doc = skill('iterate');
+  for (const c of ['no-version-change', 'patch-bump', 'minor-bump', 'major-bump', 'release-split']) {
+    assert.match(doc, new RegExp(c), `iterate must document the ${c} consequence`);
+  }
+});
+
+test('iterate gives deferred work a canonical destination', () => {
+  const doc = skill('iterate');
+  assert.match(doc, /deferred/);
+  assert.match(doc, /roadmap\.yaml/);
+});
