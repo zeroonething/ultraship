@@ -1,0 +1,23 @@
+{
+  "name": "ultraship",
+  "version": "0.1.0",
+  "description": "AI-assisted rapid development framework for shipping Minimum Complete Releases",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "ultraship": "./bin/ultraship.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test test/"
+  },
+  "keywords": [
+    "skills",
+    "claude-code",
+    "release-management",
+    "semver",
+    "agile"
+  ]
+}

@@ -1,0 +1,31 @@
+UltraShip
+Copyright (c) 2026 Aakash Pawar
+
+This product includes software developed as part of the Superpowers project:
+
+    Superpowers — https://github.com/obra/superpowers
+    Copyright (c) 2025 Jesse Vincent
+    Licensed under the MIT License
+
+Inherited from Superpowers, used with only frontmatter and cross-reference
+changes:
+
+    skills/using-ultraship/          (from skills/using-superpowers/)
+    skills/test-driven-development/
+    skills/systematic-debugging/
+    skills/verification-before-completion/
+    skills/using-git-worktrees/
+    skills/requesting-code-review/
+    skills/receiving-code-review/
+    hooks/session-start
+    hooks/run-hook.cmd
+    hooks/hooks.json
+
+Original to UltraShip:
+
+    skills/brainstorm/, skills/plan/, skills/develop/,
+    skills/iterate/, skills/complete/
+    shared/, bin/, lib/, schemas/, test/
+
+UltraShip is an independent project. It is not affiliated with, sponsored by,
+or approved by the Superpowers project or its authors.
