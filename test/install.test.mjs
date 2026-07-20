@@ -7,10 +7,18 @@ import { fileURLToPath } from 'node:url';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (p) => readFileSync(join(ROOT, p), 'utf8');
 
-test('the plugin manifest wires up the hooks', () => {
-  const plugin = JSON.parse(read('.claude-plugin/plugin.json'));
-  assert.equal(plugin.hooks, './hooks/hooks.json');
+test('the standard hooks file ships and is left for auto-loading', () => {
   assert.ok(existsSync(join(ROOT, 'hooks', 'hooks.json')));
+
+  // Claude Code loads hooks/hooks.json automatically. Naming it again in
+  // manifest.hooks registers it twice and the plugin fails to load with
+  // "Duplicate hooks file detected". manifest.hooks is only for ADDITIONAL
+  // hook files. Upstream superpowers ships this same file and omits the key.
+  const plugin = JSON.parse(read('.claude-plugin/plugin.json'));
+  assert.ok(
+    !('hooks' in plugin),
+    'plugin.json must not declare the standard hooks/hooks.json path',
+  );
 });
 
 test('the README documents every command the CLI exposes', () => {
