@@ -92,3 +92,52 @@ test('plan keeps SemVer off tasks and uses the CLI for version math', () => {
   assert.match(doc, /ultraship semver next/);
   assert.match(doc, /US-<PRODUCT>-<VERSION>-T<NUMBER>/);
 });
+
+test('develop exists and is namespaced correctly', () => {
+  assert.ok(existsSync(join(ROOT, 'skills', 'develop', 'SKILL.md')));
+  assert.match(skill('develop'), /^name: develop$/m);
+});
+
+test('develop records a qualitative release fit and never a number', () => {
+  const doc = skill('develop');
+  for (const level of ['high', 'probable', 'uncertain', 'unlikely']) {
+    assert.match(doc, new RegExp(`\`${level}\``), `develop must document fit level ${level}`);
+  }
+  assert.match(doc, /never (invent|fabricate)/i);
+  assert.match(doc, /percentage/i);
+});
+
+test('develop recommends iterate but never invokes it', () => {
+  const doc = skill('develop');
+  assert.match(doc, /ultraship:iterate/);
+  assert.match(doc, /## When the plan stops fitting/);
+  assert.match(doc, /Do not (invoke|run) .*iterate/i);
+});
+
+test('develop delegates implementation discipline to the TDD skill', () => {
+  assert.match(skill('develop'), /ultraship:test-driven-development/);
+});
+
+test('develop builds vertical slices, not horizontal layers', () => {
+  const doc = skill('develop');
+  assert.match(doc, /vertical/i);
+  assert.match(doc, /horizontal/i);
+});
+
+test('develop names the inference-efficient behaviours it must follow', () => {
+  const doc = skill('develop');
+  assert.match(doc, /ultraship state/);
+  assert.match(doc, /repository-wide/i);
+});
+
+test('develop refuses to claim completion', () => {
+  const doc = skill('develop');
+  assert.match(doc, /ultraship:complete/);
+  assert.match(doc, /## What this skill does not own/);
+});
+
+test('develop checkpoints instead of manufacturing completion', () => {
+  const doc = skill('develop');
+  assert.match(doc, /checkpoint/i);
+  assert.match(doc, /remaining_acceptance/);
+});
