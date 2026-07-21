@@ -9,6 +9,7 @@ import { snapshot } from '../lib/state.mjs';
 import { transition } from '../lib/transition.mjs';
 import { addProduct, useProduct } from '../lib/product.mjs';
 import { migrate } from '../lib/migrate.mjs';
+import { setConstraints, showConstraints } from '../lib/constraints.mjs';
 import { validateWorkspace } from '../lib/validate.mjs';
 import { renderViews } from '../lib/views.mjs';
 
@@ -61,6 +62,30 @@ const COMMANDS = {
   migrate() {
     out(migrate(requireRoot(process.cwd())));
     return 0;
+  },
+
+  constraints(argv) {
+    const [sub, ...rest] = argv;
+    const root = requireRoot(process.cwd());
+    if (sub === 'show' || sub === undefined) {
+      out(showConstraints(root));
+      return 0;
+    }
+    if (sub === 'set') {
+      const values = {};
+      for (let i = 0; i < rest.length; i += 1) {
+        const field = { '--time': 'time', '--budget': 'budget', '--capacity': 'capacity' }[rest[i]];
+        if (!field) return fail(`Unknown flag "${rest[i]}". Use --time, --budget, or --capacity.`);
+        values[field] = rest[i + 1] ?? null;
+        i += 1;
+      }
+      if (!Object.keys(values).length) {
+        return fail('Usage: ultraship constraints set [--time T] [--budget B] [--capacity C]');
+      }
+      out(setConstraints(root, values));
+      return 0;
+    }
+    return fail('Usage: ultraship constraints <set|show> [--time T] [--budget B] [--capacity C]');
   },
 
   validate() {

@@ -168,6 +168,13 @@ Then pin the record. Its SHA-256 goes into `.ultraship/releases.lock`, and
 Finally, run `ultraship transition RELEASED`, then `ultraship validate` and
 `ultraship views`.
 
+`ultraship transition RELEASED` finalizes the shipped version's state itself: it
+marks the version `released` in `roadmap.yaml` and archives the execution pointer
+to `execution/archive/<version>.yaml`, so no shipped version keeps reading
+`execution_state: DEVELOPING`. Do not hand-edit the roadmap status or the active
+pointer to match — the transition already did, and a manual edit only competes
+with it.
+
 ## Process
 
 1. Run `ultraship state`; confirm the release and its target mode.

@@ -14,6 +14,18 @@
     "execution_state": { "enum": ["DEVELOPING", "ITERATING", "COMPLETING", "BLOCKED", "PAUSED"] },
     "checkpoint": { "type": ["string", "null"] },
     "blockers": { "type": "array", "items": { "type": "string" } },
+    "constraints": {
+      "description": "Real limits the user supplied for this release. Free text because the framework cannot observe units. source is always user-estimate — the CLI never measures, so a value here can never be presented as measured.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source"],
+      "properties": {
+        "time": { "type": ["string", "null"] },
+        "budget": { "type": ["string", "null"] },
+        "capacity": { "type": ["string", "null"] },
+        "source": { "const": "user-estimate" }
+      }
+    },
     "release_fit": {
       "type": "object",
       "additionalProperties": false,

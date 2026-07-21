@@ -52,6 +52,13 @@ resource assumptions.
 
 ## Under resource pressure
 
+"Will not fit" is grounded, not guessed, when the user has recorded constraints.
+`ultraship state` reports them under `active.constraints`, and `develop`'s
+release-fit assessment names them when the scope exceeds the recorded time,
+budget, or capacity. Those recorded limits — user estimates, never framework
+measurements — are the evidence that the scope must shrink. Cite them in the
+iteration record.
+
 When the release will not fit, work down this list in order and stop at the first
 step that succeeds:
 
