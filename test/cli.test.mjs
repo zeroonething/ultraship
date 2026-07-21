@@ -1,9 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const CLI = fileURLToPath(new URL('../bin/ultraship.mjs', import.meta.url));
+const PKG_VERSION = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version;
 
 function run(args, cwd = process.cwd()) {
   try {
@@ -44,5 +46,5 @@ test('an unknown command names the valid ones', () => {
 test('--version prints the framework version', () => {
   const { code, stdout } = run(['--version']);
   assert.equal(code, 0);
-  assert.equal(stdout.trim(), '0.2.0');
+  assert.equal(stdout.trim(), PKG_VERSION);
 });

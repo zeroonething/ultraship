@@ -57,7 +57,8 @@ command reads and checks it. It never calls a model and never touches the networ
 | `ultraship transition <STATE> [product]` | Move a product's lifecycle to a new state, refusing any move the state model forbids. Defaults to the active product. |
 | `ultraship product add <id> [name]` | Register a new product with its own lifecycle and make it active. |
 | `ultraship product use <id>` | Switch which product is active. |
-| `ultraship migrate` | Move a 0.1.0 workspace's single state onto its active product's lifecycle. Run once per existing workspace. |
+| `ultraship migrate` | Move a 0.1.0 workspace's single state onto its active product's lifecycle, and bring `framework_version` up to the installed release. Run once per upgrade. |
+| `ultraship constraints set [--time T] [--budget B] [--capacity C]` | Record your real limits on the active release, as user estimates, so develop and iterate assess release fit against them. `ultraship constraints show` prints them. |
 | `ultraship validate` | Check every canonical file against its schema and the cross-file rules. |
 | `ultraship semver next <version> <bump>` | Compute the next version. `bump` is `major`, `minor`, `patch`, `release`, or a pre-release identifier. |
 | `ultraship views` | Regenerate the readable Markdown summaries in `.ultraship/views/`. |
@@ -73,9 +74,27 @@ between them with `ultraship product use <id>`, and every skill acts on the
 active product. Because lifecycle state is per product, one product can be in
 development while another is planned or released — their states never compete.
 
-Upgrading a workspace created by 0.1.0? Run `ultraship migrate` once. It moves
-the single workspace state onto the active product's lifecycle and leaves the
-rest untouched.
+Upgrading a workspace? Run `ultraship migrate` once. From 0.1.0 it moves the
+single workspace state onto the active product's lifecycle; on any upgrade it
+also brings `framework_version` up to the installed release. It leaves the rest
+untouched.
+
+## Constraints and release fit
+
+UltraShip never invents a cost, a token count, or a duration — it has no way to
+measure them. But you know your own limits. Record them on the active release:
+
+```
+ultraship constraints set --time "ship by Friday" --budget "$20 of plan credit" --capacity "half a day"
+```
+
+They are stored as `user-estimate`, never as measured figures, and surface in
+`ultraship state` and the active-releases view. `/ultraship:develop` and
+`/ultraship:iterate` assess release fit against them: when the scope no longer
+fits your recorded limits, they cite the constraint and recommend the release's
+fallback scope rather than guessing. When a version ships, `ultraship transition
+RELEASED` marks it released in the roadmap and archives its execution pointer, so
+no shipped version keeps reading as in development.
 
 ## Principles
 
