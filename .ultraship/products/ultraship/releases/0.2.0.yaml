@@ -1,0 +1,81 @@
+product: ultraship
+version: 0.2.0
+status: planned
+release_type: minor
+outcome:
+  user_can: >
+    Register several independent products in one UltraShip workspace, select
+    which one is active, and take each through its own lifecycle and release
+    track — so one product can be in development while another is planned or
+    released, without their states competing.
+  business_value: >
+    A solo developer running several side projects manages them all from one
+    UltraShip install instead of one workspace per project, so each can reach a
+    releasable state without the framework forcing a single shared lifecycle.
+  evidence_of_value: >
+    Two or more products exist under one workspace, each with its own roadmap
+    and release history at a different lifecycle point, the developer switches
+    the active product and operates on it, and `ultraship validate` passes.
+scope:
+  included:
+    - A product registry so brainstorm registers each new product in the workspace instead of assuming one
+    - Per-product lifecycle state, so state, transition, and the next-command hint apply to the selected product rather than one workspace-global state
+    - A command to set and show the active product
+    - state, views, and validate operate on the selected product and report per-product truth
+    - A workspace view that lists every product with its current lifecycle state and latest release
+  excluded:
+    - Release bundles (coordinated multi-product releases)
+    - Shared capabilities reused across products
+    - Cross-product dependency validation
+    - Product relationships or platform-with-dependent-services modelling
+  fallback_scope:
+    - A product registry, per-product lifecycle state, and an active-product selector, with per-product state and validate — deferring the cross-product workspace view
+acceptance:
+  functional:
+    - Registering a second product creates its own product directory and lifecycle state without touching the first product's state
+    - Setting the active product changes which product state, transition, develop, and complete operate on
+    - Each product advances through its own lifecycle independently; one being DEVELOPING does not move another off PLANNED
+    - state reports the active product's lifecycle, active release, and released versions, not a workspace-global state
+    - A workspace view lists every product with its current lifecycle state and latest release
+  non_functional:
+    - Zero runtime npm dependencies; the vendored YAML parser is still the only parser
+    - The CLI still never calls a model and never touches the network
+    - A single-product workspace behaves exactly as it did in 0.1.0; existing state files load without a migration step, or a migration is provided and tested
+  operational:
+    - ultraship validate exits 0 for a workspace holding two products at different lifecycle points
+    - The README and NOTICE document the multi-product workflow and any new command
+delivery:
+  target_mode: published
+  environment: GitHub plugin marketplace (zeroonething/ultraship)
+  deployment_method: git tag v0.2.0 and a marketplace release from the zeroonething/ultraship repository
+  migrations:
+    - If the workspace state field moves from workspace-level to per-product, migrate an existing 0.1.0 workspace on first run or with an explicit command, and cover it with a test
+  observability:
+    - ultraship state and ultraship validate are the health checks; both are exercised against a two-product workspace before release
+  rollback: Revert the v0.2.0 tag; the marketplace serves the prior 0.1.0 release, whose state schema is a subset and still loads
+dependencies:
+  products: []
+  services: []
+  human_approvals:
+    - The developer confirms the marketplace publish and performs the plugin reinstall from zeroonething/ultraship
+resource_profile:
+  complexity: medium
+  uncertainty: medium
+  likely_cost_drivers:
+    - Moving lifecycle state from workspace-global to per-product touches state, transition, validate, views, and every skill that reads the snapshot
+    - Backward compatibility and migration for existing single-product workspaces
+  preferred_tools:
+    - Claude Code
+  constraints:
+    - Zero runtime npm dependencies
+    - Node 20 or newer
+    - The CLI never calls a model and never touches the network
+    - Do not break the 0.1.0 public contract without a major bump; multi-product must be additive
+risks:
+  - Per-product state is a schema change; getting migration wrong corrupts an existing workspace. Mitigated by a tested migration and the subset-schema rollback.
+  - Scope creep back toward bundles and shared capabilities, which this release deliberately defers.
+  - The single-workspace-state assumption is baked into more skills than expected, widening the change.
+open_questions:
+  - Does lifecycle state move onto each product, or does the workspace keep one state and gain a per-product execution pointer? Decided in develop.
+  - Is active-product selection a new CLI command or a flag on existing commands?
+  - Does 0.1.0 state migrate automatically on first run, or through an explicit command?

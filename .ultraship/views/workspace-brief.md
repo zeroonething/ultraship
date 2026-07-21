@@ -4,8 +4,8 @@ Run `ultraship views` to regenerate.
 -->
 # UltraShip
 
-**State:** BRAINSTORMED
-**Next command:** `/ultraship:plan`
+**State:** PLANNED
+**Next command:** `/ultraship:develop`
 
 ## Vision
 

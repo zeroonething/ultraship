@@ -1,6 +1,6 @@
 id: ultraship
 name: UltraShip
-state: BRAINSTORMED
+state: PLANNED
 resumes_to: null
 vision: An AI-assisted rapid development framework for shipping Minimum Complete Releases.
 constraints:
