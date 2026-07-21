@@ -1,0 +1,131 @@
+product: ultraship
+version: 0.3.0
+status: released
+release_type: minor
+outcome:
+  user_can: >
+    Record real constraints for a release — a deadline, a budget, and available
+    subscription capacity — and get release-fit guidance and fallback-scope
+    recommendations grounded in those figures. The figures are marked as
+    user-supplied estimates, so develop and iterate advise scope against the
+    developer's actual limits instead of a blank qualitative guess, without the
+    framework ever inventing a number it cannot observe.
+  business_value: >
+    A solo developer on a subscription plan running several projects can tell
+    UltraShip the real ceiling on one release — ship by Friday, this much budget,
+    this much plan capacity left — and be told honestly whether the current scope
+    fits and, if not, which smaller complete release does. Scope decisions stop
+    being guesswork and start being anchored to the constraints the developer
+    already knows.
+  evidence_of_value: >
+    A developer records constraints on a release, runs develop, and the
+    release_fit assessment cites those recorded constraints in its reasons; when
+    the recorded constraints do not fit the scope, recommended_scope_change names
+    the release's fallback_scope; state and views show the recorded constraints
+    with their user-estimate source; and `ultraship validate` passes.
+scope:
+  included:
+    - A place to record user-supplied constraints on a release — time, budget, and capacity — each carrying a telemetry source of user-estimate
+    - A CLI command to set and show a release's recorded constraints, so they are canonical state and not re-entered each session
+    - release_fit.assessment consumes the recorded constraints and cites them by name in reasons, instead of assessing against nothing
+    - recommended_scope_change names the release's fallback_scope when the recorded constraints do not fit the current scope
+    - state and views surface the recorded constraints and the fit assessed against them, with the user-estimate source shown so no figure looks measured
+    - complete finalizes canonical state itself so a shipped release leaves nothing stale — it sets the roadmap version status to released rather than requiring a hand edit, and it clears or archives the execution pointer so no released version still reads execution_state DEVELOPING in active.yaml or active-releases.md
+    - the framework_version recorded in ultraship.yaml reflects the installed framework, so an upgrade no longer leaves the value init first wrote
+  excluded:
+    - Provider telemetry or any automatic measurement of tokens, cost, or time — the CLI still never calls a model and never touches the network
+    - Automatic scope reduction; recommended_scope_change advises, iterate still applies the change with an approval source
+    - Predictive cost or duration models that would produce a figure the framework did not receive from the user
+    - Cross-product capacity budgeting across the workspace
+  fallback_scope:
+    - Record user-supplied constraints on a release and have release_fit cite them and flag honestly when they do not fit — deferring the automatic mapping of recommended_scope_change onto fallback_scope, which the developer would then choose manually. The completion-state fixes (roadmap status, execution pointer, framework_version) are small and independent and ship in the fallback too, since they correct existing broken behavior rather than extend scope.
+acceptance:
+  functional:
+    - A developer sets time, budget, and capacity constraints on a release and they persist to canonical state, each tagged with a user-estimate source
+    - The set-constraints command shows the recorded constraints and reports the same figures on a later run without re-entry
+    - With constraints recorded, release_fit.reasons names at least one recorded constraint rather than assessing against nothing
+    - When recorded constraints do not fit the current scope, recommended_scope_change is non-null and names the release's fallback_scope
+    - When no constraints are recorded, release_fit still assesses qualitatively exactly as it did in 0.2.0 — constraints are additive, not required
+    - state and views display the recorded constraints and their user-estimate source
+    - after complete runs on a release, the roadmap shows that version as released with no hand edit
+    - after complete runs, no shipped version reads execution_state DEVELOPING — active.yaml and active-releases.md no longer show a released version as in development
+    - after a framework upgrade, framework_version in ultraship.yaml matches the installed framework version
+  non_functional:
+    - Zero runtime npm dependencies; the vendored YAML parser is still the only parser
+    - The CLI still never calls a model and never touches the network
+    - No recorded or derived figure is ever presented without its source; a user-estimate is never rendered as if measured
+    - A 0.2.0 workspace with no recorded constraints loads and behaves unchanged, with no migration required
+  operational:
+    - ultraship validate exits 0 for a workspace with a release carrying recorded constraints and for one carrying none
+    - The README and NOTICE document how to record constraints and how fit and scope recommendations use them
+delivery:
+  target_mode: published
+  environment: GitHub plugin marketplace (zeroonething/ultraship)
+  deployment_method: git tag v0.3.0 pushed to zeroonething/ultraship, then a marketplace update and plugin reinstall verified to load 0.3.0
+  migrations:
+    - None expected; constraints are a new optional block on the release contract and its active snapshot. If the active snapshot schema gains a required field, provide and test a migration; otherwise absence of constraints must load unchanged.
+  observability:
+    - ultraship state and ultraship validate are the health checks; both are exercised against a release with recorded constraints and a release without before release
+  rollback: Revert the v0.3.0 tag; the marketplace serves the prior 0.2.0 release, whose schema is a subset (no constraints block) and still loads every existing workspace
+dependencies:
+  products: []
+  services: []
+  human_approvals:
+    - The developer confirms the marketplace publish, pushes the v0.3.0 tag, and performs the plugin reinstall from zeroonething/ultraship
+resource_profile:
+  complexity: medium
+  uncertainty: medium
+  likely_cost_drivers:
+    - Deciding the shape of the constraints block and its telemetry-source tagging so it is honest and validates cleanly
+    - Threading recorded constraints into release_fit assessment across develop and iterate without breaking the no-constraints path
+    - Keeping the source of every figure visible in state and views so nothing user-supplied reads as measured
+    - Teaching complete to finalize state — a released execution_state or an archived pointer — without breaking validate or the released-record immutability rule
+  preferred_tools:
+    - Claude Code
+  constraints:
+    - Zero runtime npm dependencies
+    - Node 20 or newer
+    - The CLI never calls a model and never touches the network
+    - Never invent a token count, cost, percentage, or duration; figures exist only when the user supplied them, tagged user-estimate
+    - Additive only; the 0.2.0 public contract must not break without a major bump
+risks:
+  - The framework's resource-honesty rule is easy to violate by accident; a fit reason that reads as measured when the figure is a user estimate would undermine the whole feature. Mitigated by requiring the source to travel with every figure and asserting it in tests.
+  - Scope creep toward predictive cost models or provider telemetry, which this release deliberately excludes and 0.1.0's constraints forbid.
+  - Constraint threading touches release_fit in both develop and iterate; the no-constraints path could regress. Mitigated by an explicit test that a constraint-free release assesses exactly as in 0.2.0.
+open_questions:
+  - Are constraints recorded on the release contract, on the active snapshot, or both? Decided in develop.
+  - Is recording constraints a new CLI subcommand or a flag on an existing command? Decided in develop.
+  - What units does capacity take for a subscription plan the framework cannot observe — a free-text estimate, or a coarse enum? Decided in develop.
+  - Does clearing the execution pointer on complete mean adding a RELEASED execution_state to the active snapshot enum, or archiving and removing active.yaml once the release is recorded? Decided in develop.
+  - Is framework_version bumped by a CLI command run on upgrade, or read live from the installed package version rather than stored at all? Decided in develop.
+released_at: 2026-07-21T20:00:00Z
+mode: release-ready
+delivered: >
+  A developer records real limits on a release — time, budget, capacity — with
+  `ultraship constraints set`, stored as user estimates and surfaced in state and
+  views; develop and iterate ground release fit in them and recommend the
+  fallback scope when the work no longer fits. Shipping a version now finalizes
+  its state: `transition RELEASED` marks it released in the roadmap and archives
+  the execution pointer, so no shipped release still reads DEVELOPING. `migrate`
+  and `init` keep framework_version honest.
+evidence:
+  tests:
+    - node --test — 202 passing, 0 failing
+    - test/constraints.test.mjs — 7 passing (persist as user-estimate, round-trip, snapshot surfaces, CLI, unknown flag rejected)
+    - test/transition.test.mjs — releasing marks the roadmap released and archives the pointer; missing pointer is a best-effort no-op
+    - test/migrate.test.mjs — migrate syncs a stale framework_version and is idempotent
+  builds:
+    - npm pack --dry-run — ultraship@0.3.0, exit 0 (plugin has no compile step)
+  reviews: []
+  deployments: []
+  health_checks:
+    - ultraship validate — ok, 9 checked
+    - constraints set/show and state round-trip verified live in a scratch workspace — figures stored and echoed as user-estimate
+    - grep confirmed the new lib has no http/https/net/fetch or model imports — the CLI still touches no network and calls no model
+known_limitations:
+  - Marketplace publish is pending. v0.3.0 goes live when the PR merges, the v0.3.0 tag is live on main, and the plugin is reinstalled. Achieved mode is release-ready, not the intended published, until then.
+  - Constraints are free text. The framework cannot observe units, so it stores and echoes them without interpreting or comparing them numerically.
+  - No provider telemetry. Release fit stays qualitative unless the user supplies estimates, which are recorded as user-estimate and never rendered as measured.
+supersedes: null
+next_recommended_version: 0.4.0
+immutable: true

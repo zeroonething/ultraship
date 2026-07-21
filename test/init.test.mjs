@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync, existsSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { init } from '../lib/init.mjs';
+import { init, FRAMEWORK_VERSION } from '../lib/init.mjs';
 import { findRoot, requireRoot, paths, DIR } from '../lib/paths.mjs';
 import { readYaml } from '../lib/yaml.mjs';
 
@@ -32,7 +32,7 @@ test('init writes a config whose resource profile is entirely unknown', () => {
     const { root } = init(dir);
     const config = readYaml(join(root, 'ultraship.yaml'));
     assert.equal(config.schema_version, 1);
-    assert.equal(config.framework_version, '0.1.0');
+    assert.equal(config.framework_version, FRAMEWORK_VERSION);
     assert.equal(config.resource_profile.telemetry.source, 'unknown');
     assert.equal(config.resource_profile.available.token_budget, null);
     assert.equal(config.resource_profile.available.monetary_budget_usd, null);

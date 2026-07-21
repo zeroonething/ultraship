@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { init } from '../lib/init.mjs';
+import { init, FRAMEWORK_VERSION } from '../lib/init.mjs';
 import { paths } from '../lib/paths.mjs';
 import { readYaml, writeYaml } from '../lib/yaml.mjs';
 import { addProduct } from '../lib/product.mjs';
@@ -84,6 +84,26 @@ test('migrate of a fresh 0.1.0 workspace strips state and writes no lifecycle', 
     assert.equal(result.lifecycle, null);
     assert.ok(!('state' in readYaml(p.workspace)));
     assert.equal(validateWorkspace(root).ok, true);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('migrate brings a stale framework_version up to the installed release', () => {
+  const { dir, root, p } = scratch();
+  try {
+    const config = readYaml(p.config);
+    config.framework_version = '0.1.0'; // as if the workspace was created by an older release
+    writeYaml(p.config, config);
+
+    const result = migrate(root);
+    assert.equal(result.framework_version.from, '0.1.0');
+    assert.equal(result.framework_version.to, FRAMEWORK_VERSION);
+    assert.equal(result.framework_version.changed, true);
+    assert.equal(readYaml(p.config).framework_version, FRAMEWORK_VERSION);
+
+    // Idempotent: running again reports no change.
+    assert.equal(migrate(root).framework_version.changed, false);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

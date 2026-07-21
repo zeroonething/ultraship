@@ -1,0 +1,19 @@
+product: ultraship
+version: 0.3.0
+execution_state: DEVELOPING
+checkpoint: null
+blockers: []
+release_fit:
+  assessment: high
+  reasons:
+    - The change is additive and well bounded — a constraints block on the active pointer, one CLI
+      command, and threading it through state and views.
+    - The completion-hygiene fixes hook the single sanctioned finalization point, the RELEASED
+      transition, rather than fanning out across skills.
+    - The full suite is green at 202 tests, including new coverage for constraints, release
+      finalization, and framework_version sync.
+    - No user constraints were supplied for this release, so fit is assessed qualitatively — exactly
+      the no-constraints path the release preserves.
+  major_cost_drivers:
+    - Keeping every recorded figure tagged user-estimate so nothing reads as measured.
+  recommended_scope_change: null

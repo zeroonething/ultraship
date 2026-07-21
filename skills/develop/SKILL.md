@@ -43,6 +43,14 @@ resources available. Consider scope size, repository condition, existing test
 coverage, architectural uncertainty, deployment requirements, external
 dependencies, and anything the user told you about their time or budget.
 
+If the user has recorded constraints — `ultraship state` reports them under
+`active.constraints`, or they set them with `ultraship constraints set` — the
+assessment must be grounded in them, not made in a vacuum. Name at least one
+recorded constraint in `reasons`, and when the scope does not fit the recorded
+limits, set `recommended_scope_change` to the release's `fallback_scope` rather
+than leaving it null. The constraints are `user-estimate` figures; cite them as
+the user's own estimates, never as anything the framework measured.
+
 Record it in `active.yaml`:
 
 ```yaml

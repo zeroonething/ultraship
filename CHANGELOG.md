@@ -3,6 +3,46 @@
 All notable changes to UltraShip are recorded here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] — 2026-07-21
+
+Release fit grounded in real constraints. A developer records the actual limits
+on a release — a deadline, a budget, remaining subscription capacity — and
+`develop` and `iterate` assess fit against them and recommend the fallback scope
+when the work no longer fits, instead of guessing. The figures are stored as
+user estimates and never rendered as measured; the framework still calls no
+model and touches no network. This release also fixes three state-hygiene gaps
+found while dogfooding 0.2.0.
+
+### Added
+
+- `ultraship constraints set [--time T] [--budget B] [--capacity C]` and
+  `ultraship constraints show` record the user's real limits on the active
+  release. Stored on the execution pointer, always tagged `user-estimate`.
+- An optional `constraints` block on the active-execution schema.
+- `ultraship state` and the active-releases view surface recorded constraints
+  with their `user-estimate` source.
+
+### Changed
+
+- `develop` and `iterate` ground release fit in recorded constraints: the
+  assessment names a constraint and recommends `fallback_scope` when the scope
+  exceeds the recorded limits. With no constraints recorded, fit is assessed
+  qualitatively exactly as before — the block is additive.
+- `ultraship transition RELEASED` now finalizes a shipped version's state: it
+  marks the version `released` in `roadmap.yaml` and archives the execution
+  pointer to `execution/archive/<version>.yaml`, so no shipped release keeps
+  reading `execution_state: DEVELOPING`. `complete` no longer hand-edits either.
+- `ultraship migrate` brings `ultraship.yaml`'s `framework_version` up to the
+  installed release; `ultraship init` records the installed version rather than
+  a literal.
+
+### Known limitations
+
+- Constraints are free text — the framework cannot observe units, so it stores
+  and echoes them without interpreting or comparing them numerically.
+- No provider telemetry. Fit remains qualitative; only user-supplied estimates
+  ground it.
+
 ## [0.2.0] — 2026-07-21
 
 Several independent products from one workspace. Each product runs on its own

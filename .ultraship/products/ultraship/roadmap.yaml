@@ -3,33 +3,31 @@ status: active
 versions:
   - version: 0.1.0
     outcome: >
-      One developer takes one product from a vague idea to an immutable release
-      record, entirely in local canonical state, using the five skills.
+      One developer takes one product from a vague idea to an immutable release record, entirely in
+      local canonical state, using the five skills.
     detail: outline
     status: released
   - version: 0.2.0
     outcome: >
-      A developer runs several independent products from one workspace, each on
-      its own lifecycle and release track, with no product's state competing
-      with another's.
+      A developer runs several independent products from one workspace, each on its own lifecycle
+      and release track, with no product's state competing with another's.
     detail: specified
     status: released
   - version: 0.3.0
     outcome: >
-      A developer supplies real constraints — time, budget, capacity — and gets
-      release-fit guidance and adaptive scope recommendations grounded in them.
-    detail: outline
-    status: planned
+      A developer supplies real constraints — time, budget, capacity — and gets release-fit guidance
+      and adaptive scope recommendations grounded in them.
+    detail: specified
+    status: released
   - version: 0.4.0
     outcome: >
-      A release completes as staging- or production-deployed through
-      configurable project hooks, with verified deployment evidence recorded.
+      A release completes as staging- or production-deployed through configurable project hooks,
+      with verified deployment evidence recorded.
     detail: hypothesis
     status: planned
   - version: 1.0.0
     outcome: >
-      A stable, documented, migration-safe framework a developer can rely on
-      for real projects, with a public contract that will not break underneath
-      them.
+      A stable, documented, migration-safe framework a developer can rely on for real projects, with
+      a public contract that will not break underneath them.
     detail: hypothesis
     status: planned

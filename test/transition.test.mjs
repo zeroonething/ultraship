@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync, mkdirSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -152,6 +152,61 @@ test('the lifecycle still validates after a transition', () => {
   try {
     assert.equal(run(['transition', 'BRAINSTORMING'], dir).code, 0);
     assert.equal(run(['validate'], dir).code, 0);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// A product sitting at COMPLETING with an active 0.1.0 release and a roadmap
+// entry for it — the exact state complete is in just before it ships.
+function readyToRelease() {
+  const { dir, root, p, id } = scratch();
+  const lifecycle = readYaml(p.lifecycle(id));
+  lifecycle.state = 'COMPLETING';
+  writeYaml(p.lifecycle(id), lifecycle);
+  writeYaml(p.roadmap(id), {
+    product: id, status: 'active',
+    versions: [{ version: '0.1.0', outcome: 'A user does the thing.', detail: 'specified', status: 'planned' }],
+  });
+  mkdirSync(p.releases(id), { recursive: true });
+  writeYaml(p.release(id, '0.1.0'), { product: id, version: '0.1.0', status: 'released' });
+  mkdirSync(join(p.productDir(id), 'execution'), { recursive: true });
+  writeYaml(p.active(id), {
+    product: id, version: '0.1.0', execution_state: 'COMPLETING', checkpoint: null, blockers: [],
+    release_fit: { assessment: 'high', reasons: [], major_cost_drivers: [], recommended_scope_change: null },
+  });
+  return { dir, root, p, id };
+}
+
+test('releasing marks the roadmap version released and archives the execution pointer', () => {
+  const { dir, root, p, id } = readyToRelease();
+  try {
+    const result = transition(root, 'RELEASED');
+    assert.equal(result.finalized.released_version, '0.1.0');
+    assert.equal(result.finalized.roadmap_updated, true);
+
+    // The roadmap now records the release itself — no hand edit needed.
+    const entry = readYaml(p.roadmap(id)).versions.find((v) => v.version === '0.1.0');
+    assert.equal(entry.status, 'released');
+
+    // The live pointer is gone and archived, so nothing still reads DEVELOPING.
+    assert.equal(existsSync(p.active(id)), false);
+    assert.equal(readYaml(p.archivedActive(id, '0.1.0')).version, '0.1.0');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('releasing with no execution pointer is a best-effort no-op, not a failure', () => {
+  const { dir, root, p, id } = scratch();
+  try {
+    const lifecycle = readYaml(p.lifecycle(id));
+    lifecycle.state = 'COMPLETING';
+    writeYaml(p.lifecycle(id), lifecycle);
+    const result = transition(root, 'RELEASED');
+    assert.equal(result.to, 'RELEASED');
+    assert.equal(result.finalized.released_version, null);
+    assert.equal(result.finalized.archived, null);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
