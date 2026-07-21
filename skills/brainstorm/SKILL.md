@@ -24,7 +24,11 @@ a traceable record.
 ## What this skill owns
 
 - `.ultraship/products/<product-id>/product.yaml`
-- `vision` and `active_product` in `.ultraship/workspace.yaml`
+- `vision` in `.ultraship/workspace.yaml`
+
+Register the product and set `active_product` through `ultraship product add`,
+not by hand. The product's `lifecycle.yaml` is created by that command and moved
+only by `ultraship transition` — never hand-write a lifecycle state.
 
 ## What this skill does not own
 
@@ -41,7 +45,9 @@ Do not write implementation code.
 2. If the repository already contains a project, inspect it before asking
    questions the code answers. Do not scan the whole repository — look at the
    README, the package manifest, and the top-level directory names.
-3. Run `ultraship transition BRAINSTORMING`.
+3. Register the product with `ultraship product add <id> <name>` — this creates
+   its directory and lifecycle and makes it active — then run
+   `ultraship transition BRAINSTORMING`.
 4. Ask questions one at a time. Prefer multiple choice. Never ask something the
    user has already told you.
 5. Draft the product definition and present it for approval.
@@ -79,9 +85,13 @@ Classify the idea as exactly one of:
 `unknown` is a legitimate answer and must be recorded as one. Never guess a
 classification to make the file look finished — record the open question instead.
 
-UltraShip 0.1.0 manages one product per workspace. If the user describes several,
-help them pick the one to build first, record the others as open questions, and
-say plainly that multi-product portfolios arrive in 0.2.0.
+A workspace can hold several independent products, each with its own lifecycle.
+If the user describes several, register the one to build first with
+`ultraship product add` and record the others as candidates; register each with
+its own `product add` when its turn comes. Products advance independently, so one
+can be in development while another is still an idea. Coordinated cross-product
+releases and shared capabilities are not part of this — they are deliberately
+out of scope.
 
 ## The MVP boundary
 

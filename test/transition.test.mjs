@@ -8,14 +8,18 @@ import { fileURLToPath } from 'node:url';
 import { init } from '../lib/init.mjs';
 import { paths } from '../lib/paths.mjs';
 import { readYaml, writeYaml } from '../lib/yaml.mjs';
+import { addProduct } from '../lib/product.mjs';
 import { transition } from '../lib/transition.mjs';
 
 const CLI = fileURLToPath(new URL('../bin/ultraship.mjs', import.meta.url));
 
+// A transition moves a product's lifecycle, so every scratch workspace has one
+// registered and active product sitting at UNINITIALIZED.
 function scratch() {
   const dir = mkdtempSync(join(tmpdir(), 'ultraship-transition-'));
   const { root } = init(dir);
-  return { dir, root, p: paths(root) };
+  addProduct(root, 'client-tracker');
+  return { dir, root, p: paths(root), id: 'client-tracker' };
 }
 
 function run(args, cwd) {
@@ -29,43 +33,54 @@ function run(args, cwd) {
   }
 }
 
-test('a legal transition is written to workspace.yaml', () => {
-  const { dir, root, p } = scratch();
+test('a legal transition is written to the product lifecycle', () => {
+  const { dir, root, p, id } = scratch();
   try {
     const result = transition(root, 'BRAINSTORMING');
     assert.deepEqual(result, {
+      product: id,
       from: 'UNINITIALIZED',
       to: 'BRAINSTORMING',
       next_command: '/ultraship:brainstorm',
     });
-    assert.equal(readYaml(p.workspace).state, 'BRAINSTORMING');
+    assert.equal(readYaml(p.lifecycle(id)).state, 'BRAINSTORMING');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
 });
 
 test('an illegal transition throws and leaves the state untouched', () => {
-  const { dir, root, p } = scratch();
+  const { dir, root, p, id } = scratch();
   try {
     assert.throws(
       () => transition(root, 'RELEASED'),
-      /Cannot move from UNINITIALIZED to RELEASED\. Legal next states: BRAINSTORMING/,
+      /Cannot move client-tracker from UNINITIALIZED to RELEASED\. Legal next states: BRAINSTORMING/,
     );
-    assert.equal(readYaml(p.workspace).state, 'UNINITIALIZED');
+    assert.equal(readYaml(p.lifecycle(id)).state, 'UNINITIALIZED');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
 });
 
 test('a released version cannot be reopened', () => {
-  const { dir, root, p } = scratch();
+  const { dir, root, p, id } = scratch();
   try {
-    const workspace = readYaml(p.workspace);
-    workspace.state = 'RELEASED';
-    writeYaml(p.workspace, workspace);
+    const lifecycle = readYaml(p.lifecycle(id));
+    lifecycle.state = 'RELEASED';
+    writeYaml(p.lifecycle(id), lifecycle);
 
-    assert.throws(() => transition(root, 'COMPLETING'), /Cannot move from RELEASED to COMPLETING/);
-    assert.equal(readYaml(p.workspace).state, 'RELEASED');
+    assert.throws(() => transition(root, 'COMPLETING'), /Cannot move client-tracker from RELEASED to COMPLETING/);
+    assert.equal(readYaml(p.lifecycle(id)).state, 'RELEASED');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('a transition with no active product asks for one', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'ultraship-transition-'));
+  try {
+    const { root } = init(dir);
+    assert.throws(() => transition(root, 'BRAINSTORMING'), /No active product to transition/);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -81,25 +96,26 @@ test('an unknown target state is rejected by name', () => {
 });
 
 test('entering PAUSED records where to resume, and resuming clears it', () => {
-  const { dir, root, p } = scratch();
+  const { dir, root, p, id } = scratch();
   try {
     transition(root, 'BRAINSTORMING');
     transition(root, 'PAUSED');
-    assert.equal(readYaml(p.workspace).resumes_to, 'BRAINSTORMING');
+    assert.equal(readYaml(p.lifecycle(id)).resumes_to, 'BRAINSTORMING');
 
     transition(root, 'BRAINSTORMING');
-    assert.equal(readYaml(p.workspace).resumes_to, null);
+    assert.equal(readYaml(p.lifecycle(id)).resumes_to, null);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
 });
 
 test('the CLI reports the move as JSON and exits 0', () => {
-  const { dir } = scratch();
+  const { dir, id } = scratch();
   try {
     const { code, stdout } = run(['transition', 'BRAINSTORMING'], dir);
     assert.equal(code, 0);
     assert.deepEqual(JSON.parse(stdout), {
+      product: id,
       from: 'UNINITIALIZED',
       to: 'BRAINSTORMING',
       next_command: '/ultraship:brainstorm',
@@ -131,11 +147,24 @@ test('the CLI requires a target state', () => {
   }
 });
 
-test('workspace.yaml still validates after a transition', () => {
+test('the lifecycle still validates after a transition', () => {
   const { dir } = scratch();
   try {
     assert.equal(run(['transition', 'BRAINSTORMING'], dir).code, 0);
     assert.equal(run(['validate'], dir).code, 0);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('a named product can be transitioned while another stays put', () => {
+  const { dir, root, p } = scratch();
+  try {
+    addProduct(root, 'second');
+    // active_product is now "second"; move the first one by name.
+    transition(root, 'BRAINSTORMING', 'client-tracker');
+    assert.equal(readYaml(p.lifecycle('client-tracker')).state, 'BRAINSTORMING');
+    assert.equal(readYaml(p.lifecycle('second')).state, 'UNINITIALIZED');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

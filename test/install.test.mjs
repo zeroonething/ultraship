@@ -33,7 +33,7 @@ test('the README documents every command the CLI exposes', () => {
 
   assert.deepEqual(
     [...commands].sort(),
-    ['init', 'semver', 'state', 'transition', 'validate', 'views'],
+    ['init', 'migrate', 'product', 'semver', 'state', 'transition', 'validate', 'views'],
     'the CLI exposes a command set the README was not written against',
   );
   for (const command of commands) {
@@ -51,7 +51,7 @@ test('the README documents every UltraShip skill that ships', () => {
 test('the README tells the user how to install the plugin', () => {
   const readme = read('README.md');
   assert.match(readme, /plugin marketplace add/);
-  assert.match(readme, /aakashpawar1999\/ultraship/);
+  assert.match(readme, /zeroonething\/ultraship/);
 });
 
 test('the README no longer claims the skills are unbuilt', () => {

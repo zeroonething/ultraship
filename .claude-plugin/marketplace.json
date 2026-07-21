@@ -2,16 +2,16 @@
   "name": "ultraship",
   "description": "UltraShip — AI-assisted rapid development framework",
   "owner": {
-    "name": "Aakash Pawar"
+    "name": "Aakash Pawar (zeroonething)"
   },
   "plugins": [
     {
       "name": "ultraship",
       "description": "Ship at inference speed. Turn vague ideas into complete, releasable software through brainstorm, plan, develop, iterate, and complete.",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "source": "./",
       "author": {
-        "name": "Aakash Pawar"
+        "name": "Aakash Pawar (zeroonething)"
       }
     }
   ]

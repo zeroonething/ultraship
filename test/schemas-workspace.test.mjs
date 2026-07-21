@@ -48,19 +48,31 @@ test('workspace.yaml accepts a freshly initialized workspace', () => {
   const errors = validate(load('workspace'), {
     id: 'freelance-tools',
     name: 'Freelance Tools',
-    state: 'UNINITIALIZED',
     vision: '',
     constraints: [],
     active_product: null,
-    blockers: [],
   });
   assert.deepEqual(errors, []);
 });
 
-test('workspace.yaml rejects a state outside the state model', () => {
+test('workspace.yaml rejects a lifecycle state written onto it', () => {
   const errors = validate(load('workspace'), {
-    id: 'w', name: 'W', state: 'SHIPPING', vision: '', constraints: [],
-    active_product: null, blockers: [],
+    id: 'w', name: 'W', vision: '', constraints: [], active_product: null,
+    state: 'DEVELOPING',
+  });
+  assert.match(errors[0], /unexpected property "state"/);
+});
+
+test('lifecycle.yaml accepts a product mid-development', () => {
+  const errors = validate(load('lifecycle'), {
+    product: 'client-tracker', state: 'DEVELOPING', resumes_to: null, blockers: [],
+  });
+  assert.deepEqual(errors, []);
+});
+
+test('lifecycle.yaml rejects a state outside the state model', () => {
+  const errors = validate(load('lifecycle'), {
+    product: 'client-tracker', state: 'SHIPPING', resumes_to: null, blockers: [],
   });
   assert.match(errors[0], /state: expected one of/);
 });

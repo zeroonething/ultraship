@@ -44,5 +44,5 @@ test('an unknown command names the valid ones', () => {
 test('--version prints the framework version', () => {
   const { code, stdout } = run(['--version']);
   assert.equal(code, 0);
-  assert.equal(stdout.trim(), '0.1.0');
+  assert.equal(stdout.trim(), '0.2.0');
 });
