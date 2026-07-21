@@ -30,4 +30,4 @@ record, and complete a release whose record cannot afterwards be silently edited
 - Claude Code is the only supported agent tool. Codex and OpenCode adapters are
   not built.
 
-[0.1.0]: https://github.com/aakashpawar1999/ultraship/releases/tag/v0.1.0
+[0.1.0]: https://github.com/zeroonething/ultraship/releases/tag/v0.1.0
