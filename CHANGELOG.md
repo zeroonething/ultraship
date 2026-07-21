@@ -3,6 +3,45 @@
 All notable changes to UltraShip are recorded here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [0.2.0] — 2026-07-21
+
+Several independent products from one workspace. Each product runs on its own
+lifecycle and release track, so one can be in development while another is
+planned or released — their states never compete. Release bundles, shared
+capabilities, and cross-product dependency validation are deliberately out of
+scope for a solo developer with independent projects.
+
+### Added
+
+- Per-product `lifecycle.yaml` (new schema) owning each product's state,
+  resume target, and blockers.
+- `ultraship product add <id> [name]` and `ultraship product use <id>` to
+  register and select products.
+- `ultraship migrate` to move a 0.1.0 workspace's single state onto its active
+  product's lifecycle. Idempotent.
+- `ultraship transition <STATE> [product]` now targets a named product,
+  defaulting to the active one.
+- Workspace-brief view gains per-product State and Latest release columns.
+
+### Changed
+
+- Lifecycle state moved off `workspace.yaml` onto each product. `ultraship state`
+  reports the active product's state and every product's state.
+- `brainstorm` registers products through `ultraship product add`.
+
+### Migration
+
+- A workspace created by 0.1.0 must run `ultraship migrate` once. It moves the
+  single workspace state onto the active product's lifecycle and strips the
+  legacy fields; nothing else changes.
+
+### Known limitations
+
+- No coordinated cross-product releases or shared capabilities by design.
+- `release-ready`/`published` are the exercised completion modes; staging and
+  production deployment hooks arrive in 0.4.0.
+- No provider telemetry; resource-aware execution arrives in 0.3.0.
+
 ## [0.1.0] — 2026-07-21
 
 Single-product release workflow. A user can install UltraShip, turn a vague idea
@@ -30,4 +69,5 @@ record, and complete a release whose record cannot afterwards be silently edited
 - Claude Code is the only supported agent tool. Codex and OpenCode adapters are
   not built.
 
+[0.2.0]: https://github.com/zeroonething/ultraship/releases/tag/v0.2.0
 [0.1.0]: https://github.com/zeroonething/ultraship/releases/tag/v0.1.0

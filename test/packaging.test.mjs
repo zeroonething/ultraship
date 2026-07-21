@@ -21,7 +21,7 @@ test('NOTICE credits upstream without claiming endorsement', () => {
 test('plugin manifest declares the ultraship plugin', () => {
   const plugin = readJson('.claude-plugin/plugin.json');
   assert.equal(plugin.name, 'ultraship');
-  assert.equal(plugin.version, '0.1.0');
+  assert.equal(plugin.version, '0.2.0');
   assert.equal(plugin.license, 'MIT');
 });
 
