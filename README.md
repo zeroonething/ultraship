@@ -23,7 +23,7 @@ canonical source of truth.
 ## Install
 
 ```
-/plugin marketplace add aakashpawar1999/ultraship
+/plugin marketplace add zeroonething/ultraship
 /plugin install ultraship
 ```
 

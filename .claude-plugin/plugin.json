@@ -3,10 +3,10 @@
   "description": "Ship at inference speed. Turn vague ideas into complete, releasable software through brainstorm, plan, develop, iterate, and complete.",
   "version": "0.1.0",
   "author": {
-    "name": "Aakash Pawar"
+    "name": "Aakash Pawar (zeroonething)"
   },
-  "homepage": "https://github.com/aakashpawar1999/ultraship",
-  "repository": "https://github.com/aakashpawar1999/ultraship",
+  "homepage": "https://github.com/zeroonething/ultraship",
+  "repository": "https://github.com/zeroonething/ultraship",
   "license": "MIT",
   "keywords": [
     "skills",
