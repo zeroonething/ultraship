@@ -13,7 +13,7 @@ versions:
       its own lifecycle and release track, with no product's state competing
       with another's.
     detail: specified
-    status: planned
+    status: released
   - version: 0.3.0
     outcome: >
       A developer supplies real constraints — time, budget, capacity — and gets
