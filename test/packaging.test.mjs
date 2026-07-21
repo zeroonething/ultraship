@@ -21,7 +21,6 @@ test('NOTICE credits upstream without claiming endorsement', () => {
 test('plugin manifest declares the ultraship plugin', () => {
   const plugin = readJson('.claude-plugin/plugin.json');
   assert.equal(plugin.name, 'ultraship');
-  assert.equal(plugin.version, '0.2.0');
   assert.equal(plugin.license, 'MIT');
 });
 
@@ -30,6 +29,15 @@ test('marketplace entry points at this plugin', () => {
   assert.equal(market.plugins.length, 1);
   assert.equal(market.plugins[0].name, 'ultraship');
   assert.equal(market.plugins[0].source, './');
+});
+
+// The version lives in three files. If they drift, the marketplace advertises a
+// version the code is not, and a reinstall silently keeps the old plugin — the
+// exact failure that shipped in 0.3.0's first cut.
+test('package, plugin, and marketplace declare one and the same version', () => {
+  const version = readJson('package.json').version;
+  assert.equal(readJson('.claude-plugin/plugin.json').version, version);
+  assert.equal(readJson('.claude-plugin/marketplace.json').plugins[0].version, version);
 });
 
 test('package declares no runtime dependencies', () => {
