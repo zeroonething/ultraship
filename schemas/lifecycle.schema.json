@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "UltraShip product lifecycle",
+  "description": "Owns one product's lifecycle state, the state to resume to after an interruption, and its blockers. Each product advances independently, so several products in one workspace never share a single state.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["product", "state", "resumes_to", "blockers"],
+  "properties": {
+    "product": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+    "state": {
+      "enum": [
+        "UNINITIALIZED", "BRAINSTORMING", "BRAINSTORMED", "PLANNING", "PLANNED",
+        "DEVELOPING", "ITERATING", "COMPLETING", "RELEASED", "BLOCKED", "PAUSED"
+      ]
+    },
+    "resumes_to": {
+      "description": "State to return to when leaving BLOCKED or PAUSED.",
+      "type": ["string", "null"]
+    },
+    "blockers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "summary", "needs"],
+        "properties": {
+          "id": { "type": "string" },
+          "summary": { "type": "string" },
+          "needs": { "type": "string" }
+        }
+      }
+    }
+  }
+}

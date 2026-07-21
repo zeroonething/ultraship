@@ -105,12 +105,14 @@ test('snapshot reports the active release and released versions in order', () =>
     const p = paths(root);
 
     const workspace = readYaml(p.workspace);
-    workspace.state = 'DEVELOPING';
     workspace.active_product = 'client-tracker';
     writeYaml(p.workspace, workspace);
 
     mkdirSync(p.releases('client-tracker'), { recursive: true });
     mkdirSync(join(p.productDir('client-tracker'), 'execution'), { recursive: true });
+    writeYaml(p.lifecycle('client-tracker'), {
+      product: 'client-tracker', state: 'DEVELOPING', resumes_to: null, blockers: [],
+    });
 
     for (const [version, status] of [['0.1.0', 'released'], ['0.2.0', 'released'], ['0.10.0', 'active']]) {
       writeYaml(p.release('client-tracker', version), { product: 'client-tracker', version, status });
@@ -130,23 +132,28 @@ test('snapshot reports the active release and released versions in order', () =>
     assert.equal(snap.active.release_status, 'active');
     assert.equal(snap.active.release_fit, 'probable');
     assert.deepEqual(snap.released_versions, ['0.1.0', '0.2.0']);
-    assert.deepEqual(snap.products, ['client-tracker']);
+    assert.deepEqual(snap.products, [{ id: 'client-tracker', state: 'DEVELOPING' }]);
     assert.deepEqual(snap.allowed_transitions, ['ITERATING', 'COMPLETING', 'BLOCKED', 'PAUSED']);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
 });
 
-test('snapshot surfaces workspace blockers', () => {
+test('snapshot surfaces the active product blockers', () => {
   const dir = scratch();
   try {
     const { root } = init(dir);
     const p = paths(root);
     const workspace = readYaml(p.workspace);
-    workspace.state = 'BLOCKED';
-    workspace.resumes_to = 'DEVELOPING';
-    workspace.blockers = [{ id: 'B1', summary: 'No staging credentials.', needs: 'Access from the owner.' }];
+    workspace.active_product = 'client-tracker';
     writeYaml(p.workspace, workspace);
+    mkdirSync(p.productDir('client-tracker'), { recursive: true });
+    writeYaml(p.lifecycle('client-tracker'), {
+      product: 'client-tracker',
+      state: 'BLOCKED',
+      resumes_to: 'DEVELOPING',
+      blockers: [{ id: 'B1', summary: 'No staging credentials.', needs: 'Access from the owner.' }],
+    });
 
     const snap = snapshot(root);
     assert.equal(snap.workspace.state, 'BLOCKED');

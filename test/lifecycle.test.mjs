@@ -8,7 +8,6 @@ import { fileURLToPath } from 'node:url';
 import { paths } from '../lib/paths.mjs';
 import { readYaml, writeYaml } from '../lib/yaml.mjs';
 import { recordRelease } from '../lib/lock.mjs';
-import { canTransition } from '../lib/state.mjs';
 
 const CLI = fileURLToPath(new URL('../bin/ultraship.mjs', import.meta.url));
 
@@ -23,14 +22,12 @@ function run(args, cwd) {
   }
 }
 
-function setState(p, state) {
-  const workspace = readYaml(p.workspace);
-  assert.ok(
-    canTransition(workspace.state, state),
-    `${workspace.state} -> ${state} must be a legal transition`,
-  );
-  workspace.state = state;
-  writeYaml(p.workspace, workspace);
+// Move the active product's lifecycle through the real CLI; the transition
+// table refuses an illegal move, so a bad step fails loudly here.
+function move(dir, state) {
+  const r = run(['transition', state], dir);
+  assert.equal(r.code, 0, r.stderr);
+  return r;
 }
 
 test('a product walks from an empty directory to an immutable release', () => {
@@ -45,8 +42,11 @@ test('a product walks from an empty directory to an immutable release', () => {
     assert.equal(snap.workspace.state, 'UNINITIALIZED');
     assert.equal(snap.next_command, '/ultraship:brainstorm');
 
+    // Registering a product creates its lifecycle and makes it active.
+    assert.equal(run(['product', 'add', 'client-tracker', 'Client Tracker'], dir).code, 0);
+
     // BRAINSTORMING -> BRAINSTORMED: a product definition appears.
-    setState(p, 'BRAINSTORMING');
+    move(dir, 'BRAINSTORMING');
     mkdirSync(p.releases('client-tracker'), { recursive: true });
     mkdirSync(join(p.productDir('client-tracker'), 'execution'), { recursive: true });
     writeYaml(p.product('client-tracker'), {
@@ -60,14 +60,13 @@ test('a product walks from an empty directory to an immutable release', () => {
       assumptions: [], mvp_boundary: 'One freelancer records one invoice and marks it paid.',
     });
     const workspace = readYaml(p.workspace);
-    workspace.active_product = 'client-tracker';
     workspace.vision = 'Everything a solo freelancer needs to get paid.';
     writeYaml(p.workspace, workspace);
-    setState(p, 'BRAINSTORMED');
+    move(dir, 'BRAINSTORMED');
     assert.equal(run(['validate'], dir).code, 0);
 
     // PLANNING -> PLANNED: roadmap and a release contract.
-    setState(p, 'PLANNING');
+    move(dir, 'PLANNING');
     writeYaml(p.roadmap('client-tracker'), {
       product: 'client-tracker', status: 'active',
       versions: [
@@ -96,11 +95,11 @@ test('a product walks from an empty directory to an immutable release', () => {
       },
       risks: [], open_questions: [],
     });
-    setState(p, 'PLANNED');
+    move(dir, 'PLANNED');
     assert.equal(run(['validate'], dir).code, 0);
 
     // DEVELOPING: execution state appears.
-    setState(p, 'DEVELOPING');
+    move(dir, 'DEVELOPING');
     writeYaml(p.active('client-tracker'), {
       product: 'client-tracker', version: '0.1.0', execution_state: 'DEVELOPING',
       checkpoint: null, blockers: [],
@@ -128,7 +127,7 @@ test('a product walks from an empty directory to an immutable release', () => {
     assert.deepEqual(snap.released_versions, []);
 
     // COMPLETING, first attempt: gates fail, the record stays mutable.
-    setState(p, 'COMPLETING');
+    move(dir, 'COMPLETING');
     const partial = readYaml(p.release('client-tracker', '0.1.0'));
     partial.status = 'released';
     partial.immutable = true;
@@ -142,10 +141,10 @@ test('a product walks from an empty directory to an immutable release', () => {
     reverted.status = 'planned';
     delete reverted.immutable;
     writeYaml(p.release('client-tracker', '0.1.0'), reverted);
-    setState(p, 'DEVELOPING');
+    move(dir, 'DEVELOPING');
     assert.equal(run(['validate'], dir).code, 0);
 
-    setState(p, 'COMPLETING');
+    move(dir, 'COMPLETING');
     const record = readYaml(p.release('client-tracker', '0.1.0'));
     Object.assign(record, {
       status: 'released',
@@ -163,7 +162,7 @@ test('a product walks from an empty directory to an immutable release', () => {
     });
     writeYaml(p.release('client-tracker', '0.1.0'), record);
     recordRelease(join(dir, '.ultraship'), 'client-tracker', '0.1.0');
-    setState(p, 'RELEASED');
+    move(dir, 'RELEASED');
 
     assert.equal(run(['validate'], dir).code, 0);
     snap = run(['state'], dir).json;

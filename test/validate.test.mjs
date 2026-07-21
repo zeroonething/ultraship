@@ -63,12 +63,14 @@ function buildWorkspace(overrides = {}) {
   const p = paths(root);
 
   const workspace = readYaml(p.workspace);
-  workspace.state = 'DEVELOPING';
   workspace.active_product = 'client-tracker';
   writeYaml(p.workspace, { ...workspace, ...(overrides.workspace ?? {}) });
 
   mkdirSync(p.releases('client-tracker'), { recursive: true });
   mkdirSync(join(p.productDir('client-tracker'), 'execution'), { recursive: true });
+  writeYaml(p.lifecycle('client-tracker'), {
+    product: 'client-tracker', state: 'DEVELOPING', resumes_to: null, blockers: [],
+  });
   writeYaml(p.product('client-tracker'), { ...PRODUCT, ...(overrides.product ?? {}) });
   writeYaml(p.roadmap('client-tracker'), overrides.roadmap ?? ROADMAP);
   writeYaml(p.release('client-tracker', overrides.releaseVersion ?? '0.1.0'), {

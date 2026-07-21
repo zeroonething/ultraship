@@ -53,14 +53,29 @@ command reads and checks it. It never calls a model and never touches the networ
 | Command | What it does |
 | --- | --- |
 | `ultraship init` | Scaffold `.ultraship/` in the current directory. |
-| `ultraship state` | Print the workspace state, active release, and legal next steps as JSON. |
-| `ultraship transition <STATE>` | Move the workspace to a new state, refusing any move the state model forbids. |
+| `ultraship state` | Print the active product's state, active release, every product's state, and legal next steps as JSON. |
+| `ultraship transition <STATE> [product]` | Move a product's lifecycle to a new state, refusing any move the state model forbids. Defaults to the active product. |
+| `ultraship product add <id> [name]` | Register a new product with its own lifecycle and make it active. |
+| `ultraship product use <id>` | Switch which product is active. |
+| `ultraship migrate` | Move a 0.1.0 workspace's single state onto its active product's lifecycle. Run once per existing workspace. |
 | `ultraship validate` | Check every canonical file against its schema and the cross-file rules. |
 | `ultraship semver next <version> <bump>` | Compute the next version. `bump` is `major`, `minor`, `patch`, `release`, or a pre-release identifier. |
 | `ultraship views` | Regenerate the readable Markdown summaries in `.ultraship/views/`. |
 
 Requires Node 20 or newer. There is nothing to install: the one dependency is
 vendored.
+
+## Several products in one workspace
+
+One workspace can hold several independent products, each on its own lifecycle
+and release track. Register each with `ultraship product add <id>`, switch
+between them with `ultraship product use <id>`, and every skill acts on the
+active product. Because lifecycle state is per product, one product can be in
+development while another is planned or released — their states never compete.
+
+Upgrading a workspace created by 0.1.0? Run `ultraship migrate` once. It moves
+the single workspace state onto the active product's lifecycle and leaves the
+rest untouched.
 
 ## Principles
 

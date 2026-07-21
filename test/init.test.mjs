@@ -50,7 +50,8 @@ test('init derives a workspace id from the directory and starts UNINITIALIZED', 
     const workspace = readYaml(join(root, 'workspace.yaml'));
     assert.equal(workspace.id, 'freelance-tools');
     assert.equal(workspace.name, 'Freelance Tools');
-    assert.equal(workspace.state, 'UNINITIALIZED');
+    // Lifecycle state is per product; the workspace itself carries none.
+    assert.ok(!('state' in workspace), 'workspace no longer carries a lifecycle state');
     assert.equal(workspace.active_product, null);
   } finally {
     rmSync(dir, { recursive: true, force: true });

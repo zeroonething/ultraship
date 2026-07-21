@@ -207,7 +207,7 @@ test('checkpoint.yaml accepts a safe continuation record', () => {
 });
 
 test('every declared schema exists on disk and forbids additional properties', () => {
-  assert.equal(SCHEMA_NAMES.length, 9);
+  assert.equal(SCHEMA_NAMES.length, 10);
   for (const name of SCHEMA_NAMES) {
     assert.equal(load(name).additionalProperties, false, `${name} must forbid extra properties`);
   }

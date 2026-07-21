@@ -7,6 +7,8 @@ import { init } from '../lib/init.mjs';
 import { requireRoot } from '../lib/paths.mjs';
 import { snapshot } from '../lib/state.mjs';
 import { transition } from '../lib/transition.mjs';
+import { addProduct, useProduct } from '../lib/product.mjs';
+import { migrate } from '../lib/migrate.mjs';
 import { validateWorkspace } from '../lib/validate.mjs';
 import { renderViews } from '../lib/views.mjs';
 
@@ -34,9 +36,30 @@ const COMMANDS = {
   },
 
   transition(argv) {
-    const [to] = argv;
-    if (!to) return fail('Usage: ultraship transition <STATE>');
-    out(transition(requireRoot(process.cwd()), to));
+    const [to, product] = argv;
+    if (!to) return fail('Usage: ultraship transition <STATE> [product]');
+    out(transition(requireRoot(process.cwd()), to, product));
+    return 0;
+  },
+
+  product(argv) {
+    const [sub, id, ...rest] = argv;
+    const root = requireRoot(process.cwd());
+    if (sub === 'add') {
+      if (!id) return fail('Usage: ultraship product add <id> [name]');
+      out(addProduct(root, id, rest.join(' ') || undefined));
+      return 0;
+    }
+    if (sub === 'use') {
+      if (!id) return fail('Usage: ultraship product use <id>');
+      out(useProduct(root, id));
+      return 0;
+    }
+    return fail('Usage: ultraship product <add|use> <id> [name]');
+  },
+
+  migrate() {
+    out(migrate(requireRoot(process.cwd())));
     return 0;
   },
 
