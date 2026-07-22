@@ -1,0 +1,23 @@
+product: ultraship
+version: 1.0.0
+execution_state: DEVELOPING
+checkpoint: null
+blockers: []
+release_fit:
+  assessment: probable
+  reasons:
+    - The work is largely additive and documentation — freeze/enumerate the surface, harden migrate,
+      scaffold a gitignore in init — on a green base (215 tests, validate 0).
+    - 'The recorded "no breaking change to the 0.5.1 public contract" constraint is honoured: every
+      change 0.2-0.5 was additive, so migration is the 0.1.0 legacy shape plus formalizing
+      schema_version, not a schema break.'
+    - The recorded "zero runtime npm dependencies" and "no model/network" constraints hold; nothing
+      here needs a dependency or a network call.
+  major_cost_drivers:
+    - Building a committed fixture workspace per pre-1.0 version and keeping migrate idempotent
+      across all of them
+    - The product.yaml public_contract reconciliation, which develop does not own and must route
+      through /ultraship:iterate before completion
+    - Writing an accurate enumerated contract and a deprecation policy without over-freezing
+      internals
+  recommended_scope_change: null

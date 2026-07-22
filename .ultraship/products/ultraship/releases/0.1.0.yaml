@@ -1,0 +1,100 @@
+# Reconstructed from the 0.1.0 planning material archived on the
+# archive/pre-1.0-planning-docs branch (the design spec, the two build plans, and
+# the specification roadmap §22 / acceptance §23). 0.1.0 shipped before release
+# contracts were tracked in canonical state; this record was filled in afterwards
+# for completeness, so its completion evidence is not preserved.
+product: ultraship
+version: 0.1.0
+status: released
+release_type: minor
+outcome:
+  user_can: >
+    Take one product from a vague idea to an immutable release record, entirely
+    in local canonical state, using the five skills: brainstorm a canonical
+    product definition, plan a SemVer roadmap of complete releases, develop the
+    active version as vertical slices, iterate the plan with a traceable record,
+    and complete the release through evidence-based gates.
+  business_value: >
+    Establishes the entire single-product idea-to-immutable-release loop that
+    every later version builds on, with one canonical owner for every fact.
+  evidence_of_value: >
+    A developer runs brainstorm, plan, develop, iterate, and complete end to end
+    without hand-editing canonical state; rerunning brainstorm or plan does not
+    create a competing truth; and an attempt to edit a released record fails
+    validation.
+scope:
+  included:
+    - The five skills — brainstorm, plan, develop, iterate, complete
+    - A single-product workspace in local YAML canonical state
+    - SemVer validation and the release contract
+    - Task and iteration IDs, never SemVer values
+    - The release-ready completion mode
+    - A six-command CLI — init, state, transition, validate, semver, views
+    - Generated Markdown views from canonical state
+    - A basic resource profile, telemetry unknown by default
+    - Evidence-based completion gates and a SHA-256 immutability lock
+    - A local installer for Claude Code
+  excluded:
+    - Multi-product portfolios
+    - Live provider telemetry
+    - Automated cloud deployment
+    - Release bundles
+  fallback_scope:
+    - The five skills over a single-product workspace with release-ready completion and the immutability lock, deferring generated views and installer polish.
+acceptance:
+  functional:
+    - A developer initializes a product, brainstorms it, plans a SemVer roadmap of complete outcomes, develops, iterates with a traceable record, and completes a release-ready version
+    - Rerunning brainstorm does not create a competing product definition, and rerunning plan does not create a competing roadmap
+    - Tasks use IDs rather than SemVer values
+    - A released record cannot be silently edited
+    - Incomplete work cannot pass completion
+  non_functional:
+    - Canonical state is local YAML; the CLI never calls a model and never touches the network
+    - Zero runtime npm dependencies; the YAML parser is vendored
+    - Resource assumptions may remain unknown and no token or cost figure is fabricated
+  operational:
+    - Generated summaries identify their canonical sources
+    - The CLI validates every canonical file against its schema
+delivery:
+  target_mode: release-ready
+  environment: Local workspace, distributed as a Claude Code plugin
+  deployment_method: Install the plugin and run the five skills against a local workspace
+  migrations:
+    - None; 0.1.0 establishes the initial canonical schema.
+  observability:
+    - ultraship validate is the health check; generated views summarize state
+  rollback: Canonical state is local and version-controlled; revert the workspace files.
+dependencies:
+  products: []
+  services: []
+  human_approvals:
+    - The developer approves the product definition and the roadmap before they are written
+resource_profile:
+  complexity: large
+  uncertainty: medium
+  likely_cost_drivers:
+    - Building the state engine, schema validator, immutability lock, and five skills from an upstream fork
+  preferred_tools:
+    - Claude Code
+  constraints:
+    - Zero runtime npm dependencies
+    - Node 20 or newer
+    - The CLI never calls a model and never touches the network
+risks:
+  - Forking upstream without a cosmetic-only result requires the release model, schemas, and iteration logic to be first-class. Mitigated by a schema-first build order.
+open_questions: []
+released_at: 2026-07-20T00:00:00Z
+mode: release-ready
+delivered: The single-product idea-to-immutable-release loop across the five skills, with local canonical state and an immutability lock.
+evidence:
+  tests: []
+  builds: []
+  reviews: []
+  deployments: []
+  health_checks: []
+known_limitations:
+  - Reconstructed from the archived planning docs; the original 0.1.0 shipped before release contracts were tracked, so the completion evidence here is not preserved and this file is a historical reference, not the enforced immutable record.
+  - Single product only; multi-product workspaces arrive in 0.2.0.
+supersedes: null
+next_recommended_version: 0.2.0
+immutable: true

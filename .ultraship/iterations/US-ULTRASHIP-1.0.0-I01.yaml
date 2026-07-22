@@ -1,0 +1,45 @@
+id: US-ULTRASHIP-1.0.0-I01
+timestamp: 2026-07-22T06:00:00Z
+category:
+  - product-level
+trigger: >
+  Planning 1.0.0 requires freezing the real public contract, but product.yaml's
+  public_contract still described the 0.1.0 surface — a six-command CLI — while
+  the framework now exposes ten commands. A 1.0 that freezes an inaccurate
+  contract is worse than no freeze.
+evidence:
+  - bin/ultraship.mjs COMMANDS exposes ten commands (init, state, transition, product, migrate, constraints, deploy, validate, semver, views); product.yaml listed six (init, state, transition, validate, semver, views).
+  - The 0.3.0 constraints, 0.4.0 version_files, and 0.5.0 delivery_hooks work added commands and skills that were never reflected in the product definition's public_contract.
+before:
+  scope:
+    - product.yaml public_contract named a six-command CLI (init, state, transition, validate, semver, views) and five skills
+  assumptions:
+    - The public surface had not grown since 0.1.0, so the definition need not be revisited before freezing it
+  implementation: The public_contract field held the 0.1.0 surface text; docs/CONTRACT.md now enumerates the real ten-command surface.
+change:
+  summary: >
+    Reconcile product.yaml's public_contract to the real, frozen 1.0 surface —
+    ten CLI commands, the workflow plus supporting skills, and the ten .ultraship
+    schemas — and point at docs/CONTRACT.md as the enumerated authority.
+  added: []
+  removed: []
+  deferred: []
+  replaced:
+    - product.yaml public_contract text, from the stale six-command description to the accurate ten-command frozen 1.0 surface
+impact:
+  products:
+    - ultraship
+  versions:
+    - 1.0.0
+  tasks: []
+  dependencies: []
+  resource_effect: None — a documentation-fact correction, no implementation change.
+versioning:
+  previous_target: 1.0.0
+  new_target: 1.0.0
+  consequence: no-version-change
+approval:
+  source: user
+  reference: Approved in session 2026-07-22 via /ultraship:iterate, confirming the new public_contract wording.
+canonical_updates:
+  - products/ultraship/product.yaml

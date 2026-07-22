@@ -1,0 +1,127 @@
+product: ultraship
+version: 1.0.0
+status: released
+release_type: major
+outcome:
+  user_can: >
+    Rely on UltraShip for real projects. The public contract — every CLI command,
+    every shipped skill, and every .ultraship schema — is enumerated and frozen as
+    the 1.0 surface, and changing any of it requires a major bump. Any pre-1.0
+    workspace upgrades to 1.0 with `ultraship migrate` and keeps working. A written
+    deprecation and compatibility policy, backed by a compatibility test matrix,
+    tells the developer how future change is announced, so nothing breaks
+    underneath them without warning and a major version.
+  business_value: >
+    Versions 0.1 through 0.5 built the capability; 1.0 makes it dependable. Until
+    the surface is written down and frozen, migration is guaranteed and tested
+    across every past version, and a deprecation policy exists, a developer cannot
+    safely build a real project on the framework — the ground could shift under
+    them. 1.0 turns "it works" into "it will not break underneath you," which is
+    the line between a demo and a tool.
+  evidence_of_value: >
+    The docs enumerate all ten CLI commands, every shipped skill, and all ten
+    schemas as the frozen 1.0 surface with an explicit major-bump-to-change rule;
+    `ultraship migrate` upgrades fixture workspaces created at each pre-1.0 version
+    to 1.0 and they pass `ultraship validate`; a compatibility test matrix asserts
+    every historical schema_version migrates to the current one; a deprecation and
+    compatibility policy is documented; product.yaml's public_contract matches the
+    real surface; and validate exits 0.
+scope:
+  included:
+    - A written, enumerated public contract — every CLI command (ten), every shipped skill, and every .ultraship schema (ten) — documented as the frozen 1.0 surface, with an explicit rule that changing any of it is a major version
+    - ultraship migrate upgrades any pre-1.0 workspace to the 1.0 schema, tested against committed fixtures at each pre-1.0 version, and the result passes validate
+    - A workspace-level schema/contract version is carried and formalized, with a backward-compatibility guarantee that a 1.x release never breaks a 1.x workspace
+    - A compatibility test matrix asserting each historical schema_version migrates to the current one and validates
+    - A written deprecation and compatibility policy — how a change is announced, deprecated, and only removed on a major bump
+    - ultraship init scaffolds the evidence gitignore entry so a new workspace stays clean after a release
+    - product.yaml's public_contract reconciled to the real surface, performed via /ultraship:iterate during develop since plan and develop do not own product.yaml
+    - The README documents every command, skill, and schema
+  excluded:
+    - New features or commands; 1.0 stabilizes what exists, it does not add capability
+    - Any breaking change to an existing command's behaviour or a schema's shape
+    - A hosted service, dashboard, or registry beyond the existing GitHub marketplace
+    - Migrating a user's application code — only .ultraship canonical state is migrated
+  fallback_scope:
+    - Enumerate and freeze the public contract, make migrate upgrade the two most recent pre-1.0 schema shapes (0.4.x and 0.5.x) to 1.0 with tested fixtures, formalize the workspace schema_version with the compatibility guarantee, and scaffold the evidence gitignore in init. The full 0.1-0.3 migration fixtures, the deprecation-policy document, and the exhaustive compatibility matrix are the deferrable extension.
+acceptance:
+  functional:
+    - ultraship migrate upgrades a fixture workspace from each pre-1.0 schema version to 1.0 and the result passes ultraship validate
+    - A compatibility test asserts every historical schema_version migrates to the current one and validates
+    - ultraship init scaffolds the evidence gitignore entry so git status is clean after a release
+    - The documented public contract enumerates every CLI command, every shipped skill, and every schema as the frozen 1.0 surface
+  non_functional:
+    - Zero runtime npm dependencies; the vendored YAML parser is still the only parser
+    - The CLI never calls a model and never touches the network
+    - No breaking change to any 0.5.1 public behaviour; a 0.5.1 workspace migrates to 1.0 with no manual edits
+    - The schema_version handling is additive; a workspace without one is treated as its pre-versioned baseline and migrated
+  operational:
+    - The README documents every CLI command, skill, and schema and states the major-bump-to-change rule
+    - A deprecation and compatibility policy is documented
+    - ultraship validate exits 0 on a freshly migrated 1.0 workspace
+delivery:
+  target_mode: published
+  environment: GitHub plugin marketplace (zeroonething/ultraship)
+  deployment_method: git tag v1.0.0 pushed after the PR merges to main, a GitHub release created from the main merge commit via the CHANGELOG-sourced publish hook, and a plugin reinstall verified to report 1.0.0
+  migrations:
+    - This release is largely about migration. ultraship migrate carries any pre-1.0 workspace to the 1.0 schema; its absence of a schema_version is treated as the pre-versioned baseline. Existing 0.5.1 workspaces migrate with no manual edits.
+  observability:
+    - ultraship validate is the health check, exercised against a freshly migrated workspace from each pre-1.0 version; the publish hook output is captured under evidence/ (gitignored)
+  rollback: Revert the v1.0.0 tag and delete its GitHub release; the marketplace serves 0.5.1. migrate remains forward-only, so a workspace already migrated to 1.0 stays on 1.0 — documented, not auto-reversed.
+dependencies:
+  products: []
+  services: []
+  human_approvals:
+    - The developer approves the product.yaml public_contract reconciliation (via /ultraship:iterate), merges the PR, and authorizes the publish and the plugin reinstall
+risks:
+  - Formalizing schema_version can itself look like a schema change older workspaces lack; migrate must treat its absence as the pre-versioned baseline or upgrades break. Mitigated by making schema_version additive with a defined default.
+  - Freezing the contract means future improvements need major bumps; freezing internal implementation detail as well would make the framework rigid. Mitigated by freezing the documented surface — commands, skills, schemas — not the internals.
+  - The product.yaml public_contract reconciliation is owned by iterate, not plan or develop; skipping it leaves the frozen contract inaccurate. Mitigated by making it an explicit acceptance item routed through /ultraship:iterate.
+  - A compatibility matrix across every past version is open-ended; over-building synthetic fixtures is waste. Mitigated by committing one real fixture per version and asserting migrate + validate on each.
+resource_profile:
+  complexity: large
+  uncertainty: medium
+  likely_cost_drivers:
+    - Building a committed fixture workspace for each pre-1.0 version and keeping migrate idempotent across all of them
+    - Deciding how the workspace schema_version is represented and defaulted for pre-versioned workspaces
+    - The product.yaml reconciliation needing a separate /ultraship:iterate pass
+    - Writing an accurate enumerated contract and a deprecation policy that is precise without over-freezing internals
+  preferred_tools:
+    - Claude Code
+  constraints:
+    - Zero runtime npm dependencies
+    - Node 20 or newer
+    - The CLI never calls a model and never touches the network
+    - No breaking change to the 0.5.1 public contract
+open_questions:
+  - Where does the contract version live — the existing ultraship.yaml schema_version (currently 1), or a new per-schema version? Leaning the existing workspace-level schema_version as the contract version. Decided in develop.
+  - Is the frozen contract a section in the README or a separate CONTRACT.md? Decided in develop.
+  - Does the compatibility matrix use one real committed fixture per version or synthesize them? Leaning real committed fixtures. Decided in develop.
+released_at: 2026-07-22T07:00:00Z
+mode: release-ready
+delivered: >
+  The UltraShip public contract — ten CLI commands, the workflow and supporting
+  skills, and the ten .ultraship schemas — is enumerated and frozen at 1.0 in
+  docs/CONTRACT.md; changing any of it is a major version. Any pre-1.0 workspace
+  migrates to 1.0 with ultraship migrate and validates, proven by a compatibility
+  matrix over every pre-1.0 release; a deprecation and compatibility policy is
+  documented; init keeps a workspace clean after a release; and product.yaml's
+  public contract was reconciled to reality.
+evidence:
+  tests:
+    - node --test test/compat.test.mjs — 7 passing (a workspace from each pre-1.0 release migrates to 1.0 and validates)
+    - node --test test/init.test.mjs — 11 passing (init scaffolds/append/no-duplicate the evidence gitignore)
+    - node --test test/migrate.test.mjs — schema_version defaults an absent value to the baseline, leaves a current one untouched
+    - npm test — 227 passing, 0 failing
+  builds:
+    - No build step; pure ESM CLI with a vendored YAML parser and zero runtime dependencies
+  reviews: []
+  deployments: []
+  health_checks:
+    - node bin/ultraship.mjs validate — exit 0 on this workspace and on a freshly migrated fixture from every pre-1.0 version
+known_limitations:
+  - mode is release-ready, not published. By the release-after-merge workflow, the durable GitHub release is created from the main merge commit after this PR merges, via the CHANGELOG-sourced publish hook; the marketplace reinstall verified to report 1.0.0 remains the developer's authorized step.
+  - schema_version is frozen at 1 because every change through 0.5 was additive; the compatibility matrix therefore exercises the 0.1.0 legacy shape and the additive-config shapes, since there is only one schema_version to migrate to.
+  - The compatibility fixtures are constructed per version's feature set rather than committed as separate near-duplicate trees; a future genuinely-distinct schema_version would add a committed fixture and a migration step.
+supersedes: 0.5.1
+next_recommended_version: null
+immutable: true

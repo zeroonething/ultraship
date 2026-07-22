@@ -1,0 +1,52 @@
+# Reconstructed execution record for 0.2.0 from the specification roadmap (§22).
+# No dedicated 0.2.0 build plan was archived, so these tasks are derived from the
+# roadmap's "includes" list, narrowed to what actually shipped (release bundles
+# were deferred). Historical reference, not the original canonical tasks.yaml.
+product: ultraship
+version: 0.2.0
+tasks:
+  - id: US-ULTRASHIP-0.2.0-T01
+    summary: Move workspace-level lifecycle state onto a per-product lifecycle file.
+    why_required: Several products cannot share one workspace state without colliding.
+    status: done
+    depends_on: []
+    acceptance_criteria:
+      - Two products at different lifecycle points both validate in one workspace
+    files: [schemas/lifecycle.schema.json, lib/transition.mjs, lib/state.mjs]
+    evidence: []
+  - id: US-ULTRASHIP-0.2.0-T02
+    summary: ultraship product add / use — register a product and select the active one.
+    why_required: A multi-product workspace needs registration and active selection.
+    status: done
+    depends_on: [US-ULTRASHIP-0.2.0-T01]
+    acceptance_criteria:
+      - A developer registers several products and each has its own lifecycle and release stream
+      - Switching the active product changes which product the skills act on
+    files: [lib/product.mjs, bin/ultraship.mjs]
+    evidence: []
+  - id: US-ULTRASHIP-0.2.0-T03
+    summary: ultraship migrate — move a 0.1.0 single-state workspace onto per-product lifecycles.
+    why_required: An existing 0.1.0 workspace must upgrade without a hand edit.
+    status: done
+    depends_on: [US-ULTRASHIP-0.2.0-T01]
+    acceptance_criteria: []
+    files: [lib/migrate.mjs]
+    evidence: []
+  - id: US-ULTRASHIP-0.2.0-T04
+    summary: Per-product paths, roadmaps, and release contracts under one canonical root.
+    why_required: Each product owns its own roadmap and releases with no shared fact duplicated.
+    status: done
+    depends_on: [US-ULTRASHIP-0.2.0-T02]
+    acceptance_criteria:
+      - No requirement or fact is copied into more than one product file
+    files: [lib/paths.mjs, lib/validate.mjs]
+    evidence: []
+  - id: US-ULTRASHIP-0.2.0-T05
+    summary: Surface every product's state in ultraship state and the generated views.
+    why_required: The snapshot must show the whole portfolio, not only the active product.
+    status: done
+    depends_on: [US-ULTRASHIP-0.2.0-T04]
+    acceptance_criteria:
+      - ultraship state and the views surface every product's state, not only the active one
+    files: [lib/state.mjs, lib/views.mjs]
+    evidence: []

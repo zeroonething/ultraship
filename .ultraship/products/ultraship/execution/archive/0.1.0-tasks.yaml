@@ -1,0 +1,183 @@
+# Reconstructed execution record for 0.1.0 from the two build plans archived on
+# the archive/pre-1.0-planning-docs branch (part 1 state engine, Tasks 1-12; part
+# 2 skills, Tasks 1-9). The original tasks.yaml was not preserved in canonical
+# state; this is a historical record, filled in for completeness. All shipped.
+product: ultraship
+version: 0.1.0
+tasks:
+  # --- Part 1: canonical state engine ---
+  - id: US-ULTRASHIP-0.1.0-T01
+    summary: Repository scaffold, licensing, and plugin manifests.
+    why_required: Nothing installs or runs without the package and plugin manifests.
+    status: done
+    depends_on: []
+    acceptance_criteria: []
+    files: [package.json, .claude-plugin/plugin.json, .claude-plugin/marketplace.json, LICENSE, NOTICE]
+    evidence: []
+  - id: US-ULTRASHIP-0.1.0-T02
+    summary: Vendor the YAML parser so there are zero runtime dependencies.
+    why_required: The zero-dependency constraint forbids an npm YAML parser.
+    status: done
+    depends_on: [US-ULTRASHIP-0.1.0-T01]
+    acceptance_criteria: []
+    files: [vendor/yaml/, lib/yaml.mjs]
+    evidence: []
+  - id: US-ULTRASHIP-0.1.0-T03
+    summary: A JSON Schema subset interpreter — validate(schema, data) -> string[].
+    why_required: Canonical files are checked against schemas without a dependency.
+    status: done
+    depends_on: [US-ULTRASHIP-0.1.0-T02]
+    acceptance_criteria: []
+    files: [lib/schema.mjs]
+    evidence: []
+  - id: US-ULTRASHIP-0.1.0-T04
+    summary: Workspace and product schemas plus the schema loader.
+    why_required: The workspace and product facts need a canonical shape.
+    status: done
+    depends_on: [US-ULTRASHIP-0.1.0-T03]
+    acceptance_criteria: []
+    files: [schemas/workspace.schema.json, schemas/product.schema.json, lib/schemas.mjs]
+    evidence: []
+  - id: US-ULTRASHIP-0.1.0-T05
+    summary: Release and execution schemas (release, roadmap, lifecycle, active, tasks, iteration, checkpoint).
+    why_required: Every canonical file across a release's life needs a schema.
+    status: done
+    depends_on: [US-ULTRASHIP-0.1.0-T04]
+    acceptance_criteria: []
+    files: [schemas/release.schema.json, schemas/roadmap.schema.json, schemas/active.schema.json, schemas/tasks.schema.json, schemas/iteration.schema.json, schemas/checkpoint.schema.json]
+    evidence: []
+  - id: US-ULTRASHIP-0.1.0-T06
+    summary: SemVer service and the CLI dispatcher (COMMANDS map).
+    why_required: SemVer belongs to releases; the CLI needs a dispatch spine.
+    status: done
+    depends_on: [US-ULTRASHIP-0.1.0-T05]
+    acceptance_criteria:
+      - Tasks use IDs rather than SemVer values
+    files: [lib/semver.mjs, bin/ultraship.mjs]
+    evidence: []
+  - id: US-ULTRASHIP-0.1.0-T07
+    summary: Canonical paths and ultraship init.
+    why_required: A workspace must be scaffolded before any skill runs.
+    status: done
+    depends_on: [US-ULTRASHIP-0.1.0-T06]
+    acceptance_criteria: []
+    files: [lib/paths.mjs, lib/init.mjs]
+    evidence: []
+  - id: US-ULTRASHIP-0.1.0-T08
+    summary: The state model and ultraship state.
+    why_required: Every skill reads the state and legal next transitions.
+    status: done
+    depends_on: [US-ULTRASHIP-0.1.0-T07]
+    acceptance_criteria: []
+    files: [lib/state.mjs]
+    evidence: []
+  - id: US-ULTRASHIP-0.1.0-T09
+    summary: The release immutability lock (SHA-256 per released record).
+    why_required: A released record cannot be silently edited.
+    status: done
+    depends_on: [US-ULTRASHIP-0.1.0-T08]
+    acceptance_criteria:
+      - A released record cannot be silently edited
+    files: [lib/lock.mjs]
+    evidence: []
+  - id: US-ULTRASHIP-0.1.0-T10
+    summary: ultraship validate — schema plus cross-file rules, including lock verification.
+    why_required: Completion and every skill prove state with validate.
+    status: done
+    depends_on: [US-ULTRASHIP-0.1.0-T09]
+    acceptance_criteria:
+      - Incomplete work cannot pass completion
+    files: [lib/validate.mjs]
+    evidence: []
+  - id: US-ULTRASHIP-0.1.0-T11
+    summary: ultraship views — generated Markdown from canonical state.
+    why_required: Human-readable summaries must not become a second source of truth.
+    status: done
+    depends_on: [US-ULTRASHIP-0.1.0-T10]
+    acceptance_criteria:
+      - Generated summaries identify their canonical sources
+    files: [lib/views.mjs]
+    evidence: []
+  - id: US-ULTRASHIP-0.1.0-T12
+    summary: End-to-end lifecycle walk test.
+    why_required: The whole loop must pass end to end before the skills ship.
+    status: done
+    depends_on: [US-ULTRASHIP-0.1.0-T11]
+    acceptance_criteria: []
+    files: [test/]
+    evidence: []
+  # --- Part 2: the five skills ---
+  - id: US-ULTRASHIP-0.1.0-T13
+    summary: ultraship transition — the only sanctioned lifecycle move.
+    why_required: Editing lifecycle.yaml by hand bypasses the transition table.
+    status: done
+    depends_on: [US-ULTRASHIP-0.1.0-T08]
+    acceptance_criteria: []
+    files: [lib/transition.mjs]
+    evidence: []
+  - id: US-ULTRASHIP-0.1.0-T14
+    summary: Inherit and rebrand the reusable upstream skills.
+    why_required: TDD, systematic debugging, and review skills are reused, not rebuilt.
+    status: done
+    depends_on: [US-ULTRASHIP-0.1.0-T13]
+    acceptance_criteria: []
+    files: [skills/]
+    evidence: []
+  - id: US-ULTRASHIP-0.1.0-T15
+    summary: Shared reference documents (skill contract, release contract, state model, principles).
+    why_required: Skills read shared contracts rather than restating them.
+    status: done
+    depends_on: [US-ULTRASHIP-0.1.0-T14]
+    acceptance_criteria: []
+    files: [shared/]
+    evidence: []
+  - id: US-ULTRASHIP-0.1.0-T16
+    summary: /ultraship:brainstorm — vague idea to canonical product.yaml.
+    why_required: The loop starts by turning an idea into canonical product truth.
+    status: done
+    depends_on: [US-ULTRASHIP-0.1.0-T15]
+    acceptance_criteria:
+      - Rerunning brainstorm does not create a competing product definition, and rerunning plan does not create a competing roadmap
+    files: [skills/brainstorm/SKILL.md]
+    evidence: []
+  - id: US-ULTRASHIP-0.1.0-T17
+    summary: /ultraship:plan — approved product to SemVer roadmap and first contract.
+    why_required: A release needs a roadmap of complete versions and a contract.
+    status: done
+    depends_on: [US-ULTRASHIP-0.1.0-T16]
+    acceptance_criteria: []
+    files: [skills/plan/SKILL.md]
+    evidence: []
+  - id: US-ULTRASHIP-0.1.0-T18
+    summary: /ultraship:develop — implement the active contract as vertical slices.
+    why_required: The contract must be built as the smallest complete slice.
+    status: done
+    depends_on: [US-ULTRASHIP-0.1.0-T17]
+    acceptance_criteria: []
+    files: [skills/develop/SKILL.md]
+    evidence: []
+  - id: US-ULTRASHIP-0.1.0-T19
+    summary: /ultraship:iterate — record a plan change with evidence and approval.
+    why_required: Plan changes need a traceable record, not a silent edit.
+    status: done
+    depends_on: [US-ULTRASHIP-0.1.0-T18]
+    acceptance_criteria: []
+    files: [skills/iterate/SKILL.md]
+    evidence: []
+  - id: US-ULTRASHIP-0.1.0-T20
+    summary: /ultraship:complete — evidence-based gates, record, immutable release.
+    why_required: A release is complete only on evidence, and then made immutable.
+    status: done
+    depends_on: [US-ULTRASHIP-0.1.0-T19]
+    acceptance_criteria:
+      - A developer initializes a product, brainstorms it, plans a SemVer roadmap of complete outcomes, develops, iterates with a traceable record, and completes a release-ready version
+    files: [skills/complete/SKILL.md]
+    evidence: []
+  - id: US-ULTRASHIP-0.1.0-T21
+    summary: Installation, documentation, and the workspace walk.
+    why_required: A framework the user cannot install or follow is not delivered.
+    status: done
+    depends_on: [US-ULTRASHIP-0.1.0-T20]
+    acceptance_criteria: []
+    files: [README.md, docs/]
+    evidence: []

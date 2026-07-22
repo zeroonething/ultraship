@@ -44,7 +44,10 @@ versions:
     status: released
   - version: 1.0.0
     outcome: >
-      A stable, documented, migration-safe framework a developer can rely on for real projects, with
-      a public contract that will not break underneath them.
-    detail: hypothesis
-    status: planned
+      A developer relies on UltraShip for real projects: every CLI command, skill, and .ultraship
+      schema is enumerated and frozen as the 1.0 public contract — changing any needs a major bump;
+      any pre-1.0 workspace upgrades with ultraship migrate and keeps working; and a written
+      deprecation policy plus a compatibility test matrix guarantee nothing breaks underneath them
+      without warning and a major version.
+    detail: specified
+    status: released

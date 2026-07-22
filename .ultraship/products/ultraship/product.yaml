@@ -36,9 +36,11 @@ constraints:
   - Claude Code is the only supported agent tool in 0.1.0
   - The CLI never calls a model and never touches the network
 public_contract: >
-  Five skills, a six-command CLI (init, state, transition, validate, semver,
-  views), and the .ultraship/ state schema. Breaking any of those is a major
-  version.
+  Ten CLI commands (init, state, transition, product, migrate, constraints,
+  deploy, validate, semver, views), the workflow skills (brainstorm, plan,
+  develop, iterate, complete) plus supporting skills, and the .ultraship/ state
+  schema (ten schema files). This surface is frozen at 1.0; breaking any of it is
+  a major version. See docs/CONTRACT.md.
 deployment_context: >
   Distributed as a Claude Code plugin installed from a GitHub marketplace.
   Canonical state lives in .ultraship/ inside the user's own repository. There

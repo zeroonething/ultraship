@@ -1,23 +1,81 @@
 product: ultraship
-version: 0.5.1
+version: 1.0.0
 tasks:
-  - id: US-ULTRASHIP-0.5.1-T01
-    summary: Source the publish hook's release notes from the CHANGELOG's latest section instead of --generate-notes, reorder the complete Process to write the changelog before deploy, and update the README and skill guidance.
-    why_required: Without it, the dogfooded publish hook produces a threadbare release of PR titles — the exact defect seen on v0.5.0.
+  - id: US-ULTRASHIP-1.0.0-T01
+    summary: ultraship init scaffolds a .gitignore (node_modules, .DS_Store, and the evidence output dir) so a new workspace stays clean after a release.
+    why_required: A 1.0 workspace that goes dirty after every release is not dependable; the evidence-gitignore fix must ship for all users, not just this repo.
     status: done
     depends_on: []
     acceptance_criteria:
-      - The workspace's publish hook produces release notes from the CHANGELOG's latest section, not a list of merged pull-request titles
-      - The complete skill writes the changelog before running ultraship deploy, so the notes the hook reads already exist
-      - No change to lib/, bin/, or the schemas; this is a configuration and documentation fix
-      - node --test still reports 215 passing, 0 failing, and ultraship validate still exits 0
-      - The README and the complete skill document CHANGELOG-sourced notes and warn against --generate-notes
+      - ultraship init scaffolds the evidence gitignore entry so git status is clean after a release
     files:
-      - .ultraship/ultraship.yaml
-      - README.md
-      - skills/complete/SKILL.md
+      - lib/init.mjs
+      - test/init.test.mjs
     evidence:
-      - .ultraship/ultraship.yaml — published.deploy now uses --notes "$(awk '/^## \[/{n++} n==1' CHANGELOG.md)"; YAML parses to the correct shell command and validate exits 0
-      - skills/complete/SKILL.md — Process writes release notes/changelog (step 7) before ultraship deploy (step 8); deploy guidance warns against --generate-notes
-      - README.md — delivery_hooks example sources notes from CHANGELOG with an explanatory comment
-      - npm test — 215 passing, 0 failing; no lib/bin/schema change; the live v0.5.0 notes were corrected via gh release edit
+      - lib/init.mjs ensureGitignore — creates a project .gitignore (node_modules, .DS_Store, .ultraship/products/*/evidence/) or appends the evidence line to an existing one without clobbering or duplicating
+      - test/init.test.mjs — scaffolds the evidence ignore, appends without clobbering, does not duplicate; 11 passing
+
+  - id: US-ULTRASHIP-1.0.0-T02
+    summary: Formalize the workspace schema_version as the contract version — migrate ensures it is present and current, defaulting an absent one to the pre-versioned baseline — with no breaking change to a 0.5.1 workspace.
+    why_required: A stable contract needs a versioned schema; without migrate defaulting an absent version, an older or hand-made workspace breaks on upgrade.
+    status: done
+    depends_on: []
+    acceptance_criteria:
+      - The schema_version handling is additive; a workspace without one is treated as its pre-versioned baseline and migrated
+      - No breaking change to any 0.5.1 public behaviour; a 0.5.1 workspace migrates to 1.0 with no manual edits
+      - Zero runtime npm dependencies; the vendored YAML parser is still the only parser
+      - The CLI never calls a model and never touches the network
+    files:
+      - lib/migrate.mjs
+      - test/migrate.test.mjs
+    evidence:
+      - lib/init.mjs exports SCHEMA_VERSION=1 (the frozen 1.0 contract version); lib/migrate.mjs syncSchemaVersion defaults an absent value to it, leaves a present one unchanged, and reports it in the result
+      - test/migrate.test.mjs — absent schema_version defaults to baseline and validates; a current workspace is left untouched (no manual edits); no dependency added, no model/network call
+      - npm test — 227 passing, 0 failing
+
+  - id: US-ULTRASHIP-1.0.0-T03
+    summary: Commit a fixture workspace per pre-1.0 version and a compatibility test asserting each migrates to 1.0 and passes validate.
+    why_required: The migration-safety guarantee is only real if it is proven against the actual historical workspace shapes, not asserted.
+    status: done
+    depends_on:
+      - US-ULTRASHIP-1.0.0-T02
+    acceptance_criteria:
+      - ultraship migrate upgrades a fixture workspace from each pre-1.0 schema version to 1.0 and the result passes ultraship validate
+      - A compatibility test asserts every historical schema_version migrates to the current one and validates
+      - ultraship validate exits 0 on a freshly migrated 1.0 workspace
+    files:
+      - test/compat.test.mjs
+    evidence:
+      - test/compat.test.mjs — builds a representative workspace for each pre-1.0 release (0.1.0 legacy through 0.5.1), migrates it, and asserts schema_version=1, framework_version=current, and validate ok; 7 passing
+      - Decision — schema_version stayed 1 through 0.5 (all changes additive), so the only distinct shapes are the 0.1.0 legacy layout and the additive-optional config blocks; fixtures are constructed per version's feature set (the codebase's existing legacyWorkspace pattern) rather than committing near-duplicate trees
+      - An absent schema_version migrates to the current one, covering the every-historical-version-reaches-current criterion
+
+  - id: US-ULTRASHIP-1.0.0-T04
+    summary: Document the frozen 1.0 public contract — every CLI command, every shipped skill, every schema — with the rule that changing any is a major version.
+    why_required: A contract that is not written down cannot be relied on or frozen; enumeration is the deliverable.
+    status: done
+    depends_on: []
+    acceptance_criteria:
+      - The documented public contract enumerates every CLI command, every shipped skill, and every schema as the frozen 1.0 surface
+      - The README documents every CLI command, skill, and schema and states the major-bump-to-change rule
+    files:
+      - README.md
+      - docs/CONTRACT.md
+    evidence:
+      - docs/CONTRACT.md — enumerates all 10 CLI commands, the 5 core + 7 supporting skills, and all 10 schemas as the frozen 1.0 surface, with the major-bump-to-change rule and schema_version:1
+      - README.md — new "Stability and the public contract" section states the rule and links CONTRACT.md; test/install.test.mjs "README documents every command" passes with all 10 commands
+
+  - id: US-ULTRASHIP-1.0.0-T05
+    summary: Write the deprecation and compatibility policy — how a change is announced, deprecated, and only removed on a major bump.
+    why_required: Freezing the contract is only trustworthy if the developer knows how future change will be handled.
+    status: done
+    depends_on:
+      - US-ULTRASHIP-1.0.0-T04
+    acceptance_criteria:
+      - A deprecation and compatibility policy is documented
+    files:
+      - docs/COMPATIBILITY.md
+      - README.md
+    evidence:
+      - docs/COMPATIBILITY.md — states what each version level may change, the 1.x-never-breaks-1.x guarantee, the announce/overlap/remove deprecation path, and the forward-only idempotent migrate
+      - README.md stability section links COMPATIBILITY.md
