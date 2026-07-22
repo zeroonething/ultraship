@@ -1,0 +1,92 @@
+product: ultraship
+version: 0.5.1
+status: released
+release_type: patch
+outcome:
+  user_can: >
+    Publish a release through the delivery_hooks publish hook and get a GitHub
+    release whose notes are the project's own CHANGELOG section, not a bare
+    auto-generated list of merged pull-request titles. The completion flow writes
+    the changelog before it runs the publish hook, so the notes the hook reads
+    already exist.
+  business_value: >
+    0.5.0 shipped the publish hook but its dogfooded command used
+    `gh release create --generate-notes`, so the v0.5.0 release notes were a
+    threadbare list of PR titles. A release users read to understand what changed
+    is part of the release; a bad one undercuts the very feature 0.5.0 added. This
+    patch makes the hook and the documented pattern source real notes.
+  evidence_of_value: >
+    The workspace's publish hook sources its notes from the CHANGELOG's top
+    section; the README example and the complete skill no longer steer users to
+    `--generate-notes`; and the complete Process writes the changelog before
+    running the hook. The 215-test suite still passes and validate exits 0.
+scope:
+  included:
+    - The workspace's delivery_hooks publish hook sources release notes from the CHANGELOG's latest section rather than --generate-notes
+    - The README delivery_hooks example and the complete skill's deploy guidance recommend CHANGELOG-sourced notes and warn against --generate-notes
+    - The complete skill's Process writes release notes and the changelog before running ultraship deploy, since a notes-sourcing hook must read the changelog first
+  excluded:
+    - Any change to the ultraship deploy code, the delivery_hooks schema, or the release-record format
+    - A framework-owned notes generator; how notes are produced stays the project's own hook command
+    - Backfilling notes for releases earlier than 0.5.0
+  fallback_scope:
+    - Fix the workspace's own publish hook to source CHANGELOG notes and correct the live v0.5.0 release notes; the README and skill wording updates are the deferrable extension.
+acceptance:
+  functional:
+    - The workspace's publish hook produces release notes from the CHANGELOG's latest section, not a list of merged pull-request titles
+    - The complete skill writes the changelog before running ultraship deploy, so the notes the hook reads already exist
+  non_functional:
+    - No change to lib/, bin/, or the schemas; this is a configuration and documentation fix
+    - node --test still reports 215 passing, 0 failing, and ultraship validate still exits 0
+  operational:
+    - The README and the complete skill document CHANGELOG-sourced notes and warn against --generate-notes
+delivery:
+  target_mode: published
+  environment: GitHub plugin marketplace (zeroonething/ultraship)
+  deployment_method: git tag v0.5.1 pushed to zeroonething/ultraship after the PR merges to main, a GitHub release created from the main merge commit via the CHANGELOG-sourced publish hook, and a plugin reinstall verified to report 0.5.1
+  migrations:
+    - None. This patch changes a hook command string and documentation only; no schema, state, or record format changes.
+  observability:
+    - ultraship validate is the health check; the publish hook's output is captured under evidence/<version>/ as for 0.5.0
+  rollback: Revert the v0.5.1 tag and delete its GitHub release; the marketplace serves 0.5.0. The only behavioural change is the workspace's own hook string, which reverts with the file.
+dependencies:
+  products: []
+  services: []
+  human_approvals:
+    - The developer merges the PR, then authorizes the publish hook and the plugin reinstall from main
+resource_profile:
+  complexity: small
+  uncertainty: low
+  likely_cost_drivers:
+    - Quoting the awk CHANGELOG-extraction command correctly inside a YAML scalar and a shell string
+  preferred_tools:
+    - Claude Code
+  constraints:
+    - Zero runtime npm dependencies
+    - Node 20 or newer
+    - The CLI never calls a model and never touches the network
+    - Additive/corrective only; no public-contract break
+risks:
+  - The awk extraction assumes the CHANGELOG uses "## [version]" section headings; a project with a different changelog format would need a different hook. Mitigated by documenting the pattern rather than hard-coding it in the framework.
+open_questions: []
+released_at: 2026-07-22T05:00:00Z
+mode: release-ready
+delivered: >
+  The publish hook sources release notes from the CHANGELOG instead of
+  --generate-notes, completion writes the changelog before running the hook, and
+  the README and complete skill recommend the CHANGELOG-sourced pattern. The live
+  v0.5.0 release notes were corrected to match.
+evidence:
+  tests:
+    - npm test — 215 passing, 0 failing (no lib/bin/schema change; behaviour unaffected)
+  builds:
+    - No build step; configuration and documentation change only
+  reviews: []
+  deployments: []
+  health_checks: []
+known_limitations:
+  - mode is release-ready, not published. Per the release-after-merge workflow, the durable GitHub release is created from the main merge commit after this PR merges, via the CHANGELOG-sourced publish hook; the marketplace reinstall verified to report 0.5.1 remains the developer's authorized step.
+  - The awk notes extraction assumes a "## [version]" CHANGELOG heading style; projects with another changelog format declare a different hook.
+supersedes: 0.5.0
+next_recommended_version: 1.0.0
+immutable: true

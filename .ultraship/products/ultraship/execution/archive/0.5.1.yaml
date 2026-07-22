@@ -1,0 +1,16 @@
+product: ultraship
+version: 0.5.1
+execution_state: DEVELOPING
+checkpoint: null
+blockers: []
+release_fit:
+  assessment: high
+  reasons:
+    - The fix is a one-line hook-command change plus documentation; it is already implemented and
+      committed on this branch.
+    - No lib/, bin/, or schema change, so the "additive/corrective only" constraint holds and the
+      215-test suite is unaffected.
+    - The published deployment path already exists from 0.5.0; only the notes source changes.
+  major_cost_drivers:
+    - Quoting the awk CHANGELOG-extraction command correctly inside a YAML scalar and a shell string
+  recommended_scope_change: null
