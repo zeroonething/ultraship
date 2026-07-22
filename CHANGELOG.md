@@ -3,6 +3,44 @@
 All notable changes to UltraShip are recorded here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.0.0] — 2026-07-22
+
+The stable contract. Versions 0.1 through 0.5 built the capability; 1.0 makes it
+dependable. The public surface — every CLI command, every skill, and every
+`.ultraship/` schema — is enumerated and frozen, and changing any of it is now a
+major version. Any pre-1.0 workspace upgrades with `ultraship migrate` and keeps
+working, and a written deprecation policy backed by a compatibility test matrix
+guarantees nothing breaks underneath a project without warning and a major bump.
+The CLI still calls no model, opens no network connection of its own, and carries
+zero runtime dependencies.
+
+### Added
+
+- **[docs/CONTRACT.md](docs/CONTRACT.md)** — the frozen 1.0 public contract: ten
+  CLI commands, the workflow and supporting skills, and the ten canonical-state
+  schemas, with the major-bump-to-change rule.
+- **[docs/COMPATIBILITY.md](docs/COMPATIBILITY.md)** — the deprecation and
+  compatibility policy: what each version level may change, the
+  1.x-never-breaks-1.x guarantee, and the announce → overlap → remove path.
+- A formalized workspace `schema_version` (the contract version, frozen at 1);
+  `ultraship migrate` defaults an absent one to the baseline.
+- A compatibility test matrix asserting a workspace from each pre-1.0 release
+  migrates to 1.0 and validates.
+- `ultraship init` scaffolds a project `.gitignore` (ignoring transient deploy
+  evidence) so a workspace stays clean after a release.
+
+### Changed
+
+- The README documents the frozen contract and links the contract and
+  compatibility policies.
+- `product.yaml`'s public contract was reconciled to the real ten-command surface
+  (iteration `US-ULTRASHIP-1.0.0-I01`).
+
+### Notes
+
+- No new features and no breaking change: 1.0 stabilizes the existing surface. A
+  0.5.1 workspace migrates to 1.0 with no manual edits.
+
 ## [0.5.1] — 2026-07-22
 
 Publish hooks now produce a real release. 0.5.0's dogfooded publish hook used

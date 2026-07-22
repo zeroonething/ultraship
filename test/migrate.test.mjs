@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { init, FRAMEWORK_VERSION } from '../lib/init.mjs';
+import { init, FRAMEWORK_VERSION, SCHEMA_VERSION } from '../lib/init.mjs';
 import { paths } from '../lib/paths.mjs';
 import { readYaml, writeYaml } from '../lib/yaml.mjs';
 import { addProduct } from '../lib/product.mjs';
@@ -123,6 +123,37 @@ test('two products at different lifecycle points both validate', () => {
     assert.equal(readYaml(p.lifecycle('beta')).state, 'UNINITIALIZED');
     assert.equal(existsSync(p.lifecycle('alpha')), true);
     assert.equal(validateWorkspace(root).ok, true, 'a mixed-state workspace validates');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('migrate defaults an absent schema_version to the baseline and validates', () => {
+  const { dir, root, p } = scratch();
+  try {
+    // A hand-made or pre-versioned workspace with no schema_version.
+    const config = readYaml(p.config);
+    delete config.schema_version;
+    writeYaml(p.config, config);
+
+    const result = migrate(root);
+    assert.equal(result.schema_version.changed, true);
+    assert.equal(readYaml(p.config).schema_version, SCHEMA_VERSION);
+    assert.equal(validateWorkspace(root).ok, true);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('migrate leaves a current workspace schema_version untouched (no manual edits)', () => {
+  const { dir, root, p } = scratch();
+  try {
+    const before = readYaml(p.config).schema_version;
+    const result = migrate(root);
+    assert.equal(before, SCHEMA_VERSION);
+    assert.equal(result.schema_version.changed, false);
+    assert.equal(readYaml(p.config).schema_version, SCHEMA_VERSION);
+    assert.equal(validateWorkspace(root).ok, true);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
