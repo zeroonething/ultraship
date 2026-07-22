@@ -24,6 +24,31 @@
         }
       }
     },
+    "delivery_hooks": {
+      "description": "Optional. Per target mode, the shell command that deploys or publishes the release and an optional post-deploy smoke command. `ultraship deploy` runs the command matching the release's target_mode, captures its output under evidence/<version>/, and reports a non-zero exit so completion refuses the deployed mode. The commands are the project's own tooling; ultraship makes no network call of its own. VERSION, PRODUCT, and MODE are exported to the command.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "staging-deployed": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["deploy"],
+          "properties": { "deploy": { "type": "string" }, "smoke": { "type": "string" } }
+        },
+        "production-deployed": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["deploy"],
+          "properties": { "deploy": { "type": "string" }, "smoke": { "type": "string" } }
+        },
+        "published": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["deploy"],
+          "properties": { "deploy": { "type": "string" }, "smoke": { "type": "string" } }
+        }
+      }
+    },
     "resource_profile": {
       "type": "object",
       "additionalProperties": false,

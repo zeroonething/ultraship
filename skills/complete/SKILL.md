@@ -118,6 +118,19 @@ missing access under `known_limitations`, and tell the user what remains. A
 release-ready artifact is a complete release. A fabricated deployment is a lie
 that someone will discover during an incident.
 
+If the project declares `delivery_hooks` in `ultraship.yaml`, do not deploy by
+hand — run `ultraship deploy` for the release. It runs the declared command for
+the contract's `target_mode`, exporting `VERSION`, `PRODUCT`, and `MODE`,
+captures stdout/stderr/exit under `evidence/<version>/`, and runs the optional
+smoke command on success. Fold its result into the record: the printed
+`deployment_evidence` line goes under `evidence.deployments` and
+`health_check_evidence` under `evidence.health_checks`. The exit code is the
+gate — a non-zero `ultraship deploy` means the deployment did not succeed, so
+record `mode: release-ready`, note it under `known_limitations`, and do not claim
+the deployed mode. When no hook is declared for the mode, `deploy` reports
+nothing to run and you deploy and record by hand as before. The `ultraship` CLI
+itself opens no network connection; the declared command is the project's own.
+
 ## When a gate fails
 
 Do not mark the release complete. Then:
@@ -193,7 +206,7 @@ validate will report the drift.
 4. Run the narrowest reliable validation, then widen.
 5. Fix release-blocking defects; route scope changes to `/ultraship:iterate`.
 6. Produce the artifact.
-7. Deploy or publish, if authorized.
+7. Deploy or publish, if authorized — `ultraship deploy` when a hook is declared.
 8. Verify the target environment.
 9. Write release notes and update the changelog.
 10. Write the completion record and pin it.

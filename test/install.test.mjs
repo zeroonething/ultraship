@@ -33,7 +33,7 @@ test('the README documents every command the CLI exposes', () => {
 
   assert.deepEqual(
     [...commands].sort(),
-    ['constraints', 'init', 'migrate', 'product', 'semver', 'state', 'transition', 'validate', 'views'],
+    ['constraints', 'deploy', 'init', 'migrate', 'product', 'semver', 'state', 'transition', 'validate', 'views'],
     'the CLI exposes a command set the README was not written against',
   );
   for (const command of commands) {
