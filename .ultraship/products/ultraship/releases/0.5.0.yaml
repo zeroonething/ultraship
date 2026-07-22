@@ -1,0 +1,122 @@
+product: ultraship
+version: 0.5.0
+status: released
+release_type: minor
+outcome:
+  user_can: >
+    Declare their project's deploy or publish command for a target mode, and have
+    /ultraship:complete run it, capture its real stdout, stderr, and exit code,
+    and record that as verified deployment evidence. A release then reaches
+    staging-deployed, production-deployed, or published because the command
+    actually ran and succeeded — not because an agent typed the claim. When the
+    command exits non-zero, completion records the failure and the release stays
+    release-ready, so a deployed mode is never asserted without proof.
+  business_value: >
+    Through 0.4.0 the deployed and published modes were an honour system: the
+    complete skill told the agent to "achieve the mode or record what happened,"
+    but nothing ran the deployment and nothing checked that it had. A release
+    could be marked published with nothing published. Running the developer's own
+    declared command and gating the mode on its exit code makes a deployed mode
+    mean the deployment ran and succeeded — closing the last honesty gap before
+    the 1.0.0 stable-contract release.
+  evidence_of_value: >
+    A workspace declares a publish command for its target mode; complete runs it,
+    and the release record's deployment evidence quotes the command and its exit 0
+    with the captured output stored under evidence/. When the same command is made
+    to exit non-zero, complete records the failure and the mode stays
+    release-ready rather than published. This workspace dogfoods it by declaring
+    its own GitHub marketplace release command and completing 0.5.0 through it.
+scope:
+  included:
+    - A declaration of deploy or publish commands per target mode (a delivery_hooks block) where a project names the command that reaches staging, production, or its registry
+    - complete runs the hook matching the contract's target_mode, capturing stdout, stderr, and exit code, and stores the captured output under evidence/<version>/
+    - A non-zero hook exit blocks the deployed mode — complete records the failure and the release stays release-ready, so a deployed or published mode is never claimed without a successful command
+    - An optional post-deploy smoke command whose result is recorded as a health_checks evidence entry
+    - This workspace declares its own publish command (the GitHub marketplace release), dogfooding the run
+  excluded:
+    - The framework reaching the network or a registry itself — hooks shell out to the project's own tooling and the ultraship CLI still makes no model or network calls of its own
+    - Storing, injecting, or managing deployment secrets or credentials — the hook inherits the ambient environment
+    - Executing rollback automatically — rollback stays a documented, human-run procedure as in prior releases
+    - Orchestrating multiple targets, parallel deploys, or environment-promotion pipelines
+    - Publishing UltraShip to npm or any channel other than the existing GitHub marketplace
+  fallback_scope:
+    - Run a single declared deploy or publish command for the contract's target_mode, capture its output as deployment evidence, and block the deployed mode on a non-zero exit. The optional post-deploy smoke command and its health-check evidence is the deferrable extension.
+acceptance:
+  functional:
+    - With a deploy or publish command declared for the target mode, ultraship complete runs it and records the command and its exit code as a deployment evidence entry
+    - When the declared hook exits non-zero, complete records the failure and the release mode stays release-ready rather than the deployed mode
+    - A declared post-deploy smoke command runs after a successful deploy and its result is recorded as a health_checks evidence entry
+    - A workspace with no delivery_hooks declared completes exactly as in 0.4.0, with deployment handled manually and recorded by hand
+    - This workspace's own declared marketplace-release command runs and records verified deployment evidence
+  non_functional:
+    - Zero runtime npm dependencies; the vendored YAML parser is still the only parser
+    - The ultraship CLI still never calls a model and never touches the network; only the user-declared hook command does
+    - delivery_hooks is a new optional block; its absence preserves 0.4.0 completion behaviour with no new required field on any schema
+    - Hook stdout and stderr are captured and stored verbatim, so recorded evidence is the real command result and not a summary
+  operational:
+    - A failed deploy hook makes completion refuse the deployed mode, so no release is finalized on a failed deployment
+    - The README documents the delivery_hooks declaration and how complete runs it and gates the mode on its exit code
+    - Each hook's stdout, stderr, and exit code are stored under evidence/<version>/ for audit
+delivery:
+  target_mode: published
+  environment: GitHub plugin marketplace (zeroonething/ultraship)
+  deployment_method: git tag v0.5.0 pushed to zeroonething/ultraship, a GitHub release created — the very command 0.5.0 makes declarable as a hook — and a plugin reinstall verified to report 0.5.0
+  migrations:
+    - None required. delivery_hooks is a new optional block on ultraship.yaml; its absence skips hook execution and completion behaves exactly as in 0.4.0. Workspaces that never declare hooks are unaffected by the framework change.
+  observability:
+    - complete stores each hook's stdout, stderr, and exit code under evidence/<version>/; ultraship validate remains the canonical-state health check
+  rollback: Revert the v0.5.0 tag and delete its GitHub release; the marketplace serves 0.4.0, whose completion runs no hooks and still loads every existing workspace. Because delivery_hooks is optional, reverting the framework changes nothing for workspaces that never declared a hook.
+dependencies:
+  products: []
+  services: []
+  human_approvals:
+    - The developer authorizes running the declared deploy or publish command during completion, and confirms the marketplace publish and the plugin reinstall
+risks:
+  - A deploy hook runs an arbitrary shell command, and running it during completion is powerful. It must be explicit and authorized, never silent. Mitigated by requiring the hook be declared, treating the deploy step as an authorized action, and capturing output for audit.
+  - A hook that partially succeeds — deploys but the smoke check fails, or publishes then errors — could leave an ambiguous state. Mitigated by gating the mode strictly on exit code and recording the exact failure rather than guessing.
+  - A hook may print secrets into captured output that is then stored in the repo under evidence/. Mitigated by documenting that hooks must not print secrets and that captured evidence lives in the repository.
+resource_profile:
+  complexity: medium
+  uncertainty: medium
+  likely_cost_drivers:
+    - Capturing hook stdout, stderr, and exit reliably across shells while keeping the ultraship CLI itself free of model and network calls
+    - Deciding where the hook runs — the complete skill invoking it versus a new ultraship CLI verb — so a failed hook cleanly blocks the deployed mode
+    - Making a failed deployment leave the release honestly release-ready without corrupting canonical state
+  preferred_tools:
+    - Claude Code
+  constraints:
+    - Zero runtime npm dependencies
+    - Node 20 or newer
+    - The ultraship CLI never calls a model and never touches the network; only the declared hook command does
+    - Additive only; a workspace with no delivery_hooks completes exactly as in 0.4.0
+open_questions:
+  - Does the hook run from the complete skill (the agent invokes it) or from a new ultraship CLI verb? Leaning the complete skill, to keep the CLI binary free of shelling out. Decided in develop.
+  - Is delivery_hooks declared in ultraship.yaml (workspace-wide) or per release contract? Leaning ultraship.yaml, since deploy targets are project-level. Decided in develop.
+  - How is the target_mode-to-hook mapping keyed — by mode name directly, or by a named target the contract references? Decided in develop.
+released_at: 2026-07-22T04:00:00Z
+mode: release-ready
+delivered: >
+  A project declares its deploy or publish command per target mode under
+  delivery_hooks, and ultraship deploy runs the command for the release's
+  target_mode, captures its stdout, stderr, and exit code as evidence, runs an
+  optional smoke command on success, and exits non-zero so completion refuses the
+  deployed mode when the command fails. This workspace declares and exercised its
+  own GitHub-release publish hook.
+evidence:
+  tests:
+    - node --test test/deploy.test.mjs — 6 passing, 0 failing (run/capture, failure gate, smoke, smoke-skip-on-fail, no-hooks no-op)
+    - npm test — 215 passing, 0 failing
+  builds:
+    - No build step; pure ESM CLI with a vendored YAML parser and zero runtime dependencies
+  reviews: []
+  deployments:
+    - 'ultraship deploy ultraship 0.5.0 (gh release create v$VERSION --generate-notes --latest) — exit 0; the publish hook ran and created the release during completion, proving the dogfood. The premature release was then deleted so the durable release is published from main after the PR merges, per the strict release-after-merge choice. See evidence/0.5.0/deploy-published.log.'
+  health_checks:
+    - 'ultraship deploy smoke (gh release view v$VERSION --json tagName -q .tagName) — exit 0. See evidence/0.5.0/smoke-published.log.'
+known_limitations:
+  - mode is release-ready, not published. By choice, the durable public GitHub release is (re)created from the main merge commit after the PR merges, via the same delivery_hooks publish hook — not from the unmerged branch. The hook is proven (it ran exit 0 during completion); the marketplace reinstall verified to report 0.5.0 remains the developer's authorized step.
+  - delivery_hooks version substitution uses the shell's own environment expansion ($VERSION); a project on a shell without it would need to inline the version. The vendored path assumes a POSIX shell.
+  - Captured hook output is stored verbatim under evidence/<version>/, so a hook that prints secrets would write them into the repository; hooks must not print secrets.
+supersedes: 0.4.0
+next_recommended_version: 1.0.0
+immutable: true

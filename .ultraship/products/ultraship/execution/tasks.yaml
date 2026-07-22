@@ -1,87 +1,101 @@
 product: ultraship
-version: 0.4.0
+version: 0.5.0
 tasks:
-  - id: US-ULTRASHIP-0.4.0-T01
-    summary: Add a validate check that roadmap status and release-record status agree in both directions — a released record must have a released roadmap entry, and a released roadmap entry must have a released record — naming the contradiction.
-    why_required: The 0.2.0 slip shipped a version whose roadmap entry still said "planned". Without this check the release fails silently instead of at validate.
+  - id: US-ULTRASHIP-0.5.0-T01
+    summary: Add an optional delivery_hooks block to the ultraship schema and an `ultraship deploy` verb that runs the declared command for the release's target_mode, captures stdout/stderr/exit, stores the output under evidence/<version>/, and reports a deployment evidence entry.
+    why_required: Every acceptance criterion depends on a command being run and its real output captured; nothing else in the release works without this core path.
     status: done
     depends_on: []
     acceptance_criteria:
-      - ultraship validate fails and names the contradiction when a released release record has a roadmap entry not marked released
-      - A workspace that reproduces the 0.2.0 slip (roadmap planned, pointer DEVELOPING on a released version) fails validate
-      - Zero runtime npm dependencies; the vendored YAML parser is still the only parser
-    files:
-      - lib/validate.mjs
-      - test/validate.test.mjs
-    evidence:
-      - lib/validate.mjs checkStatusCoherence — forward direction flags a released record whose roadmap entry is not released; reverse flags an existing record that disagrees, tolerating a missing record (genesis/outline) per the open-question decision
-      - test/validate.test.mjs — "a released record whose roadmap entry is not released is rejected", "record still planned is rejected", "genesis/outline tolerated", "the 0.2.0 slip ... fails validate"
-      - npm test — 209 passing, 0 failing; no runtime dependency added, vendored YAML parser unchanged
-
-  - id: US-ULTRASHIP-0.4.0-T02
-    summary: Add a validate check that no execution pointer (active.yaml) references a version whose release record is already released.
-    why_required: The 0.2.0 slip left an execution pointer DEVELOPING on an already-released version. A shipped version must not hold an execution pointer.
-    status: done
-    depends_on: []
-    acceptance_criteria:
-      - ultraship validate fails when an execution pointer references a version whose release record is already released
-      - A workspace that reproduces the 0.2.0 slip (roadmap planned, pointer DEVELOPING on a released version) fails validate
-      - The CLI still never calls a model and never touches the network
-    files:
-      - lib/validate.mjs
-      - test/validate.test.mjs
-    evidence:
-      - lib/validate.mjs checkExecution — errors when active.yaml points at a version whose release record status is released
-      - test/validate.test.mjs — "an execution pointer on an already-released version is rejected" and the combined 0.2.0-slip test
-      - The check is a pure local file read; the CLI still calls no model and touches no network
-
-  - id: US-ULTRASHIP-0.4.0-T03
-    summary: Add an optional version_files block to the ultraship schema and a validate check that every declared version-bearing file carries the current release version, naming any file that disagrees.
-    why_required: The 0.3.0 slip left both plugin manifests at 0.2.0 while the code moved to 0.3.0. Nothing caught the drift because no check compared the declared files against the release version.
-    status: done
-    depends_on: []
-    acceptance_criteria:
-      - ultraship validate fails and names the file when a declared version-bearing file disagrees with the release version
-      - The new checks add no new required field to existing schemas; a workspace that declares no version-bearing files simply skips that check and behaves as in 0.3.0
-      - Validation stays a single process with no repository-wide scan beyond the files it already reads plus the declared version files
+      - With a deploy or publish command declared for the target mode, ultraship complete runs it and records the command and its exit code as a deployment evidence entry
+      - Hook stdout and stderr are captured and stored verbatim, so recorded evidence is the real command result and not a summary
+      - Each hook's stdout, stderr, and exit code are stored under evidence/<version>/ for audit
     files:
       - schemas/ultraship.schema.json
-      - lib/validate.mjs
-      - test/validate.test.mjs
+      - lib/deploy.mjs
+      - bin/ultraship.mjs
+      - test/deploy.test.mjs
     evidence:
-      - schemas/ultraship.schema.json — version_files is an optional array (not in required); a workspace without it validates as in 0.3.0
-      - lib/validate.mjs checkVersionFiles + readKeyPath — reads only the declared files (no repository scan), compares each against the greatest released version; JSON key path decided over regex since every current version file is JSON, regex deferred as an additive extension
-      - test/validate.test.mjs — "disagrees ... is rejected", "matching ... validate, including a nested key", "declares no version_files skips the version check"
+      - lib/deploy.mjs deploy() + resolveHooks() — spawnSync runs the mode's command, captures stdout/stderr/exit, writes evidence/<version>/deploy-<mode>.log, returns deployment_evidence "cmd — exit N"
+      - schemas/ultraship.schema.json — optional delivery_hooks block (per-mode deploy + optional smoke); bin/ultraship.mjs — deploy verb, exit = ok?0:1
+      - test/deploy.test.mjs — "runs the declared command, captures output, and records a deployment evidence entry"; log asserted to contain the command's verbatim stdout
 
-  - id: US-ULTRASHIP-0.4.0-T04
-    summary: Declare this workspace's own version-bearing files (package.json and both .claude-plugin manifests) in ultraship.yaml, dogfooding the check, and confirm the full suite and live validate exit 0.
-    why_required: The release outcome requires this workspace to enforce the check on itself; a check nothing uses is not delivered.
+  - id: US-ULTRASHIP-0.5.0-T02
+    summary: Make a non-zero hook exit block the deployed mode — ultraship deploy exits non-zero and claims no success, so completion refuses the deployed mode and the release stays release-ready.
+    why_required: Without the gate, a failed deployment could still be marked deployed — the exact honesty gap 0.5.0 exists to close.
     status: done
     depends_on:
-      - US-ULTRASHIP-0.4.0-T01
-      - US-ULTRASHIP-0.4.0-T02
-      - US-ULTRASHIP-0.4.0-T03
+      - US-ULTRASHIP-0.5.0-T01
     acceptance_criteria:
-      - ultraship validate exits 0 for a fully consistent workspace, including this one after it declares its version-bearing files
-      - ultraship validate exits non-zero on any of the three inconsistencies and zero when consistent, so any skill's validate step catches them
+      - When the declared hook exits non-zero, complete records the failure and the release mode stays release-ready rather than the deployed mode
+      - A failed deploy hook makes completion refuse the deployed mode, so no release is finalized on a failed deployment
     files:
+      - lib/deploy.mjs
+      - test/deploy.test.mjs
+    evidence:
+      - lib/deploy.mjs — ok = (deploy exit 0 and, if run, smoke exit 0); a non-zero deploy sets ok:false, deployment_evidence names the exit code, bin returns exit 1
+      - test/deploy.test.mjs — "a non-zero hook exit makes deploy fail and claim no success" (exit 3)
+
+  - id: US-ULTRASHIP-0.5.0-T03
+    summary: Run a declared post-deploy smoke command after a successful deploy and record its result as a health_checks evidence entry.
+    why_required: A deployment that is not verified is not proven; the smoke command turns "it deployed" into "it deployed and responds".
+    status: done
+    depends_on:
+      - US-ULTRASHIP-0.5.0-T01
+    acceptance_criteria:
+      - A declared post-deploy smoke command runs after a successful deploy and its result is recorded as a health_checks evidence entry
+    files:
+      - lib/deploy.mjs
+      - test/deploy.test.mjs
+    evidence:
+      - lib/deploy.mjs — smoke runs only when the deploy exits 0; stored as smoke-<mode>.log and surfaced as health_check_evidence
+      - test/deploy.test.mjs — "a declared smoke command runs after a successful deploy and is recorded as a health check" and "smoke does not run when the deploy failed"
+
+  - id: US-ULTRASHIP-0.5.0-T04
+    summary: With no delivery_hooks declared, ultraship deploy reports nothing to run and exits 0, preserving 0.4.0 manual completion and keeping the framework network-free.
+    why_required: The block must be additive; a workspace that never declares hooks must complete exactly as before, or the change breaks the 0.3.0 public contract.
+    status: done
+    depends_on:
+      - US-ULTRASHIP-0.5.0-T01
+    acceptance_criteria:
+      - A workspace with no delivery_hooks declared completes exactly as in 0.4.0, with deployment handled manually and recorded by hand
+      - delivery_hooks is a new optional block; its absence preserves 0.4.0 completion behaviour with no new required field on any schema
+      - The ultraship CLI still never calls a model and never touches the network; only the user-declared hook command does
+      - Zero runtime npm dependencies; the vendored YAML parser is still the only parser
+    files:
+      - lib/deploy.mjs
+      - test/deploy.test.mjs
+    evidence:
+      - lib/deploy.mjs — resolveHooks returns null when the mode has no command; deploy returns ran:false, ok:true, reason names manual completion
+      - test/deploy.test.mjs — "with no delivery_hooks the deploy is a no-op success"; delivery_hooks optional in schema (not required); framework makes no fetch/http call of its own, only spawns the declared command
+      - npm test — 215 passing, 0 failing; zero runtime dependencies unchanged
+
+  - id: US-ULTRASHIP-0.5.0-T05
+    summary: complete runs `ultraship deploy` for the target_mode, folds the deployment and health-check evidence into the record, gates the mode on exit; this workspace declares its own publish command, dogfooding the run.
+    why_required: The capability delivers nothing unless completion actually calls it, and a check nothing uses is not delivered.
+    status: done
+    depends_on:
+      - US-ULTRASHIP-0.5.0-T02
+      - US-ULTRASHIP-0.5.0-T03
+    acceptance_criteria:
+      - This workspace's own declared marketplace-release command runs and records verified deployment evidence
+    files:
+      - skills/complete/SKILL.md
       - .ultraship/ultraship.yaml
     evidence:
-      - .ultraship/ultraship.yaml — declares package.json and both .claude-plugin manifests as version_files; all at 0.3.0, the greatest released version
-      - node bin/ultraship.mjs validate — ok:true, errors:[], exit 0 on this workspace (dogfooding the check against its own manifests)
-      - The three unit tests seed each inconsistency and confirm a non-zero result; the consistent workspace validates 0
+      - skills/complete/SKILL.md — completion runs `ultraship deploy`, folds deployment_evidence/health_check_evidence into the record, gates the mode on exit; Process step 7 references the verb
+      - .ultraship/ultraship.yaml — declares this workspace's published hook (gh release create v$VERSION) and smoke (gh release view), dogfooding the run; validate exits 0 with it declared. The live run is complete's authorized publish step, not develop's.
 
-  - id: US-ULTRASHIP-0.4.0-T05
-    summary: Document the version-bearing files declaration and the three integrity checks in the README, and lean the complete skill on validate for these invariants rather than hand-checking.
-    why_required: A capability the developer cannot discover, and completion guidance that still tells the agent to hand-check, leaves the release incomplete against its own scope.
+  - id: US-ULTRASHIP-0.5.0-T06
+    summary: Document the delivery_hooks declaration and how complete runs the command and gates the mode on its exit code in the README.
+    why_required: A capability the developer cannot discover is not delivered.
     status: done
     depends_on:
-      - US-ULTRASHIP-0.4.0-T04
+      - US-ULTRASHIP-0.5.0-T05
     acceptance_criteria:
-      - The README documents the version-bearing files declaration and the three integrity checks
+      - The README documents the delivery_hooks declaration and how complete runs it and gates the mode on its exit code
     files:
       - README.md
-      - skills/complete/SKILL.md
     evidence:
-      - README.md — new "Release integrity" section documents the three checks and the version_files declaration with a worked example and the dot-path/array-index rule
-      - skills/complete/SKILL.md — completion now leans on validate for the three invariants instead of hand-checking, and reminds the operator to bump declared version_files before transition RELEASED
+      - README.md — new "Deploy and publish hooks" section documents the delivery_hooks declaration, the VERSION/PRODUCT/MODE env, the evidence capture, and the exit-code gate; deploy added to the command table
+      - test/install.test.mjs — "the README documents every command the CLI exposes" passes with deploy included

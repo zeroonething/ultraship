@@ -10,6 +10,7 @@ import { transition } from '../lib/transition.mjs';
 import { addProduct, useProduct } from '../lib/product.mjs';
 import { migrate } from '../lib/migrate.mjs';
 import { setConstraints, showConstraints } from '../lib/constraints.mjs';
+import { deploy } from '../lib/deploy.mjs';
 import { validateWorkspace } from '../lib/validate.mjs';
 import { renderViews } from '../lib/views.mjs';
 
@@ -86,6 +87,13 @@ const COMMANDS = {
       return 0;
     }
     return fail('Usage: ultraship constraints <set|show> [--time T] [--budget B] [--capacity C]');
+  },
+
+  deploy(argv) {
+    const [product, version] = argv;
+    const result = deploy(requireRoot(process.cwd()), { product, version });
+    out(result);
+    return result.ok ? 0 : 1;
   },
 
   validate() {

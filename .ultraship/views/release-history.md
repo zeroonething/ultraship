@@ -8,9 +8,16 @@ Run `ultraship views` to regenerate.
 
 | Version | Released | Mode | Delivered |
 | --- | --- | --- | --- |
+| 0.5.0 | 2026-07-22T04:00:00Z | release-ready | A project declares its deploy or publish command per target mode under delivery_hooks, and ultraship deploy runs the command for the release's target_mode, captures its stdout, stderr, and exit code as evidence, runs an optional smoke command on success, and exits non-zero so completion refuses the deployed mode when the command fails. This workspace declares and exercised its own GitHub-release publish hook. |
 | 0.4.0 | 2026-07-22T00:00:00Z | release-ready | ultraship validate mechanically enforces three release-integrity invariants — a released record must be marked released in the roadmap, no shipped version may hold an execution pointer, and every declared version-bearing file must match the release version — so a completion cannot silently ship contradictory state. This workspace declares its own version files and validates clean. |
 | 0.3.0 | 2026-07-21T20:00:00Z | release-ready | A developer records real limits on a release — time, budget, capacity — with `ultraship constraints set`, stored as user estimates and surfaced in state and views; develop and iterate ground release fit in them and recommend the fallback scope when the work no longer fits. Shipping a version now finalizes its state: `transition RELEASED` marks it released in the roadmap and archives the execution pointer, so no shipped release still reads DEVELOPING. `migrate` and `init` keep framework_version honest. |
 | 0.2.0 | 2026-07-21T18:30:00Z | release-ready | A developer registers several independent products in one workspace and runs each on its own lifecycle and release track, selecting the active product, without their states competing. Registration, selection, per-product transitions, migration from 0.1.0, and cross-product views all work. |
+
+### 0.5.0 known limitations
+
+- mode is release-ready, not published. By choice, the durable public GitHub release is (re)created from the main merge commit after the PR merges, via the same delivery_hooks publish hook — not from the unmerged branch. The hook is proven (it ran exit 0 during completion); the marketplace reinstall verified to report 0.5.0 remains the developer's authorized step.
+- delivery_hooks version substitution uses the shell's own environment expansion ($VERSION); a project on a shell without it would need to inline the version. The vendored path assumes a POSIX shell.
+- Captured hook output is stored verbatim under evidence/<version>/, so a hook that prints secrets would write them into the repository; hooks must not print secrets.
 
 ### 0.4.0 known limitations
 

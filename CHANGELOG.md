@@ -3,6 +3,44 @@
 All notable changes to UltraShip are recorded here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [0.5.0] — 2026-07-22
+
+Deployment and publication are now backed by a command that actually ran. A
+`published`, `staging-deployed`, or `production-deployed` release used to be an
+honour system — completion told the agent to "achieve the mode or record what
+happened," but nothing ran the deployment or checked it. Projects now declare
+the command that reaches each mode, and completion runs it, captures the real
+output as evidence, and refuses the deployed mode if it fails. The CLI still
+calls no model, opens no network connection of its own, and carries zero runtime
+dependencies.
+
+### Added
+
+- `ultraship deploy [product] [version]` runs the declared command for the
+  release's `target_mode`, exporting `VERSION`, `PRODUCT`, and `MODE`, captures
+  its stdout, stderr, and exit code under `evidence/<version>/`, and runs an
+  optional post-deploy smoke command on success. A non-zero exit makes the
+  command exit non-zero so completion refuses the deployed mode.
+- An optional `delivery_hooks` block on `ultraship.yaml`: per target mode, a
+  `deploy` command and an optional `smoke` command.
+- This workspace dogfoods it, declaring its own GitHub-release publish hook — and
+  0.5.0 itself was published through that hook.
+
+### Changed
+
+- `complete` runs `ultraship deploy` for the target mode, folds the captured
+  deployment and health-check evidence into the record, and gates the mode on
+  the exit code rather than trusting a hand-typed claim.
+- The README documents the `delivery_hooks` declaration and how completion runs
+  and gates it.
+
+### Notes
+
+- The framework opens no network connection of its own; it spawns the project's
+  declared command, whose behaviour is the project's. Absent a `delivery_hooks`
+  block, completion behaves exactly as in 0.4.0 — the block is additive and no
+  schema field became required.
+
 ## [0.4.0] — 2026-07-22
 
 Release integrity is now mechanically enforced. `ultraship validate` checks the

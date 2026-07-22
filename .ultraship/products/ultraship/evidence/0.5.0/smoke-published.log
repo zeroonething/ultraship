@@ -1,0 +1,7 @@
+$ gh release view v$VERSION --json tagName -q .tagName
+--- exit 0 ---
+--- stdout ---
+v0.5.0
+
+--- stderr ---
+

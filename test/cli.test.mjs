@@ -37,9 +37,9 @@ test('no arguments prints usage and exits 1', () => {
 });
 
 test('an unknown command names the valid ones', () => {
-  const { code, stderr } = run(['deploy']);
+  const { code, stderr } = run(['frobnicate']);
   assert.equal(code, 1);
-  assert.match(stderr, /Unknown command "deploy"/);
+  assert.match(stderr, /Unknown command "frobnicate"/);
   assert.match(stderr, /semver/);
 });
 

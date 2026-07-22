@@ -1,0 +1,23 @@
+product: ultraship
+version: 0.5.0
+execution_state: DEVELOPING
+checkpoint: null
+blockers: []
+release_fit:
+  assessment: probable
+  reasons:
+    - One new CLI verb (deploy) plus an optional schema block; it reuses the existing command,
+      evidence-path, and YAML plumbing rather than adding a subsystem.
+    - The recorded "additive only" constraint is honoured — delivery_hooks is optional; absent,
+      completion behaves exactly as 0.4.0.
+    - "The recorded \"CLI never calls a model or touches the network\" constraint holds: the verb
+      spawns the project's own declared command (which may network); the framework itself opens no
+      connection, consistent with the contract's own \"hooks shell out\" language."
+    - The repository is healthy — 209 tests pass and validate exits 0 — so the slice builds on a
+      green base.
+  major_cost_drivers:
+    - Capturing stdout, stderr, and exit reliably from a spawned shell command while keeping the
+      framework's own code network-free
+    - Making a failed deploy leave the release honestly release-ready without corrupting canonical
+      state
+  recommended_scope_change: null

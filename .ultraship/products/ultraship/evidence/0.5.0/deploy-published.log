@@ -1,0 +1,7 @@
+$ gh release create v$VERSION --title "UltraShip $VERSION" --generate-notes --latest
+--- exit 0 ---
+--- stdout ---
+https://github.com/zeroonething/ultraship/releases/tag/v0.5.0
+
+--- stderr ---
+

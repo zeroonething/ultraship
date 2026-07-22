@@ -7,6 +7,10 @@ version_files:
     key: version
   - path: .claude-plugin/marketplace.json
     key: plugins.0.version
+delivery_hooks:
+  published:
+    deploy: gh release create v$VERSION --title "UltraShip $VERSION" --generate-notes --latest
+    smoke: gh release view v$VERSION --json tagName -q .tagName
 resource_profile:
   provider_tool: null
   billing_mode: null
