@@ -3,6 +3,45 @@
 All notable changes to UltraShip are recorded here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.0] — 2026-07-22
+
+Release integrity is now mechanically enforced. `ultraship validate` checks the
+invariants a completed release must satisfy instead of leaving them for an agent
+to remember: roadmap and release-record status must agree, no shipped version may
+still hold an execution pointer, and every declared version-bearing file must
+carry the release version. The two defects found while dogfooding 0.2.0 and
+0.3.0 — a roadmap left at "planned" with a stale `DEVELOPING` pointer, and plugin
+manifests left a version behind the code — now fail validation instead of
+slipping through. The CLI still calls no model, touches no network, and carries
+zero runtime dependencies.
+
+### Added
+
+- Three integrity checks in `ultraship validate`: released-record ↔ roadmap
+  status coherence, no execution pointer on an already-released version, and
+  declared-version-file coherence — each failing with a named contradiction.
+- An optional `version_files` block on `ultraship.yaml` declaring the files
+  outside `.ultraship/` that carry the project's version. Each is held to the
+  greatest released version. `path` is project-root-relative; `key` is a JSON
+  dot-path where a numeric segment indexes an array.
+- This workspace dogfoods the check, declaring `package.json` and both
+  `.claude-plugin` manifests.
+
+### Changed
+
+- `complete` leans on `ultraship validate` for the three invariants rather than
+  instructing the agent to hand-check them, and reminds the operator to bump the
+  declared version files before `transition RELEASED`.
+- The README documents the version-file declaration and the three checks.
+
+### Notes
+
+- The version-file check tolerates a released roadmap entry that has no release
+  record at all (a genesis or outline version), which stays governed by the
+  existing specified-detail rule. Absent a `version_files` block, a workspace
+  behaves exactly as in 0.3.0 — the checks are additive, no schema field became
+  required.
+
 ## [0.3.0] — 2026-07-21
 
 Release fit grounded in real constraints. A developer records the actual limits
