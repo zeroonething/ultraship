@@ -1,6 +1,6 @@
 {
   "name": "ultraship",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "AI-assisted rapid development framework for shipping Minimum Complete Releases",
   "license": "MIT",
   "type": "module",
@@ -11,7 +11,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "test": "node --test \"test/*.test.mjs\""
+    "test": "node --test test/*.test.mjs"
   },
   "keywords": [
     "skills",
