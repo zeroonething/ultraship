@@ -8,7 +8,7 @@
     {
       "name": "ultraship",
       "description": "Ship at inference speed. Turn vague ideas into complete, releasable software through brainstorm, plan, develop, iterate, and complete.",
-      "version": "0.5.0",
+      "version": "0.5.1",
       "source": "./",
       "author": {
         "name": "Aakash Pawar (zeroonething)"
