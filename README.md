@@ -59,6 +59,7 @@ command reads and checks it. It never calls a model and never touches the networ
 | `ultraship product use <id>` | Switch which product is active. |
 | `ultraship migrate` | Move a 0.1.0 workspace's single state onto its active product's lifecycle, and bring `framework_version` up to the installed release. Run once per upgrade. |
 | `ultraship constraints set [--time T] [--budget B] [--capacity C]` | Record your real limits on the active release, as user estimates, so develop and iterate assess release fit against them. `ultraship constraints show` prints them. |
+| `ultraship deploy [product] [version]` | Run the declared `delivery_hooks` command for the release's target mode, capture its output as evidence, and exit non-zero if it fails so completion refuses the deployed mode. No hook declared → nothing to run. |
 | `ultraship validate` | Check every canonical file against its schema and the cross-file rules. |
 | `ultraship semver next <version> <bump>` | Compute the next version. `bump` is `major`, `minor`, `patch`, `release`, or a pre-release identifier. |
 | `ultraship views` | Regenerate the readable Markdown summaries in `.ultraship/views/`. |
@@ -125,6 +126,32 @@ version_files:
 `path` is relative to the project root; `key` is a dot-path into the parsed
 JSON, where a numeric segment indexes an array. Omit `version_files` entirely and
 the check is skipped — the workspace behaves exactly as before.
+
+## Deploy and publish hooks
+
+A `published`, `staging-deployed`, or `production-deployed` release is only
+honest if the deployment actually ran. Declare the command that reaches each
+mode under `delivery_hooks` in `ultraship.yaml`:
+
+```yaml
+delivery_hooks:
+  published:
+    deploy: gh release create v$VERSION --title "MyApp $VERSION" --generate-notes
+    smoke: gh release view v$VERSION --json tagName -q .tagName
+```
+
+`/ultraship:complete` runs `ultraship deploy`, which executes the command for the
+release's `target_mode` — exporting `VERSION`, `PRODUCT`, and `MODE` — captures
+its stdout, stderr, and exit code under
+`.ultraship/products/<id>/evidence/<version>/`, and records the command and exit
+as a deployment evidence entry. An optional `smoke` command runs after a
+successful deploy and becomes a health-check entry.
+
+The exit code is the gate: if the command fails, `ultraship deploy` exits
+non-zero, completion refuses the deployed mode, and the release stays
+`release-ready`. The command is your project's own tooling — the `ultraship` CLI
+itself opens no network connection. Omit `delivery_hooks` and deployment is
+manual and recorded by hand, exactly as before.
 
 ## Principles
 
