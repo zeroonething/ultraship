@@ -52,7 +52,7 @@ command reads and checks it. It never calls a model and never touches the networ
 
 | Command | What it does |
 | --- | --- |
-| `ultraship init` | Scaffold `.ultraship/` in the current directory. |
+| `ultraship init` | Scaffold `.ultraship/` and a project `.gitignore` (ignoring transient deploy evidence) in the current directory. |
 | `ultraship state` | Print the active product's state, active release, every product's state, and legal next steps as JSON. |
 | `ultraship transition <STATE> [product]` | Move a product's lifecycle to a new state, refusing any move the state model forbids. Defaults to the active product. |
 | `ultraship product add <id> [name]` | Register a new product with its own lifecycle and make it active. |
@@ -154,6 +154,29 @@ non-zero, completion refuses the deployed mode, and the release stays
 `release-ready`. The command is your project's own tooling — the `ultraship` CLI
 itself opens no network connection. Omit `delivery_hooks` and deployment is
 manual and recorded by hand, exactly as before.
+
+## Stability and the public contract
+
+UltraShip 1.0 has a frozen, enumerated public contract: the ten CLI commands, the
+skills, and the ten `.ultraship/` schemas. **Changing any of them is a major
+version.** Additive, backward-compatible changes are minor; fixes are patch. The
+full surface is enumerated in [docs/CONTRACT.md](docs/CONTRACT.md).
+
+What you can rely on:
+
+- A `1.x` release never breaks a `1.x` workspace — `ultraship validate` still
+  exits 0 after an upgrade within 1.x.
+- `ultraship migrate` carries any workspace, back to the pre-1.0 releases, up to
+  the installed version with no manual edits. It is forward-only and idempotent;
+  run it once after upgrading.
+- The workspace records which contract it is on as `schema_version` in
+  `ultraship.yaml` (1.0 is `schema_version: 1`).
+- Released records stay immutable — a correction is a new version, never an edit.
+
+How change is announced and deprecated is documented in
+[docs/COMPATIBILITY.md](docs/COMPATIBILITY.md): a contract item is deprecated in a
+minor release, kept working for at least one more minor, and only removed in a
+major release with a `migrate` step.
 
 ## Principles
 

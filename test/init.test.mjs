@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, existsSync, mkdirSync } from 'node:fs';
+import { mkdtempSync, rmSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { init, FRAMEWORK_VERSION } from '../lib/init.mjs';
@@ -86,6 +86,45 @@ test('findRoot walks up from a nested directory', () => {
     const nested = join(dir, 'src', 'deep');
     mkdirSync(nested, { recursive: true });
     assert.equal(findRoot(nested), join(dir, DIR));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('init scaffolds a project .gitignore that ignores the evidence output', () => {
+  const dir = scratch();
+  try {
+    init(dir);
+    const gitignore = readFileSync(join(dir, '.gitignore'), 'utf8');
+    assert.match(gitignore, /\.ultraship\/products\/\*\/evidence\//);
+    assert.match(gitignore, /node_modules/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('init appends to an existing .gitignore without clobbering or duplicating', () => {
+  const dir = scratch();
+  try {
+    writeFileSync(join(dir, '.gitignore'), 'dist/\n.env\n', 'utf8');
+    init(dir);
+    const gitignore = readFileSync(join(dir, '.gitignore'), 'utf8');
+    assert.match(gitignore, /dist\//); // original preserved
+    assert.match(gitignore, /\.env/);
+    assert.match(gitignore, /\.ultraship\/products\/\*\/evidence\//); // appended
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('init does not duplicate an evidence ignore already present', () => {
+  const dir = scratch();
+  try {
+    writeFileSync(join(dir, '.gitignore'), '.ultraship/products/*/evidence/\n', 'utf8');
+    init(dir);
+    const gitignore = readFileSync(join(dir, '.gitignore'), 'utf8');
+    const count = (gitignore.match(/\.ultraship\/products\/\*\/evidence\//g) || []).length;
+    assert.equal(count, 1);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
