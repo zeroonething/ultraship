@@ -3,6 +3,37 @@
 All notable changes to UltraShip are recorded here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] — 2026-07-22
+
+Contributor-ready. 1.0 froze the public contract; 1.1 opens the front door so an
+outside developer can act on it. The repository now explains how it is built, how
+a change maps to a SemVer bump, and how to submit work in a mergeable shape — and
+it does so in the project's own idiom, showing contributors how to drive their
+change through UltraShip's own five skills. This release adds documentation,
+GitHub templates, and one CI workflow only; no CLI command, skill, or schema
+changed, so it is a clean minor and a 1.0 workspace needs no migration.
+
+### Added
+
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** — the contributor entry point: the two
+  halves (agent-facing skills vs the deterministic CLI), the local test loop
+  (Node 20+, no install, `npm test` and its single-file forms), the
+  change-classification rule that decides the SemVer bump, and the pull-request
+  workflow.
+- **[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)** — Contributor Covenant 2.1.
+- **[SECURITY.md](SECURITY.md)** — supported-version policy and private
+  vulnerability disclosure through GitHub security advisories.
+- **[docs/CONTRIBUTING-WITH-ULTRASHIP.md](docs/CONTRIBUTING-WITH-ULTRASHIP.md)** —
+  a walkthrough of `brainstorm → plan → develop → iterate → complete` for a change
+  to this repository, using the 1.1.0 release itself as the worked example.
+- GitHub **pull-request and issue templates** (`.github/PULL_REQUEST_TEMPLATE.md`,
+  `.github/ISSUE_TEMPLATE/bug_report.md`, `.github/ISSUE_TEMPLATE/feature_request.md`)
+  that prompt for the SemVer classification and test evidence.
+- A **CI workflow** (`.github/workflows/ci.yml`) running `npm test` and
+  `ultraship validate` on every push and pull request across Node 20 and 22, with
+  no install step so the zero-dependency guarantee holds in CI too.
+- README **Contributing** section linking all of the above.
+
 ## [1.0.0] — 2026-07-22
 
 The stable contract. Versions 0.1 through 0.5 built the capability; 1.0 makes it

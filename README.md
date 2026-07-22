@@ -201,6 +201,18 @@ major release with a `migrate` step.
 19. Pause safely rather than manufacture completion.
 20. Ship, observe, learn, and adapt.
 
+## Contributing
+
+Contributions are welcome. Start with [`CONTRIBUTING.md`](CONTRIBUTING.md) — it
+explains the two halves (skills vs the deterministic CLI), the local test loop,
+and how a change maps to a SemVer bump. For anything security-related, follow
+[`SECURITY.md`](SECURITY.md) rather than opening a public issue. Participation is
+governed by the [Code of Conduct](CODE_OF_CONDUCT.md).
+
+UltraShip is built with UltraShip. To ship your contribution the way the project
+ships itself — through the five skills — see
+[Contributing with UltraShip](docs/CONTRIBUTING-WITH-ULTRASHIP.md).
+
 ## License
 
 MIT. See `LICENSE` and `NOTICE`.
