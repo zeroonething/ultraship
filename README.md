@@ -136,7 +136,9 @@ mode under `delivery_hooks` in `ultraship.yaml`:
 ```yaml
 delivery_hooks:
   published:
-    deploy: gh release create v$VERSION --title "MyApp $VERSION" --generate-notes
+    # Source the release notes from your CHANGELOG's top section, not
+    # --generate-notes (which only lists merged PR titles).
+    deploy: gh release create v$VERSION --title "MyApp $VERSION" --notes "$(awk '/^## \[/{n++} n==1' CHANGELOG.md)"
     smoke: gh release view v$VERSION --json tagName -q .tagName
 ```
 

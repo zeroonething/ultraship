@@ -131,6 +131,12 @@ the deployed mode. When no hook is declared for the mode, `deploy` reports
 nothing to run and you deploy and record by hand as before. The `ultraship` CLI
 itself opens no network connection; the declared command is the project's own.
 
+Update the changelog **before** running `ultraship deploy`. A good publish hook
+sources its release notes from the changelog (for example
+`--notes "$(awk '/^## \[/{n++} n==1' CHANGELOG.md)"`), so the notes must already
+exist when the hook runs. Avoid `--generate-notes`; it only lists merged PR
+titles and produces a threadbare release.
+
 ## When a gate fails
 
 Do not mark the release complete. Then:
@@ -206,9 +212,9 @@ validate will report the drift.
 4. Run the narrowest reliable validation, then widen.
 5. Fix release-blocking defects; route scope changes to `/ultraship:iterate`.
 6. Produce the artifact.
-7. Deploy or publish, if authorized — `ultraship deploy` when a hook is declared.
-8. Verify the target environment.
-9. Write release notes and update the changelog.
+7. Write release notes and update the changelog.
+8. Deploy or publish, if authorized — `ultraship deploy` when a hook is declared.
+9. Verify the target environment.
 10. Write the completion record and pin it.
 11. Run `ultraship transition RELEASED`, `ultraship validate`, `ultraship views`.
 12. Recommend the next version.
