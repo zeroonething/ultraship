@@ -1,98 +1,87 @@
 product: ultraship
-version: 0.3.0
+version: 0.4.0
 tasks:
-  - id: US-ULTRASHIP-0.3.0-T01
-    summary: Add an optional constraints block to the active schema and a constraints CLI command to record and show user-supplied limits.
-    why_required: Without a canonical place to record time, budget, and capacity, there is nothing for release fit to be grounded in.
+  - id: US-ULTRASHIP-0.4.0-T01
+    summary: Add a validate check that roadmap status and release-record status agree in both directions — a released record must have a released roadmap entry, and a released roadmap entry must have a released record — naming the contradiction.
+    why_required: The 0.2.0 slip shipped a version whose roadmap entry still said "planned". Without this check the release fails silently instead of at validate.
     status: done
     depends_on: []
     acceptance_criteria:
-      - A developer sets time, budget, and capacity constraints on a release and they persist to canonical state, each tagged with a user-estimate source
-      - The set-constraints command shows the recorded constraints and reports the same figures on a later run without re-entry
+      - ultraship validate fails and names the contradiction when a released release record has a roadmap entry not marked released
+      - A workspace that reproduces the 0.2.0 slip (roadmap planned, pointer DEVELOPING on a released version) fails validate
+      - Zero runtime npm dependencies; the vendored YAML parser is still the only parser
     files:
-      - schemas/active.schema.json
-      - lib/constraints.mjs
-      - bin/ultraship.mjs
-      - test/constraints.test.mjs
+      - lib/validate.mjs
+      - test/validate.test.mjs
     evidence:
-      - test/constraints.test.mjs — set persists all three fields as user-estimate, show round-trips, one field leaves others in place
-      - node --test — 202 passing, 0 failing
+      - lib/validate.mjs checkStatusCoherence — forward direction flags a released record whose roadmap entry is not released; reverse flags an existing record that disagrees, tolerating a missing record (genesis/outline) per the open-question decision
+      - test/validate.test.mjs — "a released record whose roadmap entry is not released is rejected", "record still planned is rejected", "genesis/outline tolerated", "the 0.2.0 slip ... fails validate"
+      - npm test — 209 passing, 0 failing; no runtime dependency added, vendored YAML parser unchanged
 
-  - id: US-ULTRASHIP-0.3.0-T02
-    summary: Surface recorded constraints in the state snapshot and the active-releases view, always showing the user-estimate source.
-    why_required: The develop and iterate skills read fit inputs through the snapshot and views; unsurfaced constraints cannot ground an assessment.
-    status: done
-    depends_on:
-      - US-ULTRASHIP-0.3.0-T01
-    acceptance_criteria:
-      - state and views display the recorded constraints and their user-estimate source
-    files:
-      - lib/state.mjs
-      - lib/views.mjs
-    evidence:
-      - test/constraints.test.mjs — snapshot.active.constraints surfaces recorded capacity
-      - views.mjs renders a Constraints line tagged with the user-estimate source when any field is set
-
-  - id: US-ULTRASHIP-0.3.0-T03
-    summary: Ground the develop and iterate release-fit guidance in recorded constraints, and keep the no-constraints path assessing exactly as 0.2.0 did.
-    why_required: Recording constraints delivers no value unless the assessment cites them and recommends fallback scope when they do not fit; the additive path must not regress.
-    status: done
-    depends_on:
-      - US-ULTRASHIP-0.3.0-T02
-    acceptance_criteria:
-      - When no constraints are recorded, release_fit still assesses qualitatively exactly as it did in 0.2.0 — constraints are additive, not required
-      - A 0.2.0 workspace with no recorded constraints loads and behaves unchanged, with no migration required
-    files:
-      - skills/develop/SKILL.md
-      - skills/iterate/SKILL.md
-    evidence:
-      - develop SKILL.md instructs naming a recorded constraint in reasons and setting recommended_scope_change to fallback_scope when scope exceeds the limits
-      - Existing state, views, and validate suites still pass with no constraints block present — constraints are optional in the schema
-
-  - id: US-ULTRASHIP-0.3.0-T04
-    summary: Make the RELEASED transition finalize a shipped version's state — mark it released in the roadmap and archive its execution pointer.
-    why_required: Without this a shipped release still reads execution_state DEVELOPING and the roadmap status must be hand-edited, the exact gaps found in 0.2.0.
+  - id: US-ULTRASHIP-0.4.0-T02
+    summary: Add a validate check that no execution pointer (active.yaml) references a version whose release record is already released.
+    why_required: The 0.2.0 slip left an execution pointer DEVELOPING on an already-released version. A shipped version must not hold an execution pointer.
     status: done
     depends_on: []
     acceptance_criteria:
-      - after complete runs on a release, the roadmap shows that version as released with no hand edit
-      - after complete runs, no shipped version reads execution_state DEVELOPING — active.yaml and active-releases.md no longer show a released version as in development
+      - ultraship validate fails when an execution pointer references a version whose release record is already released
+      - A workspace that reproduces the 0.2.0 slip (roadmap planned, pointer DEVELOPING on a released version) fails validate
+      - The CLI still never calls a model and never touches the network
     files:
-      - lib/transition.mjs
-      - lib/paths.mjs
-      - skills/complete/SKILL.md
-      - test/transition.test.mjs
+      - lib/validate.mjs
+      - test/validate.test.mjs
     evidence:
-      - test/transition.test.mjs — releasing marks the roadmap released and archives the pointer; missing pointer is a best-effort no-op
-      - complete SKILL.md tells the operator the transition finalizes state and not to hand-edit it
+      - lib/validate.mjs checkExecution — errors when active.yaml points at a version whose release record status is released
+      - test/validate.test.mjs — "an execution pointer on an already-released version is rejected" and the combined 0.2.0-slip test
+      - The check is a pure local file read; the CLI still calls no model and touches no network
 
-  - id: US-ULTRASHIP-0.3.0-T05
-    summary: Sync framework_version to the installed release, at init and on migrate.
-    why_required: The recorded framework_version stayed at the init value through upgrades, so the workspace lied about which framework last touched it.
+  - id: US-ULTRASHIP-0.4.0-T03
+    summary: Add an optional version_files block to the ultraship schema and a validate check that every declared version-bearing file carries the current release version, naming any file that disagrees.
+    why_required: The 0.3.0 slip left both plugin manifests at 0.2.0 while the code moved to 0.3.0. Nothing caught the drift because no check compared the declared files against the release version.
     status: done
     depends_on: []
     acceptance_criteria:
-      - after a framework upgrade, framework_version in ultraship.yaml matches the installed framework version
+      - ultraship validate fails and names the file when a declared version-bearing file disagrees with the release version
+      - The new checks add no new required field to existing schemas; a workspace that declares no version-bearing files simply skips that check and behaves as in 0.3.0
+      - Validation stays a single process with no repository-wide scan beyond the files it already reads plus the declared version files
     files:
-      - lib/init.mjs
-      - lib/migrate.mjs
-      - test/migrate.test.mjs
-      - test/init.test.mjs
+      - schemas/ultraship.schema.json
+      - lib/validate.mjs
+      - test/validate.test.mjs
     evidence:
-      - test/migrate.test.mjs — migrate brings a stale 0.1.0 framework_version up to the installed release and is idempotent
-      - init now writes package.json version rather than a literal
+      - schemas/ultraship.schema.json — version_files is an optional array (not in required); a workspace without it validates as in 0.3.0
+      - lib/validate.mjs checkVersionFiles + readKeyPath — reads only the declared files (no repository scan), compares each against the greatest released version; JSON key path decided over regex since every current version file is JSON, regex deferred as an additive extension
+      - test/validate.test.mjs — "disagrees ... is rejected", "matching ... validate, including a nested key", "declares no version_files skips the version check"
 
-  - id: US-ULTRASHIP-0.3.0-T06
-    summary: Document the constraints workflow, resource-grounded fit, and release finalization.
-    why_required: A capability the user cannot discover is not delivered.
+  - id: US-ULTRASHIP-0.4.0-T04
+    summary: Declare this workspace's own version-bearing files (package.json and both .claude-plugin manifests) in ultraship.yaml, dogfooding the check, and confirm the full suite and live validate exit 0.
+    why_required: The release outcome requires this workspace to enforce the check on itself; a check nothing uses is not delivered.
     status: done
     depends_on:
-      - US-ULTRASHIP-0.3.0-T01
-      - US-ULTRASHIP-0.3.0-T04
+      - US-ULTRASHIP-0.4.0-T01
+      - US-ULTRASHIP-0.4.0-T02
+      - US-ULTRASHIP-0.4.0-T03
     acceptance_criteria:
-      - The README and NOTICE document how to record constraints and how fit and scope recommendations use them
+      - ultraship validate exits 0 for a fully consistent workspace, including this one after it declares its version-bearing files
+      - ultraship validate exits non-zero on any of the three inconsistencies and zero when consistent, so any skill's validate step catches them
+    files:
+      - .ultraship/ultraship.yaml
+    evidence:
+      - .ultraship/ultraship.yaml — declares package.json and both .claude-plugin manifests as version_files; all at 0.3.0, the greatest released version
+      - node bin/ultraship.mjs validate — ok:true, errors:[], exit 0 on this workspace (dogfooding the check against its own manifests)
+      - The three unit tests seed each inconsistency and confirm a non-zero result; the consistent workspace validates 0
+
+  - id: US-ULTRASHIP-0.4.0-T05
+    summary: Document the version-bearing files declaration and the three integrity checks in the README, and lean the complete skill on validate for these invariants rather than hand-checking.
+    why_required: A capability the developer cannot discover, and completion guidance that still tells the agent to hand-check, leaves the release incomplete against its own scope.
+    status: done
+    depends_on:
+      - US-ULTRASHIP-0.4.0-T04
+    acceptance_criteria:
+      - The README documents the version-bearing files declaration and the three integrity checks
     files:
       - README.md
+      - skills/complete/SKILL.md
     evidence:
-      - README.md — new "Constraints and release fit" section plus the constraints and updated migrate command rows
-      - NOTICE reviewed; its lib/, schemas/, bin/ inventory already covers the new files, no change needed, as for 0.2.0
+      - README.md — new "Release integrity" section documents the three checks and the version_files declaration with a worked example and the dot-path/array-index rule
+      - skills/complete/SKILL.md — completion now leans on validate for the three invariants instead of hand-checking, and reminds the operator to bump declared version_files before transition RELEASED

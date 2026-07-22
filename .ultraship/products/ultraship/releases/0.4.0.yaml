@@ -1,0 +1,120 @@
+product: ultraship
+version: 0.4.0
+status: released
+release_type: minor
+outcome:
+  user_can: >
+    Trust that a completed release is internally consistent, because
+    `ultraship validate` mechanically enforces the invariants a release must
+    satisfy instead of leaving them to the agent to remember: a version with a
+    released record must be marked released in the roadmap, no shipped version
+    may still hold an execution pointer, and every version-bearing file the
+    project declares must match the release version. A completion that would
+    ship contradictory state fails validation rather than passing quietly.
+  business_value: >
+    The two defects found while dogfooding 0.2.0 and 0.3.0 — a roadmap left at
+    "planned" and an execution pointer left at DEVELOPING after release, and a
+    plugin version that stayed 0.2.0 in two manifests while the code moved to
+    0.3.0 — both slipped because the completion gates were prose an agent had to
+    remember, not checks a command enforced. Turning those invariants into
+    validation makes the framework trustworthy before its 1.0.0 stable-contract
+    release: a developer no longer has to personally re-verify consistency after
+    every completion.
+  evidence_of_value: >
+    On a workspace with a released version whose roadmap entry still says
+    planned, `ultraship validate` fails and names the contradiction; likewise for
+    an execution pointer left on a released version, and for a declared
+    version-bearing file that disagrees with the release version. On a consistent
+    workspace validate still exits 0. Reproducing the 0.2.0 and 0.3.0 slips in a
+    test workspace makes validate fail.
+scope:
+  included:
+    - A validate check that a version with a released release record is marked released in the roadmap, and that a roadmap entry marked released has a released record — reported as a named contradiction, not a generic error
+    - A validate check that no execution pointer (active.yaml) references a version whose release record is already released
+    - A declared list of version-bearing files in ultraship.yaml, and a validate check that every one matches the current release version, so the version cannot drift across package.json and the plugin manifests again
+    - The complete skill leans on validate for these invariants rather than instructing the agent to check them by hand
+    - This workspace declares its own version-bearing files (package.json and both .claude-plugin manifests), dogfooding the check
+  excluded:
+    - Deployment or publication hooks — that is 0.5.0
+    - Verifying that acceptance criteria are actually satisfied (inherently a judgment gate, not mechanizable)
+    - Reading a version from arbitrary non-declared files, or inferring which files carry the version
+    - Any check that reaches the network or calls a model
+  fallback_scope:
+    - The two internal-state invariants — roadmap/release status coherence and no stale execution pointer — which need no new configuration and close the 0.2.0 slip class. Declared version-file coherence is the deferrable extension.
+acceptance:
+  functional:
+    - ultraship validate fails and names the contradiction when a released release record has a roadmap entry not marked released
+    - ultraship validate fails when an execution pointer references a version whose release record is already released
+    - ultraship validate fails and names the file when a declared version-bearing file disagrees with the release version
+    - ultraship validate exits 0 for a fully consistent workspace, including this one after it declares its version-bearing files
+    - A workspace that reproduces the 0.2.0 slip (roadmap planned, pointer DEVELOPING on a released version) fails validate
+  non_functional:
+    - Zero runtime npm dependencies; the vendored YAML parser is still the only parser
+    - The CLI still never calls a model and never touches the network
+    - The new checks add no new required field to existing schemas; a workspace that declares no version-bearing files simply skips that check and behaves as in 0.3.0
+    - Validation stays a single process with no repository-wide scan beyond the files it already reads plus the declared version files
+  operational:
+    - ultraship validate exits non-zero on any of the three inconsistencies and zero when consistent, so any skill's validate step catches them
+    - The README documents the version-bearing files declaration and the three integrity checks
+delivery:
+  target_mode: published
+  environment: GitHub plugin marketplace (zeroonething/ultraship)
+  deployment_method: git tag v0.4.0 pushed to zeroonething/ultraship, a marketplace release, and a plugin reinstall verified to report 0.4.0 across package.json and both .claude-plugin manifests
+  migrations:
+    - None required. version_files is a new optional block on ultraship.yaml; its absence skips the version-coherence check. If a workspace already holds an inconsistency the new checks will surface it — that is the intended behavior, documented, not a migration.
+  observability:
+    - ultraship validate is the health check; it is exercised against both a consistent workspace and one seeded with each of the three inconsistencies before release
+  rollback: Revert the v0.4.0 tag; the marketplace serves the prior 0.3.0 release, whose validate is a subset (no integrity checks) and still loads every existing workspace
+dependencies:
+  products: []
+  services: []
+  human_approvals:
+    - The developer confirms the marketplace publish, pushes the v0.4.0 tag, and performs the plugin reinstall from zeroonething/ultraship
+resource_profile:
+  complexity: medium
+  uncertainty: medium
+  likely_cost_drivers:
+    - Deciding how a version-bearing file declares where its version lives — a JSON key path, a regex, or both — so the check is general without a parser per file type
+    - Making the new validate errors precise enough to name the exact contradiction, matching the quality of the existing cross-file checks
+    - Reproducing the two historical slips as fixtures so the checks are proven against the real failures, not hypothetical ones
+  preferred_tools:
+    - Claude Code
+  constraints:
+    - Zero runtime npm dependencies
+    - Node 20 or newer
+    - The CLI never calls a model and never touches the network
+    - Additive only; the 0.3.0 public contract must not break without a major bump, and tightening validation must only reject genuinely inconsistent state
+risks:
+  - Tightening validate can surface pre-existing inconsistencies in a user's workspace on upgrade. That is the point, but it must fail with a clear, named error and a fix path, not a cryptic rejection. Mitigated by precise messages and documentation.
+  - Version extraction across file formats is open-ended; over-generalizing it (a parser per format) is scope creep. Mitigated by starting with a JSON key path plus an optional regex and deferring anything else.
+  - The status-coherence check must not fight the 0.3.0 RELEASED-transition finalization; both must agree that a released version is released in the roadmap. Mitigated by testing the finalized state passes validate.
+open_questions:
+  - Does a version-bearing file declare its version location as a JSON key path, a regex, or both? Decided in develop.
+  - Are the integrity checks part of ultraship validate, or a separate ultraship check command that complete calls? Leaning validate, since every skill already runs it. Decided in develop.
+  - Should a released roadmap entry without a released record be an error, or only the reverse direction? Decided in develop.
+released_at: 2026-07-22T00:00:00Z
+mode: release-ready
+delivered: >
+  ultraship validate mechanically enforces three release-integrity invariants —
+  a released record must be marked released in the roadmap, no shipped version
+  may hold an execution pointer, and every declared version-bearing file must
+  match the release version — so a completion cannot silently ship contradictory
+  state. This workspace declares its own version files and validates clean.
+evidence:
+  tests:
+    - node --test test/validate.test.mjs — 21 passing, 0 failing (7 new integrity tests)
+    - npm test — 209 passing, 0 failing
+  builds:
+    - No build step; pure ESM CLI with a vendored YAML parser and zero runtime dependencies
+  reviews: []
+  deployments: []
+  health_checks:
+    - node bin/ultraship.mjs validate — exit 0, ok:true on this workspace after declaring its version_files
+    - Seeded drift (package.json bumped to 0.4.0 while greatest released was 0.3.0) made validate exit non-zero and name each of the three manifests, proving the dogfooded check is live
+known_limitations:
+  - mode is release-ready, not published. The marketplace publish, the v0.4.0 git tag push to zeroonething/ultraship, and the plugin reinstall verified to report 0.4.0 are the developer's authorized human steps and were not performed by the agent.
+  - Version-file location is a JSON dot-path only; non-JSON version carriers (README badges, plain-text files) cannot yet be declared. Deferred as an additive extension.
+  - The version-file check compares against the greatest released version; it does not verify a workspace mid-release whose files are intentionally ahead until the record is written.
+supersedes: 0.3.0
+next_recommended_version: 0.5.0
+immutable: true

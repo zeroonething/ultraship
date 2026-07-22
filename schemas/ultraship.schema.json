@@ -11,6 +11,19 @@
       "type": "string",
       "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?$"
     },
+    "version_files": {
+      "description": "Optional. Files outside .ultraship that carry the project's version. validate checks every one matches the greatest released version, so the version cannot drift across manifests. path is relative to the project root; key is a dot-path into the parsed JSON (numeric segments index arrays).",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "key"],
+        "properties": {
+          "path": { "type": "string" },
+          "key": { "type": "string" }
+        }
+      }
+    },
     "resource_profile": {
       "type": "object",
       "additionalProperties": false,

@@ -1,5 +1,12 @@
 schema_version: 1
 framework_version: 0.1.0
+version_files:
+  - path: package.json
+    key: version
+  - path: .claude-plugin/plugin.json
+    key: version
+  - path: .claude-plugin/marketplace.json
+    key: plugins.0.version
 resource_profile:
   provider_tool: null
   billing_mode: null

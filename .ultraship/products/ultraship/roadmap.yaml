@@ -21,6 +21,15 @@ versions:
     status: released
   - version: 0.4.0
     outcome: >
+      A developer trusts that a completed release is internally consistent, because UltraShip
+      mechanically enforces the invariants a release must satisfy — roadmap and release status
+      agree, no shipped version still holds an execution pointer, and the project's version-bearing
+      files all match the release version — so a completion cannot silently ship contradictory
+      state.
+    detail: specified
+    status: released
+  - version: 0.5.0
+    outcome: >
       A release completes as staging- or production-deployed through configurable project hooks,
       with verified deployment evidence recorded.
     detail: hypothesis

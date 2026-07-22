@@ -1,6 +1,6 @@
 {
   "name": "ultraship",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "AI-assisted rapid development framework for shipping Minimum Complete Releases",
   "license": "MIT",
   "type": "module",

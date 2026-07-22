@@ -96,6 +96,36 @@ fallback scope rather than guessing. When a version ships, `ultraship transition
 RELEASED` marks it released in the roadmap and archives its execution pointer, so
 no shipped version keeps reading as in development.
 
+## Release integrity
+
+`ultraship validate` mechanically enforces the invariants a completed release
+must satisfy, instead of leaving them for an agent to remember. Beyond the
+schema and cross-file checks, it fails and names the contradiction when:
+
+- a version with a released release record is not marked released in the roadmap
+  (or a released roadmap entry points at a record still `planned`);
+- an execution pointer in `active.yaml` still references a version whose release
+  record is already released — a shipped version must hold no execution pointer;
+- a declared version-bearing file disagrees with the release version.
+
+The third check is opt-in. Declare the files outside `.ultraship/` that carry
+your project's version in `ultraship.yaml`, and validate holds them to the
+greatest released version so it can never drift across manifests again:
+
+```yaml
+version_files:
+  - path: package.json
+    key: version
+  - path: .claude-plugin/plugin.json
+    key: version
+  - path: .claude-plugin/marketplace.json
+    key: plugins.0.version
+```
+
+`path` is relative to the project root; `key` is a dot-path into the parsed
+JSON, where a numeric segment indexes an array. Omit `version_files` entirely and
+the check is skipped — the workspace behaves exactly as before.
+
 ## Principles
 
 1. Every release must work.

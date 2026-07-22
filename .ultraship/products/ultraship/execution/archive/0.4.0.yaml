@@ -1,0 +1,22 @@
+product: ultraship
+version: 0.4.0
+execution_state: DEVELOPING
+checkpoint: null
+blockers: []
+release_fit:
+  assessment: probable
+  reasons:
+    - Three checks extend one existing command (validateWorkspace) that already reads the roadmap,
+      release, and active files; no new subsystem is introduced.
+    - The recorded "additive only" constraint is honoured — version_files is a new optional block on
+      ultraship.yaml; when absent the 0.3.0 behaviour is unchanged.
+    - The recorded "zero runtime npm dependencies" constraint holds; all three checks are local file
+      reads using the JSON and vendored-YAML parsing already present.
+    - The published deployment path (GitHub marketplace, git tag) already exists from 0.2.0 and
+      0.3.0, so delivery is not new work.
+  major_cost_drivers:
+    - Choosing the version-file declaration format so the check is general without a parser per file
+      type
+    - Reproducing the 0.2.0 and 0.3.0 historical slips as fixtures so the checks are proven against
+      the real failures
+  recommended_scope_change: null
