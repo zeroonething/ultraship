@@ -3,6 +3,26 @@
 All notable changes to UltraShip are recorded here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [0.5.1] — 2026-07-22
+
+Publish hooks now produce a real release. 0.5.0's dogfooded publish hook used
+`gh release create --generate-notes`, so the release notes were a bare list of
+merged pull-request titles. The hook now sources its notes from the CHANGELOG's
+latest section, and completion writes the changelog before running the hook so
+those notes exist when it reads them.
+
+### Fixed
+
+- The workspace's `delivery_hooks` publish hook sources release notes from the
+  CHANGELOG (`--notes "$(awk '/^## \[/{n++} n==1' CHANGELOG.md)"`) instead of
+  `--generate-notes`.
+- `complete`'s Process writes release notes and the changelog **before**
+  `ultraship deploy`, since a notes-sourcing hook must read the changelog first.
+- The README `delivery_hooks` example and the `complete` deploy guidance
+  recommend CHANGELOG-sourced notes and warn against `--generate-notes`.
+
+No change to `lib/`, `bin/`, or the schemas.
+
 ## [0.5.0] — 2026-07-22
 
 Deployment and publication are now backed by a command that actually ran. A
