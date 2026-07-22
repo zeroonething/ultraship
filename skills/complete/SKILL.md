@@ -175,6 +175,16 @@ to `execution/archive/<version>.yaml`, so no shipped version keeps reading
 pointer to match — the transition already did, and a manual edit only competes
 with it.
 
+`ultraship validate` now mechanically enforces the invariants completion used to
+depend on you remembering: a released record must be marked released in the
+roadmap, no shipped version may still hold an execution pointer, and every file
+declared under `version_files` in `ultraship.yaml` must carry the release
+version. So do not re-verify these by hand — if any are contradictory, validate
+fails and names the contradiction. One consequence: if the project declares
+`version_files`, bump those files (for example `package.json` and the plugin
+manifests) to the release version before `ultraship transition RELEASED`, or
+validate will report the drift.
+
 ## Process
 
 1. Run `ultraship state`; confirm the release and its target mode.

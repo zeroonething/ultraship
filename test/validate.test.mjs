@@ -250,6 +250,13 @@ test('a task citing an acceptance criterion absent from the contract is rejected
 
 test('an edited released record fails validation', () => {
   const { dir, root, p } = buildWorkspace({
+    roadmap: {
+      product: 'client-tracker', status: 'active',
+      versions: [
+        { version: '0.1.0', outcome: 'Record one invoice and mark it paid.', detail: 'specified', status: 'released' },
+        { version: '0.2.0', outcome: 'Manage recurring invoices.', detail: 'outline', status: 'planned' },
+      ],
+    },
     release: {
       status: 'released', immutable: true, mode: 'release-ready',
       released_at: '2026-07-21T09:00:00Z', delivered: 'Invoice recorded and paid.',
@@ -279,6 +286,163 @@ test('unparseable YAML is reported against its file rather than crashing', () =>
     const { ok, errors } = validateWorkspace(root);
     assert.equal(ok, false);
     assert.match(errors.join('\n'), /roadmap\.yaml: could not parse/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// --- 0.4.0 integrity checks -------------------------------------------------
+
+const RELEASED_RECORD = {
+  status: 'released', immutable: true, mode: 'release-ready',
+  released_at: '2026-07-21T09:00:00Z', delivered: 'Invoice recorded and paid.',
+  evidence: { tests: ['npm test'], builds: [], reviews: [], deployments: [], health_checks: [] },
+  known_limitations: [], supersedes: null, next_recommended_version: '0.2.0',
+};
+
+function roadmapWith(status010) {
+  return {
+    product: 'client-tracker', status: 'active',
+    versions: [
+      { version: '0.1.0', outcome: 'Record one invoice and mark it paid.', detail: 'specified', status: status010 },
+      { version: '0.2.0', outcome: 'Manage recurring invoices.', detail: 'outline', status: 'planned' },
+    ],
+  };
+}
+
+test('a released record whose roadmap entry is not released is rejected', () => {
+  const { dir, root } = buildWorkspace({
+    roadmap: roadmapWith('planned'),
+    release: RELEASED_RECORD,
+  });
+  try {
+    const { ok, errors } = validateWorkspace(root);
+    assert.equal(ok, false);
+    assert.match(errors.join('\n'), /0\.1\.0 has a released release record but its roadmap entry is "planned"/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('a roadmap entry marked released whose record is still planned is rejected', () => {
+  const { dir, root } = buildWorkspace({
+    roadmap: roadmapWith('released'),
+    // release record exists but stays the default planned CONTRACT
+  });
+  try {
+    const { ok, errors } = validateWorkspace(root);
+    assert.equal(ok, false);
+    assert.match(errors.join('\n'), /0\.1\.0 is marked released in the roadmap but its release record status is "planned"/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('a released roadmap entry with no release record at all is tolerated (genesis / outline)', () => {
+  const { dir, root, p } = buildWorkspace({
+    roadmap: {
+      product: 'client-tracker', status: 'active',
+      versions: [
+        { version: '0.1.0', outcome: 'Genesis release.', detail: 'outline', status: 'released' },
+        { version: '0.2.0', outcome: 'Manage recurring invoices.', detail: 'outline', status: 'planned' },
+      ],
+    },
+  });
+  try {
+    rmSync(p.release('client-tracker', '0.1.0')); // outline version, no contract file
+    assert.deepEqual(validateWorkspace(root).errors, []);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('an execution pointer on an already-released version is rejected', () => {
+  const { dir, root, p } = buildWorkspace({
+    roadmap: roadmapWith('released'),
+    release: RELEASED_RECORD,
+  });
+  try {
+    writeYaml(p.active('client-tracker'), {
+      product: 'client-tracker', version: '0.1.0', execution_state: 'DEVELOPING',
+      checkpoint: null, blockers: [],
+      release_fit: { assessment: 'probable', reasons: [], major_cost_drivers: [], recommended_scope_change: null },
+    });
+    const { ok, errors } = validateWorkspace(root);
+    assert.equal(ok, false);
+    assert.match(errors.join('\n'), /execution pointer references version 0\.1\.0 whose release record is already released/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('the 0.2.0 slip — roadmap planned, pointer DEVELOPING on a released version — fails validate', () => {
+  const { dir, root, p } = buildWorkspace({
+    roadmap: roadmapWith('planned'),
+    release: RELEASED_RECORD,
+  });
+  try {
+    writeYaml(p.active('client-tracker'), {
+      product: 'client-tracker', version: '0.1.0', execution_state: 'DEVELOPING',
+      checkpoint: null, blockers: [],
+      release_fit: { assessment: 'probable', reasons: [], major_cost_drivers: [], recommended_scope_change: null },
+    });
+    const { ok, errors } = validateWorkspace(root);
+    assert.equal(ok, false);
+    const joined = errors.join('\n');
+    assert.match(joined, /roadmap entry is "planned"/);
+    assert.match(joined, /execution pointer references version 0\.1\.0 whose release record is already released/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('a declared version-bearing file that disagrees with the release version is rejected', () => {
+  const { dir, root, p } = buildWorkspace({
+    roadmap: roadmapWith('released'),
+    release: RELEASED_RECORD,
+  });
+  try {
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({ version: '0.2.0' }), 'utf8');
+    const config = readYaml(p.config);
+    config.version_files = [{ path: 'package.json', key: 'version' }];
+    writeYaml(p.config, config);
+    const { ok, errors } = validateWorkspace(root);
+    assert.equal(ok, false);
+    assert.match(errors.join('\n'), /package\.json: version "0\.2\.0" at "version" disagrees with the release version 0\.1\.0/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('declared version-bearing files matching the release version validate, including a nested key', () => {
+  const { dir, root, p } = buildWorkspace({
+    roadmap: roadmapWith('released'),
+    release: RELEASED_RECORD,
+  });
+  try {
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({ version: '0.1.0' }), 'utf8');
+    writeFileSync(join(dir, 'marketplace.json'), JSON.stringify({ plugins: [{ version: '0.1.0' }] }), 'utf8');
+    const config = readYaml(p.config);
+    config.version_files = [
+      { path: 'package.json', key: 'version' },
+      { path: 'marketplace.json', key: 'plugins.0.version' },
+    ];
+    writeYaml(p.config, config);
+    assert.deepEqual(validateWorkspace(root).errors, []);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('a workspace that declares no version_files skips the version check', () => {
+  const { dir, root, p } = buildWorkspace({
+    roadmap: roadmapWith('released'),
+    release: RELEASED_RECORD,
+  });
+  try {
+    // package.json exists but is undeclared: it must not be read or checked.
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({ version: '9.9.9' }), 'utf8');
+    assert.deepEqual(validateWorkspace(root).errors, []);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
