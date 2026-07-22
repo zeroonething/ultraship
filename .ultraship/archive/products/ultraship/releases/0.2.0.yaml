@@ -1,0 +1,89 @@
+# Reconstructed from the archived specification roadmap (§22, "0.2.0 —
+# Multi-product workspace"). 0.2.0 was planned before release contracts were
+# tracked in canonical state; this is a historical reconstruction of the plan.
+# The version that actually shipped narrowed the scope to independent per-product
+# lifecycles and deferred release bundles (recorded as an assumption in
+# product.yaml), so treat this as the plan-time intent, not the final record.
+product: ultraship
+version: 0.2.0
+status: released
+release_type: minor
+outcome:
+  user_can: >
+    Run several independent products from one workspace, each on its own
+    lifecycle and release track, with one shared source of truth — so one product
+    can be in development while another is planned or released, and no product's
+    state competes with another's.
+  business_value: >
+    A developer managing more than one project no longer needs a workspace per
+    product; the portfolio lives under one canonical root with per-product
+    release streams.
+  evidence_of_value: >
+    A developer registers two products, switches the active product, and takes
+    each through its own lifecycle; the two states never collide and validate
+    passes on the mixed-state workspace.
+scope:
+  included:
+    - Multiple products in one workspace, each with its own directory and lifecycle
+    - Per-product SemVer release streams
+    - Product registration and active-product selection
+    - Per-product roadmaps and release contracts under one canonical root
+    - Cross-product dependency references without duplicating a canonical fact
+  excluded:
+    - Coordinated release bundles (deferred; lower value than the specification assumed)
+    - Live provider telemetry
+    - Automated cloud deployment
+  fallback_scope:
+    - Register and switch between independent products, each on its own lifecycle and release track — deferring cross-product dependency validation and any coordinated-launch tooling.
+acceptance:
+  functional:
+    - A developer registers several products and each has its own lifecycle and release stream
+    - Switching the active product changes which product the skills act on
+    - Two products at different lifecycle points both validate in one workspace
+  non_functional:
+    - No requirement or fact is copied into more than one product file
+    - The CLI never calls a model and never touches the network
+  operational:
+    - ultraship state and the views surface every product's state, not only the active one
+delivery:
+  target_mode: release-ready
+  environment: Local workspace, distributed as a Claude Code plugin
+  deployment_method: Install the plugin and manage several products in one local workspace
+  migrations:
+    - A 0.1.0 single-workspace-state workspace migrates onto a per-product lifecycle via ultraship migrate.
+  observability:
+    - ultraship validate checks per-product state and cross-product references
+  rollback: Canonical state is local and version-controlled; revert the workspace files.
+dependencies:
+  products: []
+  services: []
+  human_approvals:
+    - The developer approves each new product's definition before it is written
+resource_profile:
+  complexity: medium
+  uncertainty: medium
+  likely_cost_drivers:
+    - Moving single-workspace state onto per-product lifecycles without breaking a 0.1.0 workspace
+  preferred_tools:
+    - Claude Code
+  constraints:
+    - Zero runtime npm dependencies
+    - Node 20 or newer
+    - The CLI never calls a model and never touches the network
+risks:
+  - Per-product state could collide with the single-workspace model from 0.1.0. Mitigated by a migrate step that moves state onto the active product's lifecycle.
+open_questions: []
+released_at: 2026-07-21T00:00:00Z
+mode: release-ready
+delivered: Independent per-product lifecycles and release tracks in one workspace, with a migrate path from the 0.1.0 single-state model.
+evidence:
+  tests: []
+  builds: []
+  reviews: []
+  deployments: []
+  health_checks: []
+known_limitations:
+  - Reconstructed from the specification roadmap; the shipped 0.2.0 deferred release bundles and this file is a historical reference, not the enforced immutable record.
+supersedes: 0.1.0
+next_recommended_version: 0.3.0
+immutable: true
