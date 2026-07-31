@@ -1,5 +1,6 @@
 schema_version: 1
-framework_version: 0.1.0
+framework_version: 1.1.0
+commit_policy: checkpoint
 version_files:
   - path: package.json
     key: version
@@ -9,7 +10,8 @@ version_files:
     key: plugins.0.version
 delivery_hooks:
   published:
-    deploy: 'gh release create v$VERSION --title "UltraShip $VERSION" --notes "$(awk ''/^## \[/{n++} n==1'' CHANGELOG.md)" --latest'
+    deploy: gh release create v$VERSION --title "UltraShip $VERSION" --notes "$(awk '/^## \[/{n++} n==1'
+      CHANGELOG.md)" --latest
     smoke: gh release view v$VERSION --json tagName -q .tagName
 resource_profile:
   provider_tool: null

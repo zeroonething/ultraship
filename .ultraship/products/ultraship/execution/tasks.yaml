@@ -127,7 +127,7 @@ tasks:
       UltraShip dogfoods itself. If the release cannot be developed and completed using its own
       commit protocol, the protocol is not shippable, and the git history that is this release's
       primary evidence would not exist.
-    status: todo
+    status: done
     depends_on:
       - US-ULTRASHIP-2.0.0-T04
     acceptance_criteria:
@@ -136,4 +136,12 @@ tasks:
       - This repository develops and completes 2.0.0 using the default commit policy, so its own git history is the release's primary evidence
     files:
       - .ultraship/ultraship.yaml
-    evidence: []
+      - .ultraship/views
+      - test/cli.test.mjs
+    evidence:
+      - .ultraship/ultraship.yaml — commit_policy set to checkpoint, so every task in this release after T01 was committed by ultraship commit itself rather than by hand
+      - node bin/ultraship.mjs migrate — run against this repository's real workspace; reported commit_policy unchanged (explicit checkpoint is never downgraded) and corrected a stale framework_version from 0.1.0 to 1.1.0, proving the upgrade path on live state
+      - "git log — the branch history shows chore(develop) commits for T02, T03, and T04 each produced by ultraship commit develop-task, each staging exactly that task's declared files plus tasks.yaml"
+      - Defect found and fixed during verification — the new CLI test ran ultraship commit against process.cwd(), which is this repository, and made a real stray commit. test/cli.test.mjs now runs the dispatcher in a scratch workspace with the policy off. Reverted the stray commit and confirmed HEAD does not move across a full npm test run
+      - npm test — 252 passing, 0 failing
+      - node bin/ultraship.mjs validate — exit 0, 18 files checked
