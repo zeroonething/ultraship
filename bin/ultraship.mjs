@@ -12,6 +12,7 @@ import { migrate } from '../lib/migrate.mjs';
 import { setConstraints, showConstraints } from '../lib/constraints.mjs';
 import { deploy } from '../lib/deploy.mjs';
 import { commitCheckpoint, CHECKPOINT_NAMES } from '../lib/commit.mjs';
+import { wave } from '../lib/wave.mjs';
 import { validateWorkspace } from '../lib/validate.mjs';
 import { renderViews } from '../lib/views.mjs';
 
@@ -116,6 +117,12 @@ const COMMANDS = {
     out(result);
     // A no-op is a success: only a commit the policy asked for and git refused fails.
     return result.ok === false ? 1 : 0;
+  },
+
+  wave(argv) {
+    const [product, version] = argv;
+    out(wave(requireRoot(process.cwd()), product, version));
+    return 0;
   },
 
   validate() {
