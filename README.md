@@ -19,6 +19,10 @@ It provides five skills:
 - `/ultraship:iterate`
 - `/ultraship:complete`
 
+…and `/ultraship:subagent`, which any of them can call to run independent work in
+parallel. It is off unless you ask for it — see
+[Parallel work](#parallel-work-when-you-ask-for-it).
+
 UltraShip plans and builds one complete product version at a time. Every release
 must deliver a real outcome, remain deployable or publishable, and preserve one
 canonical source of truth.
@@ -66,6 +70,7 @@ command reads and checks it. It never calls a model and never touches the networ
 | `ultraship constraints set [--time T] [--budget B] [--capacity C]` | Record your real limits on the active release, as user estimates, so develop and iterate assess release fit against them. `ultraship constraints show` prints them. |
 | `ultraship deploy [product] [version]` | Run the declared `delivery_hooks` command for the release's target mode, capture its output as evidence, and exit non-zero if it fails so completion refuses the deployed mode. No hook declared → nothing to run. |
 | `ultraship commit <checkpoint> [product] [version] [--task ID]` | Commit the working skills' own output at one checkpoint. Stages only that checkpoint's declared paths, never pushes, branches, or tags. Governed by `commit_policy`; a no-op when it is `off`. |
+| `ultraship wave [product] [version]` | Print the tasks that may run concurrently right now — every dependency `done`, declared `files` disjoint from the rest of the wave and from anything in progress — plus the reason each held task was excluded. Computes only; it dispatches nothing. |
 | `ultraship validate` | Check every canonical file against its schema and the cross-file rules. |
 | `ultraship semver next <version> <bump>` | Compute the next version. `bump` is `major`, `minor`, `patch`, `release`, or a pre-release identifier. |
 | `ultraship views` | Regenerate the readable Markdown summaries in `.ultraship/views/`. |
@@ -194,9 +199,41 @@ you had already staged them.
 The checkpoints, what each stages, and its message format are in
 [shared/commit-protocol.md](shared/commit-protocol.md).
 
+## Parallel work, when you ask for it
+
+`/ultraship:subagent` fans independent work out to concurrent agents. **It never
+runs on its own.** Three signals turn it on, and any one is enough:
+
+1. You invoke `/ultraship:subagent` yourself.
+2. You tell the running skill to use subagents for this flow.
+3. You recorded the preference — `allow_parallel_agents: true` in
+   `.ultraship/ultraship.yaml`, or an instruction in your `CLAUDE.md`,
+   `AGENTS.md`, or memory. This is how you make it your default.
+
+An in-session instruction always wins, in both directions: asking for subagents
+overrides a recorded `false`, and asking to stop overrides a recorded `true`.
+With none of the three present, every skill runs exactly as it did on 2.0.
+
+When it is on, `/ultraship:develop` asks the CLI which tasks are safe to run at
+once rather than guessing:
+
+```bash
+ultraship wave
+```
+
+A task joins the wave only when every dependency is already `done` and its
+declared `files` are disjoint from the rest of the wave and from anything in
+progress. Every excluded task comes back with the reason. Each agent returns its
+evidence and the files it really changed; the calling skill records that, commits
+each finished task through the existing `develop-task` checkpoint, and computes
+the next wave. A subagent never writes canonical state, transitions, commits, or
+deploys.
+
+The full contract is [shared/subagent-protocol.md](shared/subagent-protocol.md).
+
 ## Stability and the public contract
 
-UltraShip 2.0 has a frozen, enumerated public contract: the eleven CLI commands,
+UltraShip 2.0 has a frozen, enumerated public contract: the twelve CLI commands,
 the skills, and the ten `.ultraship/` schemas. **Changing any of them is a major
 version.** Additive, backward-compatible changes are minor; fixes are patch. The
 full surface is enumerated in [docs/CONTRACT.md](docs/CONTRACT.md).

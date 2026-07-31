@@ -17,6 +17,25 @@ that contract is allowed to change and how change is announced.
   same major.
 - **Patch (`X.Y.Z`)** — fixes only. No contract change.
 
+## What changed in 2.1
+
+**Nothing broke.** 2.1 adds one command (`ultraship wave`) and one supporting
+skill (`subagent`), which is exactly what the minor level is for. No command,
+skill, schema, or field was removed or renamed, `schema_version` stays `1`, and a
+2.0.0 workspace passes `ultraship validate` on 2.1 unchanged. No item was
+deprecated, so no deprecation window is owed.
+
+**Nothing became parallel by default.** The subagent skill runs only when the
+developer asks for it — see
+[shared/subagent-protocol.md](../shared/subagent-protocol.md) — so a workspace
+that says nothing behaves exactly as it did on 2.0. `allow_parallel_agents` is an
+existing field with an unchanged meaning; 2.1 gives it a second reader, not a new
+default.
+
+**`ultraship migrate` has nothing to carry but the version line.** No canonical
+shape changed, so migrating a 2.0.0 workspace updates `framework_version` and
+adds no field.
+
 ## What changed in 2.0
 
 **The break is one default.** In 1.x the skills never touched git. In 2.0 they

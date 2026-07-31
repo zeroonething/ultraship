@@ -3,6 +3,48 @@
 All notable changes to UltraShip are recorded here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [2.1.0] — 2026-07-31
+
+Parallel work, on your terms. A sixth skill, `/ultraship:subagent`, is the one
+place UltraShip fans work out to concurrent agents, and the workflow skills call
+it instead of each inventing a dispatch recipe of their own.
+
+**It is off unless you ask.** Three signals turn it on: invoking
+`/ultraship:subagent` directly, telling the running skill to use subagents for
+this flow, or recording the preference — `allow_parallel_agents: true` in
+`.ultraship/ultraship.yaml`, or an instruction in your `CLAUDE.md`, `AGENTS.md`,
+or memory, which is how you make it your default. An in-session instruction wins
+in both directions. With none of the three present, every skill behaves exactly
+as it did on 2.0.
+
+### Added
+
+- `/ultraship:subagent`, a supporting skill. It moves no lifecycle state and
+  writes no canonical file; the calling skill records the evidence, sets the
+  statuses, and runs the commits.
+- `shared/subagent-protocol.md` — the single contract behind it: the three
+  activation paths and their precedence, the brief a dispatched agent receives,
+  the return shape it owes, and the four things it may never do (write under
+  `.ultraship/`, `transition`, `commit`, `deploy`).
+- `ultraship wave [product] [version]`, the twelfth CLI command. It prints the
+  tasks that may run concurrently right now — every dependency `done`, declared
+  `files` disjoint from the rest of the wave and from anything in progress — and
+  the reason it held each of the others. It computes; it dispatches nothing, so
+  the CLI still calls no model and touches no network.
+- `develop` computes waves, dispatches them, records each returned evidence
+  against its own task, and commits each finished task through the existing
+  `develop-task` checkpoint before computing the next wave. It halts and reports
+  when an agent returns a file outside that task's declared `files`, because the
+  disjointness the wave rested on was never true.
+- `plan` can hand independent research briefs to the same skill. `brainstorm`,
+  `iterate`, and `complete` reference the protocol too.
+
+### Compatibility
+
+Nothing was removed or renamed and no canonical shape changed, so a 2.0.0
+workspace passes `ultraship validate` on 2.1 unchanged and `schema_version` stays
+`1`. `ultraship migrate` carries `framework_version` to 2.1.0 and adds no field.
+
 ## [2.0.0] — 2026-07-31
 
 The lifecycle commits its own work. `plan`, `develop`, `iterate`, and `complete`
