@@ -5,14 +5,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## What this is
 
 UltraShip is a **Claude Code plugin**: a rapid-development framework that turns ideas into
-shippable Minimum Complete Releases through five skills (`brainstorm → plan → develop →
-iterate → complete`). It has two halves that never mix:
+shippable Minimum Complete Releases through five lifecycle skills (`brainstorm → plan →
+develop → iterate → complete`). Eight supporting skills sit beside them — `using-ultraship`,
+`subagent`, `systematic-debugging`, `test-driven-development`, `verification-before-completion`,
+`requesting-code-review`, `receiving-code-review`, `using-git-worktrees` — which move no state
+and write no canonical file; `subagent` (added in 2.1) has its own contract in
+`shared/subagent-protocol.md`. It has two halves that never mix:
 
 1. **Skills** (`skills/*/SKILL.md`) — Markdown instructions the *agent* follows. No code runs;
-   these tell Claude how to drive each lifecycle phase.
+   these tell Claude how to drive each lifecycle phase and each supporting discipline.
 2. **The `ultraship` CLI** (`bin/ultraship.mjs` + `lib/*.mjs`) — a deterministic Node state
    engine. It reads and checks workspace state, and **never calls a model and never touches the
-   network** (`README.md:50`). Skills invoke it for every fact they need; it is the referee.
+   network** (`README.md:60`). Skills invoke it for every fact they need; it is the referee.
 
 ## Commands
 
@@ -33,7 +37,8 @@ code (`bin/ultraship.mjs:2`). `validate` and `deploy` exit non-zero on failure; 
 
 **The CLI is a thin dispatcher over `lib/`.** `bin/ultraship.mjs` maps each command to one
 `lib/*.mjs` module — the real logic lives there, one concern per file (`state`, `transition`,
-`validate`, `deploy`, `migrate`, `semver`, `lock`, `constraints`, `product`, `init`, `views`).
+`validate`, `deploy`, `migrate`, `semver`, `lock`, `constraints`, `product`, `init`, `views`,
+`commit`, `wave`).
 
 **Workspace state lives in `.ultraship/` in the user's repo**, not here — except that this repo
 **dogfoods itself**: `.ultraship/products/ultraship/` is UltraShip's own live product state,
@@ -64,7 +69,7 @@ swapping the vendored parser touches exactly one file.
 
 ## The public contract (this matters most)
 
-UltraShip 1.0 has a **frozen, enumerated public contract**: the ten CLI commands, the skills,
+UltraShip 2.x has a **frozen, enumerated public contract**: the twelve CLI commands, the skills,
 and the ten `.ultraship/` schemas (`docs/CONTRACT.md`). **Changing any of them is a major
 version.** Additive backward-compatible changes are minor; fixes are patch. Before altering a
 command's flags/output, a skill's behavior, or a schema, know which SemVer bump it forces and
@@ -81,8 +86,14 @@ whether it needs a `migrate` step and a deprecation window (`docs/COMPATIBILITY.
 
 - **ESM only** (`"type": "module"`), `.mjs`, Node 20+ stdlib. Vendoring over new dependencies —
   keep the zero-install guarantee.
+- **`vendor/` is never edited.** It is unmodified third-party code (currently npm `yaml` 2.9.0);
+  upgrading means re-vendoring with `npm pack` and rerunning `npm test`, never patching in place
+  (`vendor/README.md`). `vendor/` is excluded from this repository's code scanning for exactly
+  that reason. An advisory naming a vendored package is answered by re-vendoring the fixed
+  upstream release; `SECURITY.md` holds the full policy and records how the exclusion is
+  currently carried.
 - **`ponytail:` comments mark deliberate simplifications** with their upgrade seam (e.g. the ajv
   seam in `lib/schema.mjs`). Respect the seam; don't pre-build past it.
 - Skills in `skills/` share prose contracts in `shared/` (`principles.md`, `state-model.md`,
-  `release-contract.md`, `skill-contract.md`). Behavior described there is the contract the CLI
-  enforces — change both together.
+  `release-contract.md`, `skill-contract.md`, `commit-protocol.md`, `subagent-protocol.md`).
+  Behavior described there is the contract the CLI enforces — change both together.

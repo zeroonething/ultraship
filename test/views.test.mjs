@@ -159,14 +159,15 @@ test('multi-line and pipe-bearing values stay inside their table cell', () => {
       constraints: [], public_contract: '', deployment_context: '',
       success_measures: [], non_goals: [], assumptions: [],
       // A folded YAML scalar round-trips with a trailing newline, and a pipe
-      // would end the cell early. Both must survive the table intact.
-      mvp_boundary: 'One developer ships one release\nend to end | start to finish\n',
+      // would end the cell early. A backslash right before that pipe escapes
+      // the escape unless both are handled. All must survive the table intact.
+      mvp_boundary: 'One developer ships one release\nend to end \\| start to finish\n',
     });
     writeYaml(p.roadmap('wordy'), {
       product: 'wordy', status: 'active',
       versions: [{
         version: '0.1.0',
-        outcome: 'Ship it\nproperly | completely\n',
+        outcome: 'Ship it\nproperly \\| completely\n',
         detail: 'specified', status: 'planned',
       }],
     });
@@ -181,7 +182,50 @@ test('multi-line and pipe-bearing values stay inside their table cell', () => {
       assert.doesNotMatch(row, /\n/, `${file} row must not break across lines`);
       assert.match(row, /start to finish|completely/, `${file} row must keep the whole value`);
       assert.match(row, /\\\|/, `${file} must escape pipes inside a cell`);
+      // The exact rendered form: an escaped backslash, then an escaped pipe.
+      // A lone `\|` would leave the pipe live and end the cell early.
+      assert.match(row, /\\\\\\\|/, `${file} must escape the backslash as well as the pipe`);
     }
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('values without meta-characters are only whitespace-collapsed', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'ultraship-views-plain-'));
+  try {
+    const { root } = init(dir);
+    const p = paths(root);
+
+    const workspace = readYaml(p.workspace);
+    workspace.active_product = 'plain';
+    writeYaml(p.workspace, workspace);
+
+    mkdirSync(p.releases('plain'), { recursive: true });
+    writeYaml(p.product('plain'), {
+      id: 'plain', name: 'Plain', classification: 'independent-product',
+      vision: 'v', users: [], problems: [], outcomes: [], requirements: [],
+      constraints: [], public_contract: '', deployment_context: '',
+      success_measures: [], non_goals: [], assumptions: [],
+      mvp_boundary: 'One   developer\nships   one release',
+    });
+    writeYaml(p.roadmap('plain'), {
+      product: 'plain', status: 'active',
+      versions: [{ version: '0.1.0', outcome: '', detail: 'specified', status: 'planned' }],
+    });
+
+    renderViews(root);
+
+    const brief = readFileSync(join(p.views, 'workspace-brief.md'), 'utf8')
+      .split('\n').find((line) => line.startsWith('| ') && line.includes('plain'));
+    assert.ok(brief, 'workspace-brief.md should contain a row for plain');
+    assert.match(brief, /One developer ships one release/, 'whitespace runs collapse to single spaces');
+    assert.doesNotMatch(brief, /\\/, 'a value with no meta-characters gains no backslash');
+
+    const roadmap = readFileSync(join(p.views, 'master-roadmap.md'), 'utf8')
+      .split('\n').find((line) => line.startsWith('| ') && line.includes('0.1.0'));
+    assert.ok(roadmap, 'master-roadmap.md should contain a row for 0.1.0');
+    assert.match(roadmap, /—/, 'an absent value still renders as an em dash');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

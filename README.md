@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/zeroonething/ultraship/actions/workflows/ci.yml/badge.svg)](https://github.com/zeroonething/ultraship/actions/workflows/ci.yml)
 [![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](https://nodejs.org)
-[![Version](https://img.shields.io/badge/version-2.0.0-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.2.0-blue)](CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 **Ship at inference speed.**
@@ -11,7 +11,7 @@ UltraShip is an AI-assisted rapid development framework for transforming vague
 ideas into complete, production-ready software through adaptive planning,
 Minimum Complete Releases, and resource-aware agent execution.
 
-It provides five skills:
+It provides five lifecycle skills:
 
 - `/ultraship:brainstorm`
 - `/ultraship:plan`
@@ -287,8 +287,16 @@ and how a change maps to a SemVer bump. For anything security-related, follow
 [`SECURITY.md`](SECURITY.md) rather than opening a public issue. Participation is
 governed by the [Code of Conduct](CODE_OF_CONDUCT.md).
 
+The one dependency (the npm `yaml` package) is vendored, and `vendor/` is never
+edited: upgrading means re-vendoring per
+[`vendor/README.md`](vendor/README.md) and rerunning `npm test`, and an advisory
+naming a vendored package is answered by re-vendoring the fixed upstream release.
+`vendor/` is excluded from this repository's code scanning so the scanner stays on
+code this project can fix; [`SECURITY.md`](SECURITY.md) holds the full policy and
+records how that exclusion is currently carried.
+
 UltraShip is built with UltraShip. To ship your contribution the way the project
-ships itself — through the five skills — see
+ships itself — through the five lifecycle skills — see
 [Contributing with UltraShip](docs/CONTRIBUTING-WITH-ULTRASHIP.md).
 
 ## License

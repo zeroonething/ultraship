@@ -1,0 +1,257 @@
+product: ultraship
+version: 2.2.0
+status: released
+release_type: minor
+outcome:
+  user_can: >
+    Trust UltraShip's GitHub security tab, because every open code-scanning alert is either fixed in
+    the repository or ruled out of scope in writing. The one real defect CodeQL found in UltraShip's
+    own code is fixed: `cell()` in lib/views.mjs escaped a pipe to `\|` without first escaping a
+    backslash, so a canonical value containing `\|` rendered as a literal backslash followed by a
+    cell-terminating pipe and broke the generated Markdown table. It is fixed at its single site —
+    the only Markdown-emitting function in lib/ — and the existing views test, whose assertion was
+    too weak to catch it, is strengthened with a backslash-bearing fixture. The CI workflow declares
+    an explicit least-privilege `permissions: contents: read` instead of inheriting whatever the
+    repository or organisation default happens to be. The four remaining findings sit inside a
+    verbatim copy of the `yaml` package UltraShip does not own and must not patch; they are dismissed
+    as out of scope, each dismissal carrying a comment that points at the written policy. The
+    stronger mechanism — a checked-in CodeQL config with `paths-ignore: vendor/` — was built, tried,
+    and could not run: GitHub refuses an advanced configuration while default setup is enabled, and
+    default setup here is enforced organisation-wide (`US-ULTRASHIP-2.2.0-I02`). SECURITY.md records
+    that, and the steps to adopt the stronger mechanism if it ever becomes available. The rule for
+    third-party code — excluded from scanning, tracked by version, upgraded rather than patched when
+    an advisory names it — is written into CONTRIBUTING and SECURITY, and CLAUDE.md gains the same
+    rule so an agent working in this repository does not reintroduce the pattern.
+  business_value: >
+    UltraShip asks developers to trust it with their release records. A public repository whose
+    security tab shows six unexplained open alerts undercuts that on the first look a prospective
+    contributor takes. Five of the six are not defects in UltraShip at all — four are ReDoS findings
+    inside the vendored YAML parser, and one is a workflow-permissions warning — but nothing in the
+    repository says so, so a reader cannot tell an accepted risk from an unattended one. That is the
+    same failure mode the whole framework exists to prevent: a fact with no canonical owner. Fixing
+    the one genuine bug, closing the workflow-permissions weakness, and writing down the vendoring
+    policy turns the security tab from noise into a gate — and the gate is what a 1.1.0 contributor
+    guide and a frozen public contract were already promising. Where the platform refused the
+    mechanism this release wanted, the repository says so in writing rather than leaving a reader to
+    guess why four alerts are dismissed.
+  evidence_of_value: >
+    `gh api repos/zeroonething/ultraship/code-scanning/alerts` reports no open alert.
+    `lib/views.mjs` escapes backslash and pipe in one pass and
+    test/views.test.mjs asserts the exact rendered form of a `\|` input rather than merely that some
+    escaped pipe exists. `.github/workflows/ci.yml` declares `permissions: contents: read`.
+    Each of the four vendored findings is dismissed with a comment naming vendor/yaml and pointing at
+    SECURITY.md, and the repository carries no workflow that cannot run. SECURITY.md, docs/CONTRIBUTING-WITH-ULTRASHIP.md or CONTRIBUTING.md, and
+    CLAUDE.md all state the vendored-code policy. `npm test` passes and
+    `node bin/ultraship.mjs validate` exits 0.
+scope:
+  included:
+    - "A correct `cell()` in lib/views.mjs — one pass escaping both meta-characters, `String(value).replace(/\\s+/g, ' ').trim().replace(/[\\\\|]/g, '\\\\$&')`, so a backslash is escaped before a pipe can be re-exposed by it. It is the only Markdown-emitting function in lib/, so there is no sibling caller to patch."
+    - A strengthened regression test in test/views.test.mjs — the existing 'multi-line and pipe-bearing values stay inside their table cell' case gains a fixture whose value contains a literal backslash immediately before a pipe, and an assertion on the exact rendered escape rather than the current weak match on any escaped pipe
+    - "`permissions: contents: read` declared at the top level of .github/workflows/ci.yml, so the workflow's GITHUB_TOKEN is least-privilege regardless of the repository or organisation default"
+    - "The four js/polynomial-redos findings inside vendor/yaml dismissed as out of scope, each dismissal carrying a comment that names vendor/yaml as an unmodified copy of npm yaml 2.9.0 and points at SECURITY.md, so the reason travels with the alert rather than living only in someone's memory"
+    - "SECURITY.md recording why the exclusion is a dismissal rather than a path filter — GitHub refuses a CodeQL advanced configuration while default setup is enabled, and default setup on this repository is enforced by an organisation-level security configuration — together with the steps to adopt the stronger mechanism if that ever changes: detach the repository from the organisation configuration, then add a CodeQL workflow whose config carries paths-ignore for vendor/. Changed by US-ULTRASHIP-2.2.0-I02 after the built workflow was pushed and refused."
+    - A written third-party-code policy — vendored dependencies are excluded from this repository's code scanning because UltraShip ships them verbatim and patching them would break re-vendoring; they are tracked by pinned version, and an advisory naming one is answered by re-vendoring the fixed upstream release, never by editing vendor/
+    - That policy stated in SECURITY.md and in the contributor guidance, and mirrored into CLAUDE.md so an agent working in this repository inherits it
+    - CLAUDE.md brought up to date generally — the security-scanning and vendoring rule, and any stale statement about the repository's CI or contract surface found while making the change
+    - Documentation — docs/COMPATIBILITY.md records 2.2.0 as a fix-only release owing no deprecation, and CHANGELOG.md gains a 2.2.0 entry
+    - "README.md and every file under docs/ audited against the repository as it stands at 2.2.0 — every command, count, path, and version they name must exist — and corrected where the audit finds drift, the same standard already applied to CLAUDE.md. README.md also gains the code-scanning setup and the vendored-code policy, because it is where a reader looks first. Added by US-ULTRASHIP-2.2.0-I01 on the developer's instruction."
+    - version_files bumped to 2.2.0 across package.json, .claude-plugin/plugin.json, and .claude-plugin/marketplace.json
+  excluded:
+    - "Editing anything under vendor/. The four `js/polynomial-redos` alerts are in the `yaml` package's own dist output; patching them would fork a vendored copy from its upstream and silently break the next re-vendor, which is a worse defect than the finding."
+    - Upgrading or re-vendoring the `yaml` package as part of this release. Nothing in the scanning result is an advisory against it, and a parser swap is its own release with its own test evidence.
+    - "Shipping a workflow that cannot run. The CodeQL workflow and its config were written, pushed, and refused by GitHub — analysis completed, upload rejected — so they are removed rather than left to fail on every pull request. A red check that is expected to be red teaches a reviewer to ignore red checks."
+    - "Loosening the organisation-level security configuration. It would change code scanning for every repository in the organisation to settle one repository's four third-party findings, and it needs a token scope this release does not have."
+    - Any change to the twelve CLI commands, the ten schemas, or the skills. `cell()` is a module-private helper that docs/CONTRACT.md does not freeze, so no public surface moves and no migration is owed beyond the framework_version line.
+    - Escaping or sanitising the non-table Markdown in lib/views.mjs — the list items and bold lines at :95, :143-146, :157, and :189 interpolate free text without `cell()`, but a pipe is harmless outside a table row. Recorded as a known limitation rather than fixed under a security release it does not belong to.
+    - Adding a linter, a secret-scanning workflow, a dependency-review action, or any scanner beyond the CodeQL analysis the repository already had
+    - Branch protection, required status checks, or any repository setting other than the default-setup switch this release must flip to make the workflow effective
+  fallback_scope:
+    - "The lib/views.mjs fix with its regression test, the ci.yml permissions block, and the CHANGELOG and version bump. This still delivers a coherent outcome — the one real defect in UltraShip's own code is fixed and the one real workflow weakness is closed — and it is honest, because the remaining four alerts are third-party and would simply stay open with the reason unstated. The CodeQL workflow, the vendor exclusion, and the written policy are the deferrable extension; deferring them costs a clean security tab, not a correct one."
+acceptance:
+  functional:
+    - "`cell()` renders a value containing a literal backslash immediately before a pipe as an escaped backslash followed by an escaped pipe, so neither character terminates the Markdown cell"
+    - "`cell()` still collapses whitespace runs to a single space and still returns the em dash for null, undefined, and the empty string, so no existing view output changes for values that contain neither meta-character"
+    - test/views.test.mjs contains a fixture whose value includes `\|` and asserts the exact rendered escape sequence rather than matching any escaped pipe
+    - "`node bin/ultraship.mjs views` regenerates this repository's own four views with no content change other than what the escape fix requires"
+    - ".github/workflows/ci.yml declares `permissions: contents: read` and CI still passes on Node 20 and 22"
+    - Each of the four js/polynomial-redos alerts is dismissed with a comment naming vendor/yaml as an unmodified copy of npm yaml 2.9.0 and pointing at SECURITY.md
+    - The repository contains no CodeQL workflow or config that cannot run, and no reference anywhere in the documentation to a file this release does not ship
+    - SECURITY.md states why the exclusion is a dismissal rather than a path filter, and the steps to adopt the stronger mechanism if the organisation configuration changes
+    - "`gh api repos/zeroonething/ultraship/code-scanning/alerts --jq '[.[] | select(.state == \"open\")] | length'` returns 0 after that run"
+    - SECURITY.md, the contributor guidance, and CLAUDE.md each state that vendored third-party code is excluded from scanning, tracked by version, and answered by re-vendoring rather than patching
+    - CLAUDE.md is accurate against the repository as it stands at 2.2.0 — every path, command, and count it names exists
+    - README.md and every file under docs/ is accurate against the repository as it stands at 2.2.0 — every command, count, path, and version they name exists — and README.md describes the code-scanning setup and the vendored-code policy
+  non_functional:
+    - No CLI command, skill, schema, or canonical field is added, removed, renamed, or reshaped, so a 2.1.0 workspace is valid on 2.2.0 with no migration beyond framework_version
+    - The CLI still calls no model and touches no network
+    - No runtime npm dependency is added and nothing under vendor/ is modified — `git diff main -- vendor/` is empty
+    - The escape fix is a strict superset of the old behaviour for inputs containing no backslash, so no previously generated view is invalidated
+    - "`ultraship migrate` remains forward-only and idempotent"
+  operational:
+    - "`npm test` passes locally and in CI, with the strengthened views test failing against the pre-fix `cell()` and passing after it"
+    - "`node bin/ultraship.mjs validate` exits 0 on this workspace"
+    - version_files (package.json, .claude-plugin/plugin.json, .claude-plugin/marketplace.json) all read 2.2.0 at release
+    - "`ultraship deploy` runs the declared published hook and records the GitHub release as deployment evidence, after the pull request merges to main"
+delivery:
+  target_mode: published
+  environment: >
+    The GitHub repository zeroonething/ultraship, its Actions workflows, and its code-scanning
+    configuration. The change is one line of library code, one test, two workflow-side files, one
+    repository setting, and documentation. There is no server and no hosted component.
+  deployment_method: >
+    Work on branch feat/2.2.0, opened as a pull request and merged to main. The CodeQL default-setup
+    switch is flipped through the GitHub API so the checked-in workflow takes effect. After the
+    merge, `ultraship deploy` runs the declared published hook, which creates the GitHub release from
+    the CHANGELOG entry and verifies it with the smoke command.
+  migrations:
+    - "`ultraship migrate` carries a 2.1.0 workspace to framework_version 2.2.0. No canonical field is added, removed, or reshaped, so there is nothing to migrate beyond the version line. The step is idempotent and requires no hand edit."
+  observability:
+    - The CI workflow's pass/fail on every pull request
+    - The CodeQL workflow's own run status and the repository's code-scanning alert count, which is the release's headline number and is queryable with one `gh api` call
+    - "`node bin/ultraship.mjs validate` exit code"
+  rollback: >
+    Revert the pull-request merge commit. The library change is one line and reverting it restores
+    the previous escape behaviour exactly; no canonical file shape changed and no released record is
+    affected, so a workspace that ran on 2.2.0 is still valid on 2.1.0 apart from the
+    framework_version line. Code scanning itself is untouched by a revert: it runs from the
+    organisation-enforced default setup, which this release never had the authority to change. The
+    four dismissals are reversible individually through the same API that set them.
+dependencies:
+  products: []
+  services:
+    - GitHub Actions for CI and for the CodeQL analysis
+    - "GitHub code scanning, whose alert-dismissal API carries the exclusion. Verified before being planned: dismissing an alert returns state dismissed with reason \"won't fix\". The repository cannot change its own code-scanning setup — that is an organisation-enforced setting."
+    - The gh CLI, already in use for the published delivery hook
+  human_approvals:
+    - "The maintainer accepts that the vendored findings are excluded by dismissal rather than by a checked-in path filter, and that the reason for the weaker mechanism is written into SECURITY.md rather than argued away"
+    - The maintainer accepts that vendored third-party code is excluded from scanning rather than patched or dismissed
+risks:
+  - "A dismissal lives in GitHub's alert store, not in the repository, so a reader of the diff cannot see it and a future maintainer could reverse it without noticing there was a reason. This is the weakness the release originally planned around and could not avoid. Mitigated by putting the reason in the dismissal comment on every alert, by writing the full policy into SECURITY.md, CONTRIBUTING.md, and CLAUDE.md, and by recording in SECURITY.md the exact steps to replace the dismissal with a checked-in path filter."
+  - "Excluding vendor/ by any mechanism is a permanent blind spot, and a future vendored dependency with a real vulnerability would not be flagged here. Mitigated by pinning the vendored version, by making re-vendoring the stated response to any advisory, and by the fact that the alternative — scanning code the project cannot patch — produces alerts nobody can act on rather than safety."
+  - "The escape fix changes generated output, and a view regenerated on 2.2.0 will differ from one generated on 2.1.0 for any value containing a backslash. Mitigated by views being derived and never authoritative, by regenerating this repository's own views in the same release, and by the change being a strict no-op for values with no backslash."
+  - "CLAUDE.md drifts from the repository the moment either changes, and a stale instruction file misleads every future agent session more quietly than stale prose misleads a human. Mitigated by making CLAUDE.md accuracy an acceptance criterion with an explicit path-and-command check rather than a read-through."
+  - "A security-titled release invites scope creep into scanners, linters, and repository settings nobody asked for. Mitigated by an explicit excluded list naming each of them."
+resource_profile:
+  complexity: small
+  uncertainty: low
+  likely_cost_drivers:
+    - Getting the CodeQL advanced workflow right on the first try, since verifying it needs a real run on GitHub rather than a local check
+    - The default-setup switch, which is a one-way-feeling repository setting and the only step that cannot be undone by reverting a commit
+    - Auditing CLAUDE.md against the repository rather than merely appending to it
+  preferred_tools:
+    - Claude Code
+  constraints:
+    - Zero runtime npm dependencies; Node 20 or newer
+    - Nothing under vendor/ may be modified
+    - No public-contract surface may move, so this stays a minor release
+open_questions:
+  - "Resolved in develop, against the plan: whether this repository could run a CodeQL advanced configuration at all. It cannot — GitHub refuses the SARIF upload while default setup is enabled, and default setup is enforced organisation-wide. Recorded in US-ULTRASHIP-2.2.0-I02 with the run that proved it."
+  - Whether the vendoring policy belongs in SECURITY.md, CONTRIBUTING, or both. Leaning both, with SECURITY.md owning the wording and the contributor guide pointing at it. Decided in develop.
+released_at: 2026-08-01T00:00:00Z
+mode: release-ready
+delivered: >
+  Every code-scanning alert on this repository is now either fixed in the code or
+  ruled out of scope in writing. `cell()` in lib/views.mjs escaped a pipe without
+  first escaping a backslash, so a canonical value containing `\|` rendered as a
+  literal backslash beside a live cell-terminating pipe and broke the generated
+  Markdown table; it now escapes both meta-characters in one pass, at the only
+  Markdown-emitting site in lib/, and the views test that was too weak to catch it
+  asserts the exact rendered escape. The CI workflow declares
+  `permissions: contents: read`. The four remaining findings are inside vendor/yaml,
+  a verbatim copy of npm yaml 2.9.0 — the newest published stable, whose upstream
+  main carries those exact regexes unchanged and against which no advisory exists —
+  so they are dismissed, each dismissal carrying the same comment naming the
+  directory and pointing at SECURITY.md. The mechanism is not the one this release
+  planned: a checked-in CodeQL config with paths-ignore for vendor/ was written,
+  pushed, and refused by the platform, because GitHub will not process an advanced
+  configuration while default setup is enabled and default setup here is enforced
+  organisation-wide. Those two files were removed rather than shipped failing, and
+  SECURITY.md records the refusal, the trade-off a dismissal carries, and the three
+  steps to the stronger mechanism if the constraint ever lifts. The vendored-code
+  policy — excluded from scanning, tracked by pinned version, answered by
+  re-vendoring and never by patching — is written into SECURITY.md, CONTRIBUTING.md,
+  and CLAUDE.md. CLAUDE.md, README.md, docs/CONTRACT.md, and
+  docs/CONTRIBUTING-WITH-ULTRASHIP.md were audited against the repository and
+  corrected, which found four drifts nobody had reported: "five skills" and "ten CLI
+  commands" against a real 13 and 12, a 2.0.0 README badge, SECURITY.md promising
+  fixes against the latest 1.x, and CONTRACT.md claiming migrate carries workspaces
+  "to 2.0". No command, skill, schema, or canonical field changed.
+evidence:
+  tests:
+    - npm test — 274 passing, 0 failing across 24 files (273 before this release; 1 added)
+    - >
+      node --test test/views.test.mjs — 9 passing. The added case was written before the fix and
+      failed against the old cell() with "workspace-brief.md must escape the backslash as well as
+      the pipe", actual `... end to end \\| start to finish |`, expected /\\\\\\\|/, so the test is
+      proven to catch the defect rather than merely to pass beside it.
+  builds:
+    - >
+      No build step; pure ESM CLI with a vendored YAML parser and zero runtime dependencies.
+      git diff main..HEAD -- package.json shows exactly one changed line, the version.
+  reviews: []
+  deployments: []
+  health_checks:
+    - node bin/ultraship.mjs validate — exit 0 after the record was written
+    - >
+      node bin/ultraship.mjs views — regenerated with no diff, so the checked-in views agree with
+      the corrected cell(). The fix is a strict no-op for values carrying neither meta-character,
+      which is why nothing moved.
+    - >
+      Code scanning — alerts 3, 4, 5, and 6 read state dismissed with reason "won't fix", each
+      carrying an identical 270-character comment naming vendor/yaml and pointing at SECURITY.md.
+    - >
+      CI on pull request 17 — the test matrix on Node 20 and 22 failed on `node bin/ultraship.mjs
+      validate` with exactly the three version_files complaints, 2.2.0 against a greatest released
+      version of 2.1.0. That is the gate behaving correctly before the record exists; it clears with
+      this record and is re-verified on the merge commit.
+    - >
+      Scope gate — git diff main..HEAD is empty for vendor/, schemas/, skills/, and bin/, so nothing
+      under the frozen public surface moved and nothing vendored was touched.
+    - >
+      Scope gate — .github/workflows/ holds ci.yml alone and .github/codeql/ does not exist, so the
+      workflow that could not run was removed rather than left failing. A grep for codeql and
+      paths-ignore across all Markdown returns only prose about why that mechanism was unavailable.
+    - Security gate — a secret-pattern scan of the full branch diff returns no matches
+known_limitations:
+  - >
+    mode is release-ready, not the contract's target_mode of published. Per the maintainer's
+    release-after-merge convention the GitHub release is created from the main merge commit, so
+    `ultraship deploy` is authorized only after this pull request merges. The record is pinned at
+    completion time and cannot be amended afterwards, so the published mode reached post-merge is
+    not reflected in evidence.deployments. This is the same shortfall 1.1.0, 2.0.0, and 2.1.0
+    recorded.
+  - >
+    Alerts 2 and 7 — the views escape and the workflow permissions — are fixed in code but were
+    still open at completion time, because code scanning closes an alert only after re-analysing
+    main, which happens after the merge. Alert 1, the same workflow-permissions rule from an earlier
+    fix, reads state fixed, which is the precedent for how those two close. The release therefore
+    cannot claim a zero open-alert count from its own evidence; it claims four dismissals it made
+    and two fixes whose alerts close on the merge scan.
+  - >
+    The vendored exclusion is carried by per-alert dismissal, which is weaker than the checked-in
+    path filter this release planned. A dismissal lives in GitHub's alert store, not in the diff, so
+    no reviewer sees it in a pull request and a future maintainer could reverse it without meeting
+    the reason. The comment on each alert and the section in SECURITY.md are the mitigation, and
+    they are prose, not a mechanism.
+  - >
+    Adopting the stronger mechanism needs authority this release did not have — detaching the
+    repository from the organisation security configuration requires a token with write:org. The
+    steps are written into SECURITY.md so whoever holds that scope can carry them out; it is a
+    repository-configuration change and needs no UltraShip release.
+  - >
+    Excluding vendor/ by any mechanism is a permanent blind spot. A future vendored dependency with
+    a real vulnerability would not be flagged in this repository, and the only defences are the
+    pinned version and the stated duty to re-vendor on an advisory. The four findings excluded here
+    were each checked against the advisory database first; nothing guarantees the next maintainer
+    does the same.
+  - >
+    The non-table Markdown in lib/views.mjs — the list items and bold lines that interpolate free
+    text without cell() — is still unescaped. A pipe is harmless outside a table row, so this was
+    excluded rather than fixed, but a newline in a free-text field can still break a bold line.
+  - >
+    CI is red on the pull request at completion time, by design: validate holds version_files to the
+    greatest released version until this record exists. The green run on the merge commit is
+    confirmed after the merge, not at release time.
+supersedes: 2.1.0
+next_recommended_version: 2.3.0
+immutable: true
