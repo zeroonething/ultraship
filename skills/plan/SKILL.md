@@ -9,7 +9,7 @@ Convert an approved product definition into small, complete, independently
 releasable versions.
 
 **Read first:** `shared/skill-contract.md`, `shared/release-contract.md`,
-`shared/commit-protocol.md`.
+`shared/commit-protocol.md`, `shared/subagent-protocol.md`.
 
 ## Runs when
 
@@ -111,6 +111,22 @@ scope:
 Decide this now, while there is no pressure. It exists so `/ultraship:iterate`
 never has to invent an emergency plan late in a release. The fallback must still
 deliver a coherent outcome — it is a smaller release, not a broken one.
+
+## Parallel research, only when it is asked for
+
+Planning a roadmap often needs several independent questions answered at once —
+what a dependency actually supports, how a deployment path works, what the
+repository already has. When the developer has asked for parallel work, invoke
+`/ultraship:subagent` and hand it one brief per question.
+
+`shared/subagent-protocol.md` holds the three activation signals and their
+precedence. With none of them present, investigate sequentially; nothing here is
+a default.
+
+These are read-only briefs. A research agent answers a question — it never writes
+`roadmap.yaml`, a release contract, or any other canonical file. This skill stays
+the only writer of what it owns, and the approval of every outcome stays the
+developer's.
 
 ## Process
 

@@ -14,6 +14,11 @@ failure — refusing to use it and quietly building the wrong thing is.
 **Read first:** `shared/skill-contract.md`, `shared/state-model.md`,
 `shared/commit-protocol.md`.
 
+Independent investigation of the evidence behind a plan change can be fanned out
+through `/ultraship:subagent` when the developer has asked for it —
+`shared/subagent-protocol.md` has the signals. The iteration record, the approval
+source, and every affected canonical file are still written here.
+
 ## Runs when
 
 Any active state: `DEVELOPING`, `COMPLETING`, `PLANNING`, `BRAINSTORMED`,

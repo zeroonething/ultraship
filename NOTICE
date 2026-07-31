@@ -24,7 +24,7 @@ changes:
 Original to UltraShip:
 
     skills/brainstorm/, skills/plan/, skills/develop/,
-    skills/iterate/, skills/complete/
+    skills/iterate/, skills/complete/, skills/subagent/
     shared/, bin/, lib/, schemas/, test/
 
 UltraShip is an independent project. It is not affiliated with, sponsored by,
