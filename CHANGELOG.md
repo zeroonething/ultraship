@@ -3,6 +3,61 @@
 All notable changes to UltraShip are recorded here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [2.0.0] — 2026-07-31
+
+The lifecycle commits its own work. `plan`, `develop`, `iterate`, and `complete`
+now run `ultraship commit <checkpoint>` at defined points, so the roadmap, the
+contract, every finished task with its evidence and its own files, every recorded
+plan change, and the immutable release record land as separate, readable commits
+instead of one undifferentiated working tree at the end. Git history becomes a
+second, independent view of the same canonical truth — reviewable per task,
+revertible per task, and resumable after any interruption.
+
+### BREAKING CHANGE
+
+The skills now write to your git repository. `commit_policy` defaults to
+`checkpoint`, where 1.x never touched git at all. That is a change to a
+documented skill workflow, which is a major version.
+
+**Remedy: run `ultraship migrate`.** It writes `commit_policy: off` into any
+workspace that omits the field, so an existing project keeps 1.x behaviour until
+you opt in. Even unmigrated, a workspace recording a pre-2.0 `framework_version`
+resolves to `off`, so nothing starts committing without being asked. To opt in,
+set `commit_policy: checkpoint` in `.ultraship/ultraship.yaml`.
+
+Nothing was removed or renamed. No 1.x command, skill, or schema field is gone,
+so no deprecation window was owed. `schema_version` stays `1` — the canonical
+state shapes did not break, and a 1.x workspace's data is valid data on 2.0.
+
+### Added
+
+- **`ultraship commit <checkpoint> [product] [version] [--task ID]`** — the
+  eleventh CLI command. Stages only the paths its checkpoint declares, derives a
+  Conventional Commits subject from canonical state, and commits. It never
+  pushes, never creates a branch, and never creates a tag: `lib/commit.mjs`
+  permits exactly four git subcommands (`rev-parse`, `status`, `add`, `commit`)
+  and refuses any other, so nothing it does can leave the machine. It never runs
+  `git add -A`, and the commit carries a pathspec, so unrelated staged work is
+  never swept in. Policy `off`, no git repository, no `git` on `PATH`, and no
+  change under the checkpoint's paths are all no-ops that exit 0.
+- **`commit_policy`** — a new optional `ultraship.yaml` field, `off` or
+  `checkpoint`.
+- **[shared/commit-protocol.md](shared/commit-protocol.md)** — the seven
+  checkpoints, what each stages, when to run it, and the message format. The four
+  working skills reference it rather than restating a git recipe four times.
+- **README badges** — CI status, Node version, version, and license.
+
+### Changed
+
+- `plan`, `develop`, `iterate`, and `complete` call the checkpoints they own.
+  `develop` commits per task, the moment it is `done` with evidence recorded,
+  rather than once at the end.
+- `ultraship migrate` gained the `commit_policy` step, still forward-only and
+  idempotent, still needing no hand edit.
+- [docs/CONTRACT.md](docs/CONTRACT.md) is restated as the 2.0 contract with
+  eleven commands; [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) records the
+  break and the migrate step that absorbs it.
+
 ## [1.1.0] — 2026-07-22
 
 Contributor-ready. 1.0 froze the public contract; 1.1 opens the front door so an

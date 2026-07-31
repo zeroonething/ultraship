@@ -48,11 +48,23 @@ This repo **dogfoods itself**: `.ultraship/products/ultraship/` is UltraShip's o
 live product state, managed by its own CLI. `ultraship validate` must exit `0`
 before you open a pull request.
 
+### The skills commit as they go
+
+This workspace runs with `commit_policy: checkpoint`, so if you drive your change
+through the skills they will commit their own output — one commit per finished
+task, carrying that task's files and its recorded evidence together. See
+[`shared/commit-protocol.md`](shared/commit-protocol.md) for the checkpoints.
+
+It only ever stages the paths a checkpoint declares, and it never pushes,
+branches, or tags — those stay yours. If you would rather commit by hand, set
+`commit_policy: off` in `.ultraship/ultraship.yaml` locally and leave that change
+out of your pull request.
+
 ## Classify your change — it decides the version bump
 
-UltraShip 1.0 has a **frozen, enumerated public contract**
-([`docs/CONTRACT.md`](docs/CONTRACT.md)): the ten CLI commands, the skills, and
-the ten `.ultraship/` schemas. Which part you touch decides the SemVer bump, and
+UltraShip 2.0 has a **frozen, enumerated public contract**
+([`docs/CONTRACT.md`](docs/CONTRACT.md)): the eleven CLI commands, the skills,
+and the ten `.ultraship/` schemas. Which part you touch decides the SemVer bump, and
 the rules are stated in full in
 [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md):
 
@@ -61,7 +73,7 @@ the rules are stated in full in
   minor, and it needs an `ultraship migrate` step.
 - **Minor** — adding a command, an optional schema field, a skill, or a validate
   check that only rejects genuinely inconsistent state. Never breaks an existing
-  `1.x` workspace.
+  workspace on the same major.
 - **Patch** — fixes only, no contract change.
 
 If your change touches the contract, say which bump it forces in your pull

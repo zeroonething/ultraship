@@ -52,7 +52,8 @@ From the `RELEASED` state, planning the next version is the expected path. Plan:
 
 The key discipline: every acceptance criterion is checkable, and the version
 delivers a coherent outcome on its own. Plan ends by running
-`ultraship validate` and `ultraship views`.
+`ultraship validate` and `ultraship views`, then committing the roadmap and the
+contract as two separate checkpoints.
 
 ### 3. `/ultraship:develop` — build the smallest complete slice
 
@@ -71,7 +72,11 @@ Rules develop enforces on you:
   failing test, watch it fail, make it pass. (Pure-docs changes like this release
   have no runnable logic, so the check is `npm test` staying green plus
   `ultraship validate`.)
-- Record acceptance **evidence** against each task as you finish it.
+- Record acceptance **evidence** against each task as you finish it, then run
+  `ultraship commit develop-task --task <id>`. That stages the task's own `files`
+  alongside `tasks.yaml`, so its implementation and its evidence land in one
+  commit you can review or revert on its own. Keep `files` accurate — it is what
+  the commit stages, and the command reports what it staged.
 - Never mark anything `released` or `immutable` — that is complete's job.
 
 Develop ends with `ultraship validate` exiting `0` and a recommendation to run
@@ -102,7 +107,10 @@ contribution lands cleanly:
 
 - **Branch, commit, tag, PR yourself.** Work on a `feat/…`, `fix/…`, or `docs/…`
   branch — never commit the release straight to `main`. Open a PR; the maintainer
-  reviews and merges.
+  reviews and merges. The skills commit as they go (see
+  [`../shared/commit-protocol.md`](../shared/commit-protocol.md)), but they never
+  push, branch, or tag — creating the branch, pushing it, and opening the PR are
+  still yours.
 - **Release after merge.** The GitHub release and any plugin re-publish happen
   from the `main` merge commit *after* the PR merges, not from the branch.
 - **Keep the repo clean after a release.** `git status` must be empty; deploy
