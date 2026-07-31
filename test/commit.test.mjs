@@ -286,6 +286,36 @@ test('develop-task refuses without a task id and rejects an unknown one', () => 
   }
 });
 
+// complete-release runs after transition RELEASED archived the execution
+// pointer, so the version cannot come from active.yaml at that point.
+test('complete-release derives its version from the release records', () => {
+  const { dir, root, p } = scratch();
+  try {
+    mkdirSync(join(root, 'products', 'client-tracker', 'releases'), { recursive: true });
+    for (const v of ['0.1.0', '0.2.0', '0.10.0']) {
+      writeYaml(p.release('client-tracker', v), { product: 'client-tracker', version: v });
+    }
+    const result = commitCheckpoint(root, { checkpoint: 'complete-release' });
+    assert.equal(result.version, '0.10.0', 'SemVer order, not lexical');
+    assert.equal(result.subject, 'chore(release): client-tracker 0.10.0');
+  } finally {
+    cleanup(dir);
+  }
+});
+
+test('a subject that cannot name its version fails loudly instead of committing', () => {
+  const { dir, root } = scratch();
+  try {
+    // No active pointer and no release records: nothing to derive a version from.
+    assert.throws(
+      () => commitCheckpoint(root, { checkpoint: 'complete-release' }),
+      /could not derive a version from canonical state/,
+    );
+  } finally {
+    cleanup(dir);
+  }
+});
+
 test('an unknown checkpoint names the valid ones', () => {
   const { dir, root } = scratch();
   try {

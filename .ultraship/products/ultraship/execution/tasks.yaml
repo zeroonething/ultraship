@@ -60,6 +60,8 @@ tasks:
       - "node --test test/commit.test.mjs — 13 passing, 0 failing"
       - test/install.test.mjs — the frozen command list now reads eleven commands and still asserts the README documents each one
       - npm test — 248 passing, 0 failing (233 after T01)
+      - "Defect found by running the complete-release checkpoint for real: the version was derived only from active.yaml, which transition RELEASED has already archived by then, so the subject rendered \"ultraship undefined\". Fixed by falling back to the greatest version filed under releases/, plus a guard that throws rather than committing any subject containing an underived fact"
+      - npm test — 254 passing, 0 failing after the fix, including a SemVer-order test (0.10.0 beats 0.2.0) and a test that an underived version fails loudly instead of committing
   - id: US-ULTRASHIP-2.0.0-T03
     summary: Write the commit protocol and wire it into the four skills.
     why_required: >
