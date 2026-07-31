@@ -132,14 +132,36 @@ tasks:
       CLAUDE.md is what every future agent session reads before touching this repository. An agent
       that does not know vendor/ is off limits will eventually patch it and break the next
       re-vendor, which is the exact outcome the exclusion exists to prevent.
-    status: todo
+    status: done
     depends_on: []
     acceptance_criteria:
       - SECURITY.md, the contributor guidance, and CLAUDE.md each state that vendored third-party code is excluded from scanning, tracked by version, and answered by re-vendoring rather than patching
       - CLAUDE.md is accurate against the repository as it stands at 2.2.0 — every path, command, and count it names exists
     files:
       - CLAUDE.md
-    evidence: []
+    evidence:
+      - >
+        Drift corrected against the repository — "five skills" became five lifecycle skills plus the
+        eight supporting ones named individually, with subagent's own contract at
+        shared/subagent-protocol.md; "the ten CLI commands" became twelve; "UltraShip 1.0 has a
+        frozen contract" became 2.x; the lib/*.mjs dispatcher list gained commit and wave; the
+        shared/ list gained commit-protocol.md and subagent-protocol.md; and the network-guarantee
+        citation was repinned from README.md:50 to README.md:60, where that sentence now lives.
+      - >
+        A vendoring rule added to Conventions — vendor/ is never edited, it is unmodified npm yaml
+        2.9.0, upgrading means re-vendoring with npm pack and rerunning npm test per
+        vendor/README.md, .github/codeql/codeql-config.yml sets paths-ignore vendor/ for that reason,
+        an advisory is answered by re-vendoring, and SECURITY.md holds the full policy.
+      - >
+        Every claim proved rather than asserted — ls skills/ returns exactly the 13 named files;
+        the COMMANDS object in bin/ultraship.mjs has 12 keys and docs/CONTRACT.md's command table has
+        12 rows; ls schemas/ returns 10, so "ten schemas" stands; every named lib/ module exists;
+        sed -n '60p' README.md carries the network sentence; and node bin/ultraship.mjs state and
+        validate both exit 0.
+      - npm test — 274 passing; node --test test/validate.test.mjs — 22 passing; --test-name-pattern="migrate" — 40 passing
+      - >
+        Flagged out of scope for this task and picked up by US-ULTRASHIP-2.2.0-T09 — SECURITY.md
+        still says security fixes are released against the latest 1.x while the contract is 2.x.
   - id: US-ULTRASHIP-2.2.0-T06
     summary: Bump every declared version file to 2.2.0 and record the release in the changelog and compatibility policy.
     why_required: >
