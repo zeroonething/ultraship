@@ -43,6 +43,25 @@ test('an unknown command names the valid ones', () => {
   assert.match(stderr, /semver/);
 });
 
+test('commit with no checkpoint lists the valid checkpoints', () => {
+  const { code, stderr } = run(['commit']);
+  assert.equal(code, 1);
+  assert.match(stderr, /Usage: ultraship commit <checkpoint>/);
+  assert.match(stderr, /complete-release/);
+  assert.match(stderr, /develop-task/);
+});
+
+// This repository is itself a workspace, so the dispatcher is exercised end to
+// end. plan-roadmap has nothing to commit here unless the roadmap is dirty; the
+// point is that the command resolves, prints JSON, and does not fail.
+test('commit reaches the module and prints a JSON result', () => {
+  const { code, stdout } = run(['commit', 'plan-roadmap']);
+  assert.equal(code, 0);
+  const result = JSON.parse(stdout);
+  assert.equal(result.checkpoint, 'plan-roadmap');
+  assert.ok(['off', 'checkpoint'].includes(result.policy));
+});
+
 test('--version prints the framework version', () => {
   const { code, stdout } = run(['--version']);
   assert.equal(code, 0);
