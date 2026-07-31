@@ -1,309 +1,133 @@
 product: ultraship
-version: 2.1.0
+version: 2.2.0
 tasks:
-  - id: US-ULTRASHIP-2.1.0-T01
-    summary: Add lib/wave.mjs and the twelfth CLI command, ultraship wave, with its test file.
+  - id: US-ULTRASHIP-2.2.0-T01
+    summary: Escape backslashes as well as pipes in the views table cell, and strengthen the test that missed it.
     why_required: >
-      The wave is the only mechanical part of this release. Without a deterministic, CLI-computed
-      dispatchable set, the subagent skill would be asking an agent to decide which tasks are safe
-      to run at once, which is exactly the guessing the framework exists to replace.
-    status: done
+      This is the only genuine defect in UltraShip's own code that the scan found. A canonical value
+      containing a backslash before a pipe renders as a literal backslash followed by a
+      cell-terminating pipe, so the generated Markdown table breaks. Without this the release fixes
+      nothing that is actually wrong with the framework.
+    status: todo
     depends_on: []
     acceptance_criteria:
-      - "`ultraship wave [product] [version]` prints JSON naming the dispatchable task ids and, for every task not in the wave, the reason it was excluded"
-      - "A task is admitted to the wave only when its status is `todo`, every id in `depends_on` has status `done`, and its `files` are disjoint from those of every task already in the wave and every task whose status is `in-progress`"
-      - "Two independent runs of `ultraship wave` against the same unchanged tasks.yaml return the same wave in the same order, ties broken by ascending task id"
-      - "`ultraship wave` returns an empty wave with a reason per task when every remaining task is blocked, and an empty wave when every task is `done`; it exits non-zero when there is no active release or no tasks file"
-      - No `.ultraship/...` path is hardcoded in lib/wave.mjs; every path is derived from `paths(root)`
-      - No runtime npm dependency is added; lib/wave.mjs uses Node 20+ stdlib and the vendored YAML parser through lib/yaml.mjs
+      - "`cell()` renders a value containing a literal backslash immediately before a pipe as an escaped backslash followed by an escaped pipe, so neither character terminates the Markdown cell"
+      - "`cell()` still collapses whitespace runs to a single space and still returns the em dash for null, undefined, and the empty string, so no existing view output changes for values that contain neither meta-character"
+      - test/views.test.mjs contains a fixture whose value includes `\|` and asserts the exact rendered escape sequence rather than matching any escaped pipe
+      - The escape fix is a strict superset of the old behaviour for inputs containing no backslash, so no previously generated view is invalidated
     files:
-      - lib/wave.mjs
-      - bin/ultraship.mjs
-      - test/wave.test.mjs
-    evidence:
-      - node --test test/wave.test.mjs — 17 passing, 0 failing
-      - >
-        Covers dependency gating, dependencies that are deferred or blocked, a dependency id
-        matching no task, file-overlap holding, an in-progress task holding its files, a task
-        declaring no files running alone, a reported dependency cycle, the all-blocked and all-done
-        empty waves, deterministic ordering across two runs, and the four CLI paths including both
-        non-zero exits.
-      - >
-        node bin/ultraship.mjs wave — run against this repository's live 2.1.0 task set; admitted
-        T01, T02, and T06 and named the unmet dependency for each of the other five.
-      - >
-        Scope gate — a test reads lib/wave.mjs and asserts it references no child_process, fetch,
-        http, spawn, or exec, so the module computes and never dispatches.
-      - >
-        Scope gate — lib/wave.mjs derives every path from paths(root) and imports YAML only through
-        lib/yaml.mjs; no .ultraship path is hardcoded and no dependency was added.
-
-  - id: US-ULTRASHIP-2.1.0-T02
-    summary: Write shared/subagent-protocol.md as the single contract every skill reads.
+      - lib/views.mjs
+      - test/views.test.mjs
+    evidence: []
+  - id: US-ULTRASHIP-2.2.0-T02
+    summary: Declare a least-privilege GITHUB_TOKEN in the CI workflow.
     why_required: >
-      Six skill files must obey the same activation, brief, return, and prohibition rules. Written
-      once here they stay one contract; restated per skill they drift, which is the failure
-      CLAUDE.md names for shared prose contracts.
-    status: done
+      With no permissions block the workflow inherits whatever the repository or organisation
+      default is, which for anything created before February 2023 is read-write. The alert is a real
+      weakness even though nothing in the workflow currently writes.
+    status: todo
     depends_on: []
     acceptance_criteria:
-      - "shared/subagent-protocol.md states the three activation paths, their precedence order, the brief format, the required return format, and the four prohibitions, and skills/plan and skills/develop reference it rather than restating it"
-      - "A subagent writes no file under .ultraship/ and runs no `ultraship transition`, `ultraship commit`, or `ultraship deploy`; the protocol states this and the calling skill performs all four"
-      - "`allow_parallel_agents: true` in .ultraship/ultraship.yaml activates the skill with no further instruction, which is how a developer makes parallel work their default"
-      - The release reports no token, dollar, or time figure for parallel execution, because none is measured
+      - ".github/workflows/ci.yml declares `permissions: contents: read` and CI still passes on Node 20 and 22"
     files:
-      - shared/subagent-protocol.md
-    evidence:
-      - >
-        shared/subagent-protocol.md written — states the three activation paths, a precedence table
-        that resolves any two disagreeing signals, the announce-before-dispatch rule, the two
-        dispatch modes, the brief, the return shape, the four prohibitions, and who records and
-        commits.
-      - >
-        The four prohibitions are stated as a numbered list — no write under .ultraship/, no
-        ultraship transition, no ultraship commit, no ultraship deploy — each with the reason, and
-        the calling skill is named as the party that performs all four.
-      - >
-        The honesty section forbids reporting any token, dollar, or time figure for parallel
-        execution and requires saying so plainly when the host tool cannot dispatch concurrently.
-      - >
-        The plan and develop references that complete this criterion are written under T05 and T04
-        and are verified together at T08.
-
-  - id: US-ULTRASHIP-2.1.0-T03
-    summary: Write skills/subagent/SKILL.md, the sixth skill, as a supporting skill.
+      - .github/workflows/ci.yml
+    evidence: []
+  - id: US-ULTRASHIP-2.2.0-T03
+    summary: Add a checked-in CodeQL workflow and a config that excludes vendor/.
     why_required: >
-      This is the release's user-facing surface. Without it there is no `/ultraship:subagent` to
-      invoke and the first of the three activation paths does not exist.
-    status: done
-    depends_on:
-      - US-ULTRASHIP-2.1.0-T02
-    acceptance_criteria:
-      - "skills/subagent/SKILL.md exists, carries the standard name and description frontmatter, and is invocable as `/ultraship:subagent`"
-      - "An explicit in-session instruction to use subagents activates the skill even when `allow_parallel_agents` is false, and the skill names that instruction as the activation source before dispatching"
-      - "The skill announces the matched activation source and the number of agents it is about to dispatch before dispatching any of them"
-    files:
-      - skills/subagent/SKILL.md
-    evidence:
-      - >
-        skills/subagent/SKILL.md written with the standard name and description frontmatter, so it
-        is invocable as /ultraship:subagent and discoverable the same way the other eleven skills
-        are.
-      - >
-        Step 1 states that a recorded allow_parallel_agents false does not override someone asking
-        for parallel work in this session, and that the developer is the higher authority in both
-        directions.
-      - >
-        Step 3 requires naming the authorising signal and the agent count before the first agent
-        starts, and carries a worked example of that announcement.
-      - >
-        The skill declares it owns no file under .ultraship/ and writes none; the "What this skill
-        owns" section names the calling skill as the party that records, sets status, and commits.
-      - >
-        It defers to shared/subagent-protocol.md for activation, precedence, the brief, the return
-        shape, and the four prohibitions rather than restating them, so there is one contract.
-      - >
-        Guardrails forbid dispatching on the skill's own initiative, computing a wave set itself,
-        reporting any unmeasured figure, fabricating a dispatch the host cannot make, and marking a
-        task done.
-
-  - id: US-ULTRASHIP-2.1.0-T04
-    summary: Wire the develop skill to compute waves, dispatch them, and check returned files.
-    why_required: >
-      Develop generates the independent work this release exists to parallelise. Without the
-      wiring the wave command has no caller and the outcome is unreachable.
-    status: done
-    depends_on:
-      - US-ULTRASHIP-2.1.0-T01
-      - US-ULTRASHIP-2.1.0-T03
-    acceptance_criteria:
-      - "With none of the three activation signals present, `/ultraship:develop` produces the same sequential behaviour as 2.0.0 and dispatches no subagent"
-      - "Develop records each subagent's returned evidence against that subagent's own task in tasks.yaml and runs `ultraship commit develop-task --task <id>` per finished task, so the existing commit protocol is unchanged"
-      - "Develop halts the run and reports rather than computing another wave when a subagent returns a changed file that was not in that task's declared `files`"
-    files:
-      - skills/develop/SKILL.md
-    evidence:
-      - >
-        skills/develop/SKILL.md gained a "Parallel work, only when it is asked for" section whose
-        first paragraph states that the skill builds one task at a time by default and that nothing
-        in the section happens unless the developer asked for it, deferring the three signals to
-        shared/subagent-protocol.md.
-      - >
-        The section instructs the skill to run ultraship wave, dispatch that set and nothing else,
-        and explicitly forbids working out a probably-independent set by hand.
-      - >
-        It requires writing each result's evidence into that task's evidence and status in
-        ascending task-id order rather than arrival order, then running ultraship commit
-        develop-task --task <id> per finished task, then recomputing the wave — so the 2.0.0 commit
-        protocol is reused unchanged rather than replaced.
-      - >
-        A "Check what came back" paragraph requires halting and reporting, and explicitly not
-        computing another wave, when a returned file is outside that task's declared files.
-      - >
-        shared/subagent-protocol.md was added to the skill's Read first line, so the contract is
-        loaded before the wiring is used.
-      - >
-        This wiring was exercised on this release: waves were computed with node bin/ultraship.mjs
-        wave at every step and each finished task was committed through develop-task.
-
-  - id: US-ULTRASHIP-2.1.0-T05
-    summary: Reference the protocol from plan, and from brainstorm, iterate, and complete.
-    why_required: >
-      The contract promises the skill is reachable from all five workflow skills, with plan able to
-      hand out independent research briefs. A skill only develop can reach is half the release.
-    status: done
-    depends_on:
-      - US-ULTRASHIP-2.1.0-T03
-    acceptance_criteria:
-      - The CLI still calls no model and touches no network — `ultraship wave` reads local YAML and prints JSON, and every dispatch decision is made by the agent, not the CLI
-      - No command, skill, schema, or field is removed or renamed; a 2.0.0 workspace passes `ultraship validate` unchanged on 2.1.0, so this is a minor release owing no deprecation window under docs/COMPATIBILITY.md
-    files:
-      - skills/plan/SKILL.md
-      - skills/brainstorm/SKILL.md
-      - skills/iterate/SKILL.md
-      - skills/complete/SKILL.md
-    evidence:
-      - >
-        skills/plan/SKILL.md gained shared/subagent-protocol.md on its Read first line and a
-        "Parallel research, only when it is asked for" section stating that research briefs are
-        read-only, that a research agent never writes roadmap.yaml or a release contract, and that
-        plan stays the only writer of what it owns.
-      - >
-        skills/brainstorm, skills/iterate, and skills/complete each gained a short reference
-        pointing at /ultraship:subagent and shared/subagent-protocol.md, each restating who still
-        owns the writing — product.yaml after approval, the iteration record and its approval
-        source, and the gate evidence respectively.
-      - >
-        grep -rln subagent-protocol.md over skills/, shared/, docs/, and README.md returns nine
-        files — all six skills that reference the protocol plus the protocol's three consumers in
-        documentation — so the skill is reachable from every workflow skill.
-      - >
-        No command, skill, schema, or field was removed or renamed by this task; every edit adds a
-        reference. test/migrate.test.mjs asserts a 2.0.0-shaped workspace validates on 2.1 before
-        any migration, which is the no-break half of this criterion.
-      - >
-        The CLI half holds by construction: test/wave.test.mjs asserts lib/wave.mjs references no
-        child_process, fetch, http, spawn, or exec, so every dispatch decision is the agent's and
-        the command only reads local YAML and prints JSON.
-
-  - id: US-ULTRASHIP-2.1.0-T06
-    summary: Add the migrate step carrying a 2.0.0 workspace to framework_version 2.1.0.
-    why_required: >
-      migrate must stay forward-only and idempotent for every released version. A 2.1.0 that no
-      workspace can be carried up to breaks the guarantee docs/CONTRACT.md makes.
-    status: done
+      GitHub's default setup accepts no path filter, so while it is in force the vendored yaml copy
+      cannot be excluded and keeps producing alerts against code this project does not own. Moving
+      the scanner configuration into the repository is what makes the exclusion reviewable in a diff
+      instead of a click in a web UI.
+    status: todo
     depends_on: []
     acceptance_criteria:
-      - "`ultraship migrate` carries a 2.0.0 workspace to framework_version 2.1.0, adds no field, and changes nothing when rerun"
-      - "`ultraship migrate` remains forward-only and idempotent"
+      - .github/workflows/codeql.yml exists, analyses javascript-typescript and actions, references .github/codeql/codeql-config.yml, declares its own permissions block, and pins every action by commit SHA
+      - .github/codeql/codeql-config.yml excludes vendor/ via paths-ignore
     files:
-      - test/migrate.test.mjs
-    evidence:
-      - node --test test/migrate.test.mjs — 12 passing, 0 failing (10 before this task; 2 added)
-      - >
-        No new code was needed. lib/migrate.mjs already syncs framework_version to
-        FRAMEWORK_VERSION, and FRAMEWORK_VERSION is read from package.json rather than being a
-        literal, so bumping the version file under T08 is the whole 2.1 upgrade step. This task's
-        declared files were corrected from lib/migrate.mjs and test/migrate.test.mjs to
-        test/migrate.test.mjs alone, so the record states what actually changed.
-      - >
-        The new test writes a 2.0.0-shaped workspace, runs migrate, and asserts framework_version
-        moves to the installed version while the sorted key set of ultraship.yaml is byte-identical
-        before and after — so no field was added — then reruns migrate and asserts all three sync
-        results report changed false and the key set is still identical.
-      - >
-        A second test asserts a 2.0.0-shaped workspace passes validateWorkspace before any
-        migration, which is the no-break guarantee docs/CONTRACT.md makes for a minor release.
-
-  - id: US-ULTRASHIP-2.1.0-T07
-    summary: Update CONTRACT, COMPATIBILITY, README, and CHANGELOG for twelve commands and the sixth skill.
+      - .github/workflows/codeql.yml
+      - .github/codeql/codeql-config.yml
+    evidence: []
+  - id: US-ULTRASHIP-2.2.0-T04
+    summary: Write the vendored third-party code policy into SECURITY.md and CONTRIBUTING.md.
     why_required: >
-      The public contract is enumerated by hand in docs/CONTRACT.md. A command and a skill that
-      ship without appearing there are outside the contract and unsupported by definition.
-    status: done
-    depends_on:
-      - US-ULTRASHIP-2.1.0-T01
-      - US-ULTRASHIP-2.1.0-T03
+      The exclusion is only honest if the reason is written down. Without it a reader cannot tell an
+      accepted risk from an unattended one, which is the ownerless-fact failure the whole framework
+      exists to prevent.
+    status: todo
+    depends_on: []
     acceptance_criteria:
-      - "docs/CONTRACT.md lists twelve CLI commands including `ultraship wave` and names `subagent` among the supporting skills"
-      - README, CHANGELOG.md, docs/CONTRACT.md, and docs/COMPATIBILITY.md describe the skill and the command accurately, and every path and command they name exists
+      - SECURITY.md, the contributor guidance, and CLAUDE.md each state that vendored third-party code is excluded from scanning, tracked by version, and answered by re-vendoring rather than patching
     files:
-      - docs/CONTRACT.md
-      - docs/COMPATIBILITY.md
-      - README.md
-      - CHANGELOG.md
-    evidence:
-      - >
-        docs/CONTRACT.md now reads "CLI commands (12)" with an ultraship wave row; grep -c for
-        command rows in that table returns 12.
-      - >
-        docs/CONTRACT.md lists subagent among the supporting skills and adds a paragraph stating it
-        is a supporting skill rather than a lifecycle phase, that it moves no state and writes no
-        canonical file, and that it runs only when the developer asks.
-      - >
-        docs/COMPATIBILITY.md gained a "What changed in 2.1" section recording the release as
-        purely additive — one command, one skill, nothing removed or renamed, schema_version still
-        1, no deprecation owed — and noting that allow_parallel_agents gains a second reader rather
-        than a new default.
-      - >
-        README.md gained the ultraship wave row, a "Parallel work, when you ask for it" section
-        listing the three signals and the in-session precedence, a pointer to it from the skill
-        list, and the command count in the stability section corrected from eleven to twelve.
-      - >
-        CHANGELOG.md gained a 2.1.0 entry stating the feature is off unless asked for, listing what
-        was added, and recording the compatibility position.
-      - >
-        Every path the documentation names was checked to exist — shared/subagent-protocol.md,
-        skills/subagent/SKILL.md, lib/wave.mjs — and the ultraship wave command was run against
-        this repository's live task set at each wave.
-
-  - id: US-ULTRASHIP-2.1.0-T08
-    summary: Bring the whole tree green — full suite and validate — and hand the version bump to complete.
+      - SECURITY.md
+      - CONTRIBUTING.md
+    evidence: []
+  - id: US-ULTRASHIP-2.2.0-T05
+    summary: Bring CLAUDE.md up to date and add the security-scanning and vendoring rule to it.
+    why_required: >
+      CLAUDE.md is what every future agent session reads before touching this repository. An agent
+      that does not know vendor/ is off limits will eventually patch it and break the next
+      re-vendor, which is the exact outcome the exclusion exists to prevent.
+    status: todo
+    depends_on: []
+    acceptance_criteria:
+      - SECURITY.md, the contributor guidance, and CLAUDE.md each state that vendored third-party code is excluded from scanning, tracked by version, and answered by re-vendoring rather than patching
+      - CLAUDE.md is accurate against the repository as it stands at 2.2.0 — every path, command, and count it names exists
+    files:
+      - CLAUDE.md
+    evidence: []
+  - id: US-ULTRASHIP-2.2.0-T06
+    summary: Bump every declared version file to 2.2.0 and record the release in the changelog and compatibility policy.
     why_required: >
       validate holds every file in version_files to the greatest released version, so the release
-      cannot complete until they all read 2.1.0. This is the release's own gate.
-    status: done
+      cannot complete without this. The compatibility entry is what tells an adopter that 2.2.0 owes
+      them no migration and no deprecation window.
+    status: todo
     depends_on:
-      - US-ULTRASHIP-2.1.0-T01
-      - US-ULTRASHIP-2.1.0-T02
-      - US-ULTRASHIP-2.1.0-T03
-      - US-ULTRASHIP-2.1.0-T04
-      - US-ULTRASHIP-2.1.0-T05
-      - US-ULTRASHIP-2.1.0-T06
-      - US-ULTRASHIP-2.1.0-T07
+      - US-ULTRASHIP-2.2.0-T01
+      - US-ULTRASHIP-2.2.0-T02
+      - US-ULTRASHIP-2.2.0-T03
+      - US-ULTRASHIP-2.2.0-T04
+      - US-ULTRASHIP-2.2.0-T05
     acceptance_criteria:
-      - "`npm test` passes locally and in CI, including test/wave.test.mjs and the migrate test for the 2.0.0 to 2.1.0 step"
-      - "`node bin/ultraship.mjs validate` exits 0 on this workspace"
-      - version_files (package.json, .claude-plugin/plugin.json, .claude-plugin/marketplace.json) all read 2.1.0 at release
+      - version_files (package.json, .claude-plugin/plugin.json, .claude-plugin/marketplace.json) all read 2.2.0 at release
+      - No CLI command, skill, schema, or canonical field is added, removed, renamed, or reshaped, so a 2.1.0 workspace is valid on 2.2.0 with no migration beyond framework_version
+      - "`ultraship migrate` remains forward-only and idempotent"
     files:
-      - test/install.test.mjs
-      - NOTICE
-      - .ultraship/ultraship.yaml
-    evidence:
-      - npm test — 273 passing, 0 failing across 24 files (254 before this release; 19 added)
-      - node bin/ultraship.mjs validate — exit 0, 19 files checked
-      - >
-        Two existing guard tests caught the new public surface and were updated rather than
-        worked around. test/install.test.mjs asserts the CLI's COMMANDS object against a written
-        list, which now includes wave and so proves the README documents all twelve; and its NOTICE
-        check enumerates every directory under skills/, which required listing skills/subagent/
-        under "Original to UltraShip".
-      - >
-        This task's declared files were wrong and were corrected to what actually changed —
-        test/install.test.mjs, NOTICE, and .ultraship/ultraship.yaml. This is precisely the
-        declared-versus-actual gap the release's own halt rule exists for; caught here by a single
-        agent, it is a correction, and under parallel dispatch it would have stopped the run.
-      - >
-        The version_files bump was moved out of this task. skills/complete/SKILL.md owns it, and
-        validate holds those files to the greatest released version, so bumping them during develop
-        makes validate fail by design. Reverted here; complete performs the bump immediately before
-        the complete-release checkpoint, which is the order shared/commit-protocol.md already
-        requires.
-      - >
-        node bin/ultraship.mjs migrate — run against this repository's live workspace; corrected a
-        stale framework_version of 1.1.0, left commit_policy and schema_version untouched, and
-        reported migrated false with reason "already per-product".
-      - >
-        This release was developed in four CLI-computed waves — T01/T02/T06, then T03, then
-        T04/T05/T07, then T08 — with node bin/ultraship.mjs wave computing each one and every
-        finished task committed through develop-task, so the git log is the wave record.
+      - package.json
+      - .claude-plugin/plugin.json
+      - .claude-plugin/marketplace.json
+      - CHANGELOG.md
+      - docs/COMPATIBILITY.md
+    evidence: []
+  - id: US-ULTRASHIP-2.2.0-T07
+    summary: Disable CodeQL default setup, push the branch, and confirm the checked-in workflow runs green.
+    why_required: >
+      Default and advanced setup cannot both be in force — while default setup is enabled the
+      checked-in workflow fails outright, so the exclusion never takes effect and the release
+      delivers nothing. This is also the only step in the release that no local check can verify.
+    status: todo
+    depends_on:
+      - US-ULTRASHIP-2.2.0-T03
+    acceptance_criteria:
+      - GitHub CodeQL default setup is disabled for the repository and the advanced workflow has completed a green run on main
+      - "`gh api repos/zeroonething/ultraship/code-scanning/alerts --jq '[.[] | select(.state == \"open\")] | length'` returns 0 after that run"
+    files: []
+    evidence: []
+  - id: US-ULTRASHIP-2.2.0-T08
+    summary: Run the full suite, validate, and regenerate this repository's own views.
+    why_required: >
+      The escape fix changes generated output, so the repository's own views have to be regenerated
+      in the same release or the checked-in views disagree with the code that produces them.
+    status: todo
+    depends_on:
+      - US-ULTRASHIP-2.2.0-T06
+      - US-ULTRASHIP-2.2.0-T07
+    acceptance_criteria:
+      - "`npm test` passes locally and in CI, with the strengthened views test failing against the pre-fix `cell()` and passing after it"
+      - "`node bin/ultraship.mjs validate` exits 0 on this workspace"
+      - "`node bin/ultraship.mjs views` regenerates this repository's own four views with no content change other than what the escape fix requires"
+      - The CLI still calls no model and touches no network
+      - No runtime npm dependency is added and nothing under vendor/ is modified — `git diff main -- vendor/` is empty
+    files: []
+    evidence: []
