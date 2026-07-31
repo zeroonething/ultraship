@@ -97,7 +97,7 @@ tasks:
       A major version whose break is undocumented is the failure docs/COMPATIBILITY.md exists to
       prevent. A user upgrading needs to find the break, the remedy, and the eleventh command
       without reading the source.
-    status: todo
+    status: done
     depends_on:
       - US-ULTRASHIP-2.0.0-T03
     acceptance_criteria:
@@ -112,7 +112,15 @@ tasks:
       - CHANGELOG.md
       - CONTRIBUTING.md
       - docs/CONTRIBUTING-WITH-ULTRASHIP.md
-    evidence: []
+    evidence:
+      - README.md — CI status, Node >=20, version, and license badges at the top; a new "Commits at every checkpoint" section documenting commit_policy, the default, the migrate pin, and what the command will never do; ultraship commit in the command table
+      - docs/CONTRACT.md — restated as the 2.0 public contract with eleven CLI commands; the ultraship.schema row now names commit_policy; the guarantee section reads 2.x and states that migrate pins commit_policy to off
+      - docs/COMPATIBILITY.md — a new "What changed in 2.0" section naming the break as one default, the migrate step that absorbs it, that nothing was removed or renamed so no deprecation window was owed, that schema_version stays 1, and the one-line remedy
+      - CHANGELOG.md — a 2.0.0 entry with an explicit BREAKING CHANGE heading, the remedy, and Added/Changed sections for the command, the field, the protocol doc, and the badges
+      - CONTRIBUTING.md — the contract is described as 2.0 with eleven commands, the minor rule is no longer worded as 1.x-only, and a new "The skills commit as they go" subsection tells a contributor what to expect and how to opt out locally
+      - docs/CONTRIBUTING-WITH-ULTRASHIP.md — plan, develop, and the repository-conventions section now describe the checkpoints, and note that the skills never push, branch, or tag
+      - Every local Markdown link across README, CONTRIBUTING, CHANGELOG, docs/, and shared/ resolves to a file that exists (checked programmatically); LICENSE exists for the license badge; docs/CONTRACT.md lists exactly 11 ultraship command rows
+      - npm test — 252 passing, 0 failing
   - id: US-ULTRASHIP-2.0.0-T05
     summary: Turn the commit policy on and verify the release end to end.
     why_required: >
