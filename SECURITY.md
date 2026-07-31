@@ -42,3 +42,25 @@ state only in `.ultraship/` inside your own repository. The most relevant classe
 of issue are therefore ones that could corrupt canonical state, bypass the
 released-record immutability guarantee, or cause the CLI to write outside its
 workspace. Reports in those areas are especially valuable.
+
+## Vendored dependencies
+
+`vendor/` holds unmodified third-party code. Today that is the npm `yaml`
+package, vendored at the exact published version to keep UltraShip's zero-install
+guarantee. [`vendor/README.md`](vendor/README.md) documents the procedure:
+`npm pack yaml@<version>`, drop `browser/` and the source maps, edit nothing.
+
+That directory is excluded from this repository's code scanning —
+[`.github/codeql/codeql-config.yml`](.github/codeql/codeql-config.yml) sets
+`paths-ignore: vendor/` — because scanning code the project does not own and must
+not patch produces alerts nobody can act on. It is tracked by pinned version
+instead.
+
+When an advisory names a vendored package, the response is to re-vendor the fixed
+upstream release and rerun `npm test`. Never edit a file under `vendor/`: a
+patched vendored copy silently diverges from upstream and breaks the next
+re-vendor.
+
+Report a vulnerability in UltraShip's own code through the process above. A
+vulnerability in a vendored dependency should be reported upstream to that
+package as well.
