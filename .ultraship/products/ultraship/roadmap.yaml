@@ -90,15 +90,15 @@ versions:
   - version: 2.2.0
     outcome: >
       A developer evaluating or contributing to UltraShip can trust its GitHub security tab, because
-      every open code-scanning alert is either fixed or deliberately out of scope in writing. The one
-      real defect in UltraShip's own code — a Markdown table cell that escapes pipes without escaping
-      backslashes, so a canonical value ending in a backslash breaks the generated view's table — is
-      fixed at its single source with a regression test. The CI workflow declares an explicit
-      least-privilege GITHUB_TOKEN instead of inheriting whatever the repository default happens to
-      be. Code scanning moves from GitHub's default setup to a checked-in CodeQL workflow that
-      excludes vendor/, so the vendored YAML parser UltraShip ships verbatim stops generating alerts
-      against code the project does not own and cannot patch without breaking re-vendoring — and the
-      policy for third-party code, including how an upstream advisory would be handled instead, is
-      written down rather than implied by a dismissed alert.
+      every open code-scanning alert is either fixed or deliberately out of scope in writing. The
+      one real defect in UltraShip's own code — a Markdown table cell that escapes pipes without
+      escaping backslashes, so a canonical value ending in a backslash breaks the generated view's
+      table — is fixed at its single source with a regression test. The CI workflow declares an
+      explicit least-privilege GITHUB_TOKEN instead of inheriting whatever the repository default
+      happens to be. Code scanning moves from GitHub's default setup to a checked-in CodeQL workflow
+      that excludes vendor/, so the vendored YAML parser UltraShip ships verbatim stops generating
+      alerts against code the project does not own and cannot patch without breaking re-vendoring —
+      and the policy for third-party code, including how an upstream advisory would be handled
+      instead, is written down rather than implied by a dismissed alert.
     detail: specified
-    status: planned
+    status: released

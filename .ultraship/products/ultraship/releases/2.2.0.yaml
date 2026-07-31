@@ -1,6 +1,6 @@
 product: ultraship
 version: 2.2.0
-status: planned
+status: released
 release_type: minor
 outcome:
   user_can: >
@@ -147,3 +147,111 @@ resource_profile:
 open_questions:
   - "Resolved in develop, against the plan: whether this repository could run a CodeQL advanced configuration at all. It cannot — GitHub refuses the SARIF upload while default setup is enabled, and default setup is enforced organisation-wide. Recorded in US-ULTRASHIP-2.2.0-I02 with the run that proved it."
   - Whether the vendoring policy belongs in SECURITY.md, CONTRIBUTING, or both. Leaning both, with SECURITY.md owning the wording and the contributor guide pointing at it. Decided in develop.
+released_at: 2026-08-01T00:00:00Z
+mode: release-ready
+delivered: >
+  Every code-scanning alert on this repository is now either fixed in the code or
+  ruled out of scope in writing. `cell()` in lib/views.mjs escaped a pipe without
+  first escaping a backslash, so a canonical value containing `\|` rendered as a
+  literal backslash beside a live cell-terminating pipe and broke the generated
+  Markdown table; it now escapes both meta-characters in one pass, at the only
+  Markdown-emitting site in lib/, and the views test that was too weak to catch it
+  asserts the exact rendered escape. The CI workflow declares
+  `permissions: contents: read`. The four remaining findings are inside vendor/yaml,
+  a verbatim copy of npm yaml 2.9.0 — the newest published stable, whose upstream
+  main carries those exact regexes unchanged and against which no advisory exists —
+  so they are dismissed, each dismissal carrying the same comment naming the
+  directory and pointing at SECURITY.md. The mechanism is not the one this release
+  planned: a checked-in CodeQL config with paths-ignore for vendor/ was written,
+  pushed, and refused by the platform, because GitHub will not process an advanced
+  configuration while default setup is enabled and default setup here is enforced
+  organisation-wide. Those two files were removed rather than shipped failing, and
+  SECURITY.md records the refusal, the trade-off a dismissal carries, and the three
+  steps to the stronger mechanism if the constraint ever lifts. The vendored-code
+  policy — excluded from scanning, tracked by pinned version, answered by
+  re-vendoring and never by patching — is written into SECURITY.md, CONTRIBUTING.md,
+  and CLAUDE.md. CLAUDE.md, README.md, docs/CONTRACT.md, and
+  docs/CONTRIBUTING-WITH-ULTRASHIP.md were audited against the repository and
+  corrected, which found four drifts nobody had reported: "five skills" and "ten CLI
+  commands" against a real 13 and 12, a 2.0.0 README badge, SECURITY.md promising
+  fixes against the latest 1.x, and CONTRACT.md claiming migrate carries workspaces
+  "to 2.0". No command, skill, schema, or canonical field changed.
+evidence:
+  tests:
+    - npm test — 274 passing, 0 failing across 24 files (273 before this release; 1 added)
+    - >
+      node --test test/views.test.mjs — 9 passing. The added case was written before the fix and
+      failed against the old cell() with "workspace-brief.md must escape the backslash as well as
+      the pipe", actual `... end to end \\| start to finish |`, expected /\\\\\\\|/, so the test is
+      proven to catch the defect rather than merely to pass beside it.
+  builds:
+    - >
+      No build step; pure ESM CLI with a vendored YAML parser and zero runtime dependencies.
+      git diff main..HEAD -- package.json shows exactly one changed line, the version.
+  reviews: []
+  deployments: []
+  health_checks:
+    - node bin/ultraship.mjs validate — exit 0 after the record was written
+    - >
+      node bin/ultraship.mjs views — regenerated with no diff, so the checked-in views agree with
+      the corrected cell(). The fix is a strict no-op for values carrying neither meta-character,
+      which is why nothing moved.
+    - >
+      Code scanning — alerts 3, 4, 5, and 6 read state dismissed with reason "won't fix", each
+      carrying an identical 270-character comment naming vendor/yaml and pointing at SECURITY.md.
+    - >
+      CI on pull request 17 — the test matrix on Node 20 and 22 failed on `node bin/ultraship.mjs
+      validate` with exactly the three version_files complaints, 2.2.0 against a greatest released
+      version of 2.1.0. That is the gate behaving correctly before the record exists; it clears with
+      this record and is re-verified on the merge commit.
+    - >
+      Scope gate — git diff main..HEAD is empty for vendor/, schemas/, skills/, and bin/, so nothing
+      under the frozen public surface moved and nothing vendored was touched.
+    - >
+      Scope gate — .github/workflows/ holds ci.yml alone and .github/codeql/ does not exist, so the
+      workflow that could not run was removed rather than left failing. A grep for codeql and
+      paths-ignore across all Markdown returns only prose about why that mechanism was unavailable.
+    - Security gate — a secret-pattern scan of the full branch diff returns no matches
+known_limitations:
+  - >
+    mode is release-ready, not the contract's target_mode of published. Per the maintainer's
+    release-after-merge convention the GitHub release is created from the main merge commit, so
+    `ultraship deploy` is authorized only after this pull request merges. The record is pinned at
+    completion time and cannot be amended afterwards, so the published mode reached post-merge is
+    not reflected in evidence.deployments. This is the same shortfall 1.1.0, 2.0.0, and 2.1.0
+    recorded.
+  - >
+    Alerts 2 and 7 — the views escape and the workflow permissions — are fixed in code but were
+    still open at completion time, because code scanning closes an alert only after re-analysing
+    main, which happens after the merge. Alert 1, the same workflow-permissions rule from an earlier
+    fix, reads state fixed, which is the precedent for how those two close. The release therefore
+    cannot claim a zero open-alert count from its own evidence; it claims four dismissals it made
+    and two fixes whose alerts close on the merge scan.
+  - >
+    The vendored exclusion is carried by per-alert dismissal, which is weaker than the checked-in
+    path filter this release planned. A dismissal lives in GitHub's alert store, not in the diff, so
+    no reviewer sees it in a pull request and a future maintainer could reverse it without meeting
+    the reason. The comment on each alert and the section in SECURITY.md are the mitigation, and
+    they are prose, not a mechanism.
+  - >
+    Adopting the stronger mechanism needs authority this release did not have — detaching the
+    repository from the organisation security configuration requires a token with write:org. The
+    steps are written into SECURITY.md so whoever holds that scope can carry them out; it is a
+    repository-configuration change and needs no UltraShip release.
+  - >
+    Excluding vendor/ by any mechanism is a permanent blind spot. A future vendored dependency with
+    a real vulnerability would not be flagged in this repository, and the only defences are the
+    pinned version and the stated duty to re-vendor on an advisory. The four findings excluded here
+    were each checked against the advisory database first; nothing guarantees the next maintainer
+    does the same.
+  - >
+    The non-table Markdown in lib/views.mjs — the list items and bold lines that interpolate free
+    text without cell() — is still unescaped. A pipe is harmless outside a table row, so this was
+    excluded rather than fixed, but a newline in a free-text field can still break a bold line.
+  - >
+    CI is red on the pull request at completion time, by design: validate holds version_files to the
+    greatest released version until this record exists. The green run on the merge commit is
+    confirmed after the merge, not at release time.
+supersedes: 2.1.0
+next_recommended_version: 2.3.0
+immutable: true
