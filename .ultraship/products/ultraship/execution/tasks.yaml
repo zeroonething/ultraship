@@ -112,7 +112,7 @@ tasks:
     why_required: >
       Develop generates the independent work this release exists to parallelise. Without the
       wiring the wave command has no caller and the outcome is unreachable.
-    status: todo
+    status: done
     depends_on:
       - US-ULTRASHIP-2.1.0-T01
       - US-ULTRASHIP-2.1.0-T03
@@ -122,14 +122,36 @@ tasks:
       - "Develop halts the run and reports rather than computing another wave when a subagent returns a changed file that was not in that task's declared `files`"
     files:
       - skills/develop/SKILL.md
-    evidence: []
+    evidence:
+      - >
+        skills/develop/SKILL.md gained a "Parallel work, only when it is asked for" section whose
+        first paragraph states that the skill builds one task at a time by default and that nothing
+        in the section happens unless the developer asked for it, deferring the three signals to
+        shared/subagent-protocol.md.
+      - >
+        The section instructs the skill to run ultraship wave, dispatch that set and nothing else,
+        and explicitly forbids working out a probably-independent set by hand.
+      - >
+        It requires writing each result's evidence into that task's evidence and status in
+        ascending task-id order rather than arrival order, then running ultraship commit
+        develop-task --task <id> per finished task, then recomputing the wave — so the 2.0.0 commit
+        protocol is reused unchanged rather than replaced.
+      - >
+        A "Check what came back" paragraph requires halting and reporting, and explicitly not
+        computing another wave, when a returned file is outside that task's declared files.
+      - >
+        shared/subagent-protocol.md was added to the skill's Read first line, so the contract is
+        loaded before the wiring is used.
+      - >
+        This wiring was exercised on this release: waves were computed with node bin/ultraship.mjs
+        wave at every step and each finished task was committed through develop-task.
 
   - id: US-ULTRASHIP-2.1.0-T05
     summary: Reference the protocol from plan, and from brainstorm, iterate, and complete.
     why_required: >
       The contract promises the skill is reachable from all five workflow skills, with plan able to
       hand out independent research briefs. A skill only develop can reach is half the release.
-    status: todo
+    status: done
     depends_on:
       - US-ULTRASHIP-2.1.0-T03
     acceptance_criteria:
@@ -140,7 +162,29 @@ tasks:
       - skills/brainstorm/SKILL.md
       - skills/iterate/SKILL.md
       - skills/complete/SKILL.md
-    evidence: []
+    evidence:
+      - >
+        skills/plan/SKILL.md gained shared/subagent-protocol.md on its Read first line and a
+        "Parallel research, only when it is asked for" section stating that research briefs are
+        read-only, that a research agent never writes roadmap.yaml or a release contract, and that
+        plan stays the only writer of what it owns.
+      - >
+        skills/brainstorm, skills/iterate, and skills/complete each gained a short reference
+        pointing at /ultraship:subagent and shared/subagent-protocol.md, each restating who still
+        owns the writing — product.yaml after approval, the iteration record and its approval
+        source, and the gate evidence respectively.
+      - >
+        grep -rln subagent-protocol.md over skills/, shared/, docs/, and README.md returns nine
+        files — all six skills that reference the protocol plus the protocol's three consumers in
+        documentation — so the skill is reachable from every workflow skill.
+      - >
+        No command, skill, schema, or field was removed or renamed by this task; every edit adds a
+        reference. test/migrate.test.mjs asserts a 2.0.0-shaped workspace validates on 2.1 before
+        any migration, which is the no-break half of this criterion.
+      - >
+        The CLI half holds by construction: test/wave.test.mjs asserts lib/wave.mjs references no
+        child_process, fetch, http, spawn, or exec, so every dispatch decision is the agent's and
+        the command only reads local YAML and prints JSON.
 
   - id: US-ULTRASHIP-2.1.0-T06
     summary: Add the migrate step carrying a 2.0.0 workspace to framework_version 2.1.0.
@@ -176,7 +220,7 @@ tasks:
     why_required: >
       The public contract is enumerated by hand in docs/CONTRACT.md. A command and a skill that
       ship without appearing there are outside the contract and unsupported by definition.
-    status: todo
+    status: done
     depends_on:
       - US-ULTRASHIP-2.1.0-T01
       - US-ULTRASHIP-2.1.0-T03
@@ -188,7 +232,30 @@ tasks:
       - docs/COMPATIBILITY.md
       - README.md
       - CHANGELOG.md
-    evidence: []
+    evidence:
+      - >
+        docs/CONTRACT.md now reads "CLI commands (12)" with an ultraship wave row; grep -c for
+        command rows in that table returns 12.
+      - >
+        docs/CONTRACT.md lists subagent among the supporting skills and adds a paragraph stating it
+        is a supporting skill rather than a lifecycle phase, that it moves no state and writes no
+        canonical file, and that it runs only when the developer asks.
+      - >
+        docs/COMPATIBILITY.md gained a "What changed in 2.1" section recording the release as
+        purely additive — one command, one skill, nothing removed or renamed, schema_version still
+        1, no deprecation owed — and noting that allow_parallel_agents gains a second reader rather
+        than a new default.
+      - >
+        README.md gained the ultraship wave row, a "Parallel work, when you ask for it" section
+        listing the three signals and the in-session precedence, a pointer to it from the skill
+        list, and the command count in the stability section corrected from eleven to twelve.
+      - >
+        CHANGELOG.md gained a 2.1.0 entry stating the feature is off unless asked for, listing what
+        was added, and recording the compatibility position.
+      - >
+        Every path the documentation names was checked to exist — shared/subagent-protocol.md,
+        skills/subagent/SKILL.md, lib/wave.mjs — and the ultraship wave command was run against
+        this repository's live task set at each wave.
 
   - id: US-ULTRASHIP-2.1.0-T08
     summary: Bump every declared version file to 2.1.0 and run the full suite and validate.
