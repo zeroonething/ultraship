@@ -88,10 +88,10 @@ whether it needs a `migrate` step and a deprecation window (`docs/COMPATIBILITY.
   keep the zero-install guarantee.
 - **`vendor/` is never edited.** It is unmodified third-party code (currently npm `yaml` 2.9.0);
   upgrading means re-vendoring with `npm pack` and rerunning `npm test`, never patching in place
-  (`vendor/README.md`). Code scanning (`.github/workflows/codeql.yml`,
-  `.github/codeql/codeql-config.yml`) sets `paths-ignore: vendor/` for exactly that reason. An
-  advisory naming a vendored package is answered by re-vendoring the fixed upstream release;
-  `SECURITY.md` holds the full policy.
+  (`vendor/README.md`). `vendor/` is excluded from this repository's code scanning for exactly
+  that reason. An advisory naming a vendored package is answered by re-vendoring the fixed
+  upstream release; `SECURITY.md` holds the full policy and records how the exclusion is
+  currently carried.
 - **`ponytail:` comments mark deliberate simplifications** with their upgrade seam (e.g. the ajv
   seam in `lib/schema.mjs`). Respect the seam; don't pre-build past it.
 - Skills in `skills/` share prose contracts in `shared/` (`principles.md`, `state-model.md`,

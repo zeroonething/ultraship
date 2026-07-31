@@ -291,11 +291,9 @@ The one dependency (the npm `yaml` package) is vendored, and `vendor/` is never
 edited: upgrading means re-vendoring per
 [`vendor/README.md`](vendor/README.md) and rerunning `npm test`, and an advisory
 naming a vendored package is answered by re-vendoring the fixed upstream release.
-Code scanning is configured in the repository —
-[`.github/workflows/codeql.yml`](.github/workflows/codeql.yml) with
-[`.github/codeql/codeql-config.yml`](.github/codeql/codeql-config.yml), which
-sets `paths-ignore: vendor/` so the scanner stays on code this project can fix.
-[`SECURITY.md`](SECURITY.md) holds the full policy.
+`vendor/` is excluded from this repository's code scanning so the scanner stays on
+code this project can fix; [`SECURITY.md`](SECURITY.md) holds the full policy and
+records how that exclusion is currently carried.
 
 UltraShip is built with UltraShip. To ship your contribution the way the project
 ships itself — through the five lifecycle skills — see

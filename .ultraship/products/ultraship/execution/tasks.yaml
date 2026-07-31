@@ -308,7 +308,7 @@ tasks:
       that is expected to be red teaches a reviewer to ignore red checks. Six documents already cite
       them as the mechanism, so deleting the files without correcting the prose would leave the
       repository describing a setup it does not have — the drift this release was created to fix.
-    status: todo
+    status: done
     depends_on: []
     acceptance_criteria:
       - The repository contains no CodeQL workflow or config that cannot run, and no reference anywhere in the documentation to a file this release does not ship
@@ -322,4 +322,34 @@ tasks:
       - README.md
       - CHANGELOG.md
       - docs/COMPATIBILITY.md
-    evidence: []
+    evidence:
+      - >
+        Both files removed with git rm and the now-empty .github/codeql/ directory is gone;
+        .github/workflows/ holds ci.yml alone. No disabled or workflow_dispatch-only stub was left
+        behind, because a workflow that cannot work is worse than none.
+      - >
+        SECURITY.md gains a "How the exclusion is currently carried" subsection: each alert raised
+        inside vendor/ is dismissed through the code-scanning API with a comment naming vendor/yaml
+        as an unmodified copy of npm yaml 2.9.0 and pointing back at the policy; it is a dismissal
+        rather than a path filter because GitHub rejects an advanced-configuration SARIF while
+        default setup is enabled and the API refuses to disable default setup with HTTP 422, the
+        setting being controlled by organisation administrators; the trade-off is stated plainly —
+        a dismissal lives in GitHub's alert store, not in the diff, which is why the reason is
+        written down; and the three steps to the stronger mechanism are listed, detach from the
+        organisation configuration, disable default setup, add a workflow whose config carries
+        paths-ignore for vendor/. The vendoring policy itself is unchanged.
+      - >
+        Every reference to the two deleted files corrected — CLAUDE.md, CONTRIBUTING.md, and
+        README.md now say vendor/ is excluded and point at SECURITY.md for how; the CHANGELOG's
+        2.2.0 Added bullet describes the dismissals instead of the workflow; and
+        docs/COMPATIBILITY.md's "What changed in 2.2" no longer claims a checked-in scanning
+        workflow. The agent also caught and corrected the 2.2.0 entry's opening paragraph, which
+        asserted the deleted mechanism outside the bullet it was asked to fix.
+      - >
+        grep for codeql and paths-ignore across all Markdown returns three hits, all of them prose
+        about the mechanism that could not be used — the CHANGELOG's "why not", SECURITY.md's step
+        three, and the derived active-releases view. No hit names either deleted file.
+      - npm test — 274 passing, 0 failing
+      - >
+        node bin/ultraship.mjs validate — the same three expected version_files complaints and
+        nothing else.

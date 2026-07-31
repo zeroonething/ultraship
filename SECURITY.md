@@ -50,16 +50,39 @@ package, vendored at the exact published version to keep UltraShip's zero-instal
 guarantee. [`vendor/README.md`](vendor/README.md) documents the procedure:
 `npm pack yaml@<version>`, drop `browser/` and the source maps, edit nothing.
 
-That directory is excluded from this repository's code scanning —
-[`.github/codeql/codeql-config.yml`](.github/codeql/codeql-config.yml) sets
-`paths-ignore: vendor/` — because scanning code the project does not own and must
-not patch produces alerts nobody can act on. It is tracked by pinned version
-instead.
+That directory is excluded from this repository's code scanning, because scanning
+code the project does not own and must not patch produces alerts nobody can act
+on. It is tracked by pinned version instead.
 
 When an advisory names a vendored package, the response is to re-vendor the fixed
 upstream release and rerun `npm test`. Never edit a file under `vendor/`: a
 patched vendored copy silently diverges from upstream and breaks the next
 re-vendor.
+
+### How the exclusion is currently carried
+
+Each code-scanning alert raised inside `vendor/` is **dismissed** through the
+code-scanning API, and every dismissal carries a comment naming `vendor/yaml` as
+an unmodified copy of npm `yaml` 2.9.0 and pointing back at this policy.
+
+It is a dismissal rather than a path filter because GitHub will not accept a
+CodeQL advanced configuration on this repository while code-scanning default
+setup is enabled: an advanced-configuration analysis uploads, and GitHub rejects
+the SARIF with *"CodeQL analyses from advanced configurations cannot be processed
+when the default setup is enabled"*. Default setup cannot be turned off here — the
+repository is attached to an organisation security configuration that enforces it,
+and the API refuses the change (`HTTP 422: Code scanning default setup cannot be
+modified. This setting is controlled by organization administrators.`).
+
+The trade-off is deliberate and worth stating: a dismissal lives in GitHub's alert
+store, not in the repository's diff, so nothing about it is reviewable in a pull
+request. That is precisely why the reason is written down here.
+
+If the constraint ever lifts, the stronger mechanism is adopted in three steps:
+
+1. Detach the repository from the organisation security configuration.
+2. Disable code-scanning default setup on the repository.
+3. Add a CodeQL workflow whose config carries `paths-ignore: vendor/`.
 
 Report a vulnerability in UltraShip's own code through the process above. A
 vulnerability in a vendored dependency should be reported upstream to that

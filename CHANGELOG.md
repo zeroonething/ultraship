@@ -8,10 +8,9 @@ All notable changes to UltraShip are recorded here. This project follows
 Security hygiene. Every open code-scanning alert on the repository is now either
 fixed in the code or ruled out of scope in writing. One was a real defect in
 UltraShip's own code; one was a workflow weakness; the remaining four are inside
-the vendored `yaml` copy this project ships verbatim and must not patch, so the
-scanner is now configured — in a checked-in file, not a web UI setting — to stop
-looking there, and the reason is written down. No CLI command, skill, schema, or
-canonical field changed.
+the vendored `yaml` copy this project ships verbatim and must not patch, so they
+are dismissed as out of scope and the reason is written down. No CLI command,
+skill, schema, or canonical field changed.
 
 ### Fixed
 
@@ -27,12 +26,15 @@ canonical field changed.
 
 ### Added
 
-- `.github/workflows/codeql.yml` and `.github/codeql/codeql-config.yml`. Code
-  scanning moves off GitHub's default setup, which accepts no path filter, onto a
-  checked-in workflow whose config sets `paths-ignore: vendor/`. The workflow runs
-  the `javascript-typescript` and `actions` analyses on push to `main`, on pull
-  requests, and weekly, declares its own least-privilege permissions, and pins
-  every action by commit SHA.
+- The four `js/polynomial-redos` findings inside `vendor/yaml` are dismissed as
+  out of scope, each dismissal carrying a comment that names the directory as an
+  unmodified copy of npm `yaml` 2.9.0 and points at [SECURITY.md](SECURITY.md).
+  [SECURITY.md](SECURITY.md) records why the exclusion is carried by dismissal
+  rather than by a CodeQL config with `paths-ignore: vendor/` — GitHub refuses an
+  advanced configuration while code-scanning default setup is enabled, and default
+  setup on this repository is enforced by an organisation security configuration
+  that cannot be modified here — and the steps to adopt the stronger mechanism if
+  that ever changes.
 - The vendored-code policy, written into [SECURITY.md](SECURITY.md) and
   [CONTRIBUTING.md](CONTRIBUTING.md): `vendor/` is unmodified third-party code,
   excluded from this repository's scanning, tracked by pinned version, and
