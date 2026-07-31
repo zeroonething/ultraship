@@ -3,15 +3,15 @@
 ## Supported versions
 
 UltraShip follows [Semantic Versioning](https://semver.org/). Security fixes are
-released against the latest `1.x` release. Older `1.x` lines are not backported —
-upgrade to the current `1.x`, which is always compatible with a `1.x` workspace
+released against the latest `2.x` release. Older `2.x` lines are not backported —
+upgrade to the current `2.x`, which is always compatible with a `2.x` workspace
 (see [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md)).
 
 | Version | Supported |
 | --- | --- |
-| Latest `1.x` | ✅ |
-| Older `1.x` | ⚠️ Upgrade to the latest `1.x` |
-| `0.x` | ❌ |
+| Latest `2.x` | ✅ |
+| Older `2.x` | ⚠️ Upgrade to the latest `2.x` |
+| `1.x` and earlier | ❌ |
 
 ## Reporting a vulnerability
 

@@ -72,8 +72,9 @@ to exactly one file; writing it elsewhere fails validation.
 - A 2.x release never breaks a 2.x workspace. `ultraship validate` on a workspace
   written by any 2.x release still exits 0 on a later 2.x release.
 - `ultraship migrate` carries any earlier workspace, back to the pre-1.0 releases,
-  to 2.0 with no manual edits — including pinning `commit_policy` to `off` so a
-  1.x project does not start committing without being asked.
+  to the installed version with no manual edits — including pinning
+  `commit_policy` to `off` so a 1.x project does not start committing without
+  being asked.
 - Released records are immutable; a change requires a new version.
 
 See [COMPATIBILITY.md](COMPATIBILITY.md) for how change is announced and deprecated.
