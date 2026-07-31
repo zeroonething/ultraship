@@ -1,8 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { init } from '../lib/init.mjs';
+import { addProduct } from '../lib/product.mjs';
+import { readYaml, writeYaml } from '../lib/yaml.mjs';
 
 const CLI = fileURLToPath(new URL('../bin/ultraship.mjs', import.meta.url));
 const PKG_VERSION = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version;
@@ -51,15 +56,28 @@ test('commit with no checkpoint lists the valid checkpoints', () => {
   assert.match(stderr, /develop-task/);
 });
 
-// This repository is itself a workspace, so the dispatcher is exercised end to
-// end. plan-roadmap has nothing to commit here unless the roadmap is dirty; the
-// point is that the command resolves, prints JSON, and does not fail.
+// Never run this against process.cwd(): commit is the one command that writes to
+// the repository it is run in, and a test suite that commits to the developer's
+// own checkout is a bug, not coverage. A scratch workspace with the policy off
+// exercises the dispatcher and can touch nothing.
 test('commit reaches the module and prints a JSON result', () => {
-  const { code, stdout } = run(['commit', 'plan-roadmap']);
-  assert.equal(code, 0);
-  const result = JSON.parse(stdout);
-  assert.equal(result.checkpoint, 'plan-roadmap');
-  assert.ok(['off', 'checkpoint'].includes(result.policy));
+  const dir = mkdtempSync(join(tmpdir(), 'ultraship-cli-'));
+  try {
+    const { root } = init(dir);
+    const config = readYaml(join(root, 'ultraship.yaml'));
+    config.commit_policy = 'off';
+    writeYaml(join(root, 'ultraship.yaml'), config);
+    addProduct(root, 'client-tracker');
+
+    const { code, stdout } = run(['commit', 'plan-roadmap'], dir);
+    assert.equal(code, 0);
+    const result = JSON.parse(stdout);
+    assert.equal(result.checkpoint, 'plan-roadmap');
+    assert.equal(result.policy, 'off');
+    assert.equal(result.committed, false);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test('--version prints the framework version', () => {
