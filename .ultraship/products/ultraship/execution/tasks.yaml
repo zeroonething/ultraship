@@ -168,7 +168,7 @@ tasks:
       validate holds every file in version_files to the greatest released version, so the release
       cannot complete without this. The compatibility entry is what tells an adopter that 2.2.0 owes
       them no migration and no deprecation window.
-    status: todo
+    status: done
     depends_on:
       - US-ULTRASHIP-2.2.0-T01
       - US-ULTRASHIP-2.2.0-T02
@@ -185,7 +185,28 @@ tasks:
       - .claude-plugin/marketplace.json
       - CHANGELOG.md
       - docs/COMPATIBILITY.md
-    evidence: []
+    evidence:
+      - >
+        All three declared version files read 2.2.0, checked against the key paths ultraship.yaml
+        actually declares rather than assumed — package.json version, .claude-plugin/plugin.json
+        version, and .claude-plugin/marketplace.json plugins.0.version all print 2.2.0.
+      - >
+        CHANGELOG.md gains a "[2.2.0] — 2026-08-01" entry in the existing house structure — a lead
+        paragraph plus Fixed, Added, Changed, and Compatibility sections — covering the cell()
+        escape fix and its strengthened test, the two new code-scanning files and the vendor/
+        exclusion, the ci.yml permissions block, and the CLAUDE.md audit. The file's link-reference
+        block holds only 0.2.0 and 0.1.0 and no entry since has added one, so 2.2.0 adds none either.
+      - >
+        docs/COMPATIBILITY.md gains a "What changed in 2.2" section above the 2.1 one, stating that
+        nothing broke, that no command, skill, schema, or field was removed or renamed, that
+        schema_version stays 1 and a 2.1.0 workspace passes validate on 2.2 unchanged, that no
+        deprecation window is owed, that cell() is a module-private helper CONTRACT.md does not
+        freeze, and that migrate carries the version line and nothing else.
+      - >
+        node bin/ultraship.mjs validate — exit 1 with exactly the three expected version_files
+        complaints, each saying 2.2.0 disagrees with the release version 2.1.0. This is the designed
+        gate: the bump is only reconciled when /ultraship:complete writes the 2.2.0 release record.
+      - npm test — 274 passing, 0 failing
   - id: US-ULTRASHIP-2.2.0-T07
     summary: Disable CodeQL default setup, push the branch, and confirm the checked-in workflow runs green.
     why_required: >
