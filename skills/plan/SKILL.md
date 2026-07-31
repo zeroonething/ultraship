@@ -8,7 +8,8 @@ description: Use after brainstorming to turn an approved product definition into
 Convert an approved product definition into small, complete, independently
 releasable versions.
 
-**Read first:** `shared/skill-contract.md`, `shared/release-contract.md`.
+**Read first:** `shared/skill-contract.md`, `shared/release-contract.md`,
+`shared/commit-protocol.md`.
 
 ## Runs when
 
@@ -118,14 +119,19 @@ deliver a coherent outcome — it is a smaller release, not a broken one.
 3. Run `ultraship transition PLANNING`.
 4. Draft the roadmap: three to six versions is usually right. Present it and get
    agreement on the outcomes before writing contracts.
-5. Write `roadmap.yaml`. Versions ascend; each entry has an outcome.
+5. Write `roadmap.yaml`. Versions ascend; each entry has an outcome. Then run
+   `ultraship commit plan-roadmap`.
 6. Write the full contract for the first version at
    `releases/<version>.yaml`. Every field in `shared/release-contract.md` is
    required — including `delivery.rollback` and `delivery.target_mode`, which are
    part of the release, not an afterthought.
 7. Run `ultraship transition PLANNED`, then `ultraship validate` and
-   `ultraship views`.
+   `ultraship views`. Then run `ultraship commit plan-contract`.
 8. Report the roadmap and recommend `/ultraship:develop <product> <version>`.
+
+Call both checkpoints unconditionally. `shared/commit-protocol.md` defines what
+each one stages, and the command is a no-op that exits 0 whenever the workspace's
+`commit_policy` is `off` or there is nothing to commit.
 
 ## Choosing the completion mode
 

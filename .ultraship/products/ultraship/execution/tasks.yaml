@@ -66,7 +66,7 @@ tasks:
       The command is only reachable through the skills. Without the checkpoint calls the feature
       ships as a CLI command nobody runs, and the release outcome — that lifecycle work commits
       itself — is not delivered.
-    status: todo
+    status: done
     depends_on:
       - US-ULTRASHIP-2.0.0-T02
     acceptance_criteria:
@@ -81,7 +81,16 @@ tasks:
       - skills/complete/SKILL.md
       - test/shared.test.mjs
       - test/skills.test.mjs
-    evidence: []
+    evidence:
+      - shared/commit-protocol.md — a table of all seven checkpoints with when to run each, what it stages, and its subject; a section on how the policy decides whether anything happens; a section on what the command will never do; and the JSON result shape with the advice to read `staged` when a task's files list is uncertain
+      - skills/plan/SKILL.md — plan-roadmap after the roadmap is written, plan-contract after the contract validates; both called unconditionally
+      - skills/develop/SKILL.md — develop-tasks after the task set is generated, develop-task per finished task with a new "Commit each task as it finishes" section, develop-checkpoint after a pause point; also states that `files` is what the task's commit stages
+      - skills/iterate/SKILL.md — a new step 11 running the iterate checkpoint after validate and views
+      - skills/complete/SKILL.md — a new step 12 running complete-release last, after the record, the lock entry, and the version_files bumps
+      - All four skills now name shared/commit-protocol.md in their Read first line
+      - test/skills.test.mjs — asserts each working skill reads the protocol and literally runs every checkpoint it owns, so a skill that stopped calling one fails the build
+      - test/shared.test.mjs — asserts commit-protocol.md documents every name in CHECKPOINT_NAMES and every verb in ALLOWED_GIT, so the doc and the registry cannot drift apart
+      - npm test — 252 passing, 0 failing (249 after T02)
   - id: US-ULTRASHIP-2.0.0-T04
     summary: Restate the docs for the 2.0 contract and add README badges.
     why_required: >
