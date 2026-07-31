@@ -1,6 +1,6 @@
 product: ultraship
 version: 2.1.0
-status: planned
+status: released
 release_type: minor
 outcome:
   user_can: >
@@ -174,3 +174,59 @@ open_questions:
   - How the skill behaves when the host agent tool cannot dispatch concurrently. Leaning report it plainly and run sequentially, never fabricate a dispatch — the same rule `using-ultraship`'s platform references already apply. Confirmed in develop.
   - Whether a task depending on a `deferred` or `blocked` task is reported as blocked or simply excluded, and whether a dependency cycle is an error or an empty wave. Leaning explicit reasons for all three, with a cycle reported rather than silently returning nothing. Decided in develop with test coverage.
   - Whether plan's research briefs need any structure beyond the shared brief format, given they are read-only and write nothing. Leaning no extra structure. Decided in develop.
+released_at: 2026-07-31T00:00:00Z
+mode: release-ready
+delivered: >
+  UltraShip fans work out to concurrent agents, and only when asked. A sixth
+  skill, `/ultraship:subagent`, is the single place that happens;
+  `shared/subagent-protocol.md` is the single contract behind it, and all five
+  workflow skills reference it rather than restating a dispatch recipe. Three
+  signals activate it — invoking the skill directly, telling the running skill to
+  use subagents in this session, or recording the preference in project
+  instructions, memory, or `allow_parallel_agents` — resolved by a written
+  precedence table in which an in-session instruction wins in both directions.
+  With none of them present nothing dispatches and every skill behaves exactly as
+  it did on 2.0.0. The twelfth CLI command, `ultraship wave`, decides which tasks
+  may run at once: status `todo`, every dependency `done`, and declared `files`
+  disjoint from the rest of the wave and from anything in progress, ties broken by
+  ascending task id so the same task set always yields the same wave. It reports
+  the reason it held every other task, including named dependency cycles and
+  dependency ids that match no task. It computes and never dispatches — a test
+  asserts the module references no `child_process`, `fetch`, `http`, `spawn`, or
+  `exec` — so the CLI still calls no model and touches no network. Develop
+  consumes waves, records each returned evidence against its own task, commits
+  each finished task through the existing `develop-task` checkpoint, and halts
+  rather than computing another wave when an agent returns a file outside that
+  task's declared list. A subagent writes no canonical state, transitions,
+  commits, or deploys. Nothing was removed, renamed, or reshaped: a 2.0.0
+  workspace's data is valid data here, and `schema_version` stays `1`. This
+  release was built in four CLI-computed waves of its own.
+evidence:
+  tests:
+    - npm test — 273 passing, 0 failing across 24 files (254 before this release; 19 added)
+    - node --test test/wave.test.mjs — 17 passing, covering dependency gating, dependencies that are deferred or blocked, a dependency id matching no task, file-overlap holding, an in-progress task holding its files against the whole wave, a task declaring no files running alone, a reported dependency cycle, the all-blocked and all-done empty waves, deterministic ordering across two runs, and four CLI paths including both non-zero exits
+    - node --test test/migrate.test.mjs — 12 passing, including the new 2.0.0-to-installed step asserting the sorted key set of ultraship.yaml is identical before and after so no field was added, that a rerun reports changed false on all three syncs, and that a 2.0.0-shaped workspace validates before any migration
+  builds:
+    - No build step; pure ESM CLI with a vendored YAML parser and zero runtime dependencies. git diff main -- package.json shows no dependency change.
+  reviews: []
+  deployments: []
+  health_checks:
+    - node bin/ultraship.mjs validate — exit 0, 19 files checked
+    - "node bin/ultraship.mjs wave — run against this repository's live task set at every wave; produced T01/T02/T06, then T03, then T04/T05/T07, then T08, and finally an empty wave with remaining 0"
+    - node bin/ultraship.mjs migrate — run against this repository's live workspace; corrected a stale framework_version of 1.1.0 and left commit_policy and schema_version untouched
+    - "Scope gate — grep for child_process, spawn, exec, fetch, and http in lib/wave.mjs returns nothing, so the excluded in-CLI dispatch is absent by inspection as well as by test"
+    - "Scope gate — git diff --stat against main for schemas/ is empty, so no canonical schema changed and the release owes no migration beyond the version line"
+    - "Scope gate — grep for worktree in skills/subagent/SKILL.md and shared/subagent-protocol.md returns nothing, so the excluded automatic worktree isolation was not built"
+    - "Security gate — a secret-pattern scan of the full branch diff returns no matches"
+    - "Contract gate — the command table in docs/CONTRACT.md holds twelve ultraship rows, and test/install.test.mjs asserts the CLI's COMMANDS object matches the written twelve-command list, so the documented surface and the real one cannot drift"
+known_limitations:
+  - mode is release-ready, not the contract's target_mode of published. Per the maintainer's release-after-merge convention the GitHub release is created from the main merge commit, so `ultraship deploy` — which runs the declared published hook — is authorized only after this pull request merges. The record is pinned at completion time and cannot be amended afterwards, so the published mode reached post-merge is not reflected in evidence.deployments. This is the same shortfall 1.1.0 and 2.0.0 recorded.
+  - The parallel path is verified by construction and by the wave command's tests, not by a run in which real concurrent subagents were dispatched. This release was built by a single agent consuming CLI-computed waves sequentially, so the wave rule, the per-task commits, and the halt-on-undeclared-file rule are all exercised, while genuine concurrency is not. Nothing in the framework can test an agent host's dispatch, which is why that half is a prose contract.
+  - Activation, the brief, the return shape, and the four prohibitions are prose an agent must follow. `ultraship wave` mechanically decides what may run at once, but nothing mechanically prevents a subagent from writing canonical state. The commit protocol limits the blast radius — each task commit stages only that task's declared files — but the prohibitions themselves are honoured, not enforced.
+  - The disjointness proof is only as good as each task's declared `files`. This release hit that gap twice on its own task set — T06 declared lib/migrate.mjs it never changed, and T08 declared the version files while changing NOTICE and test/install.test.mjs — both corrected in the record. Under real concurrency the second would have halted the run, which is the designed behaviour, but nothing detects a wrong list before dispatch.
+  - "No cap on concurrent agents is defined. The open question was resolved by deferring it, because a cap belongs with the resource preferences and adding one would need the schema change this release excluded."
+  - An in-session activation is never persisted. The skill offers to record it and will not write `allow_parallel_agents` unasked, so a developer who wants it permanently edits one line themselves.
+  - The CI workflow is verified by running its exact steps locally; its green run on GitHub Actions is confirmed after the branch is pushed, not at release time.
+supersedes: 2.0.0
+next_recommended_version: 2.2.0
+immutable: true

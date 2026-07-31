@@ -86,4 +86,4 @@ versions:
       single owner of tasks.yaml, of the transitions, and of the commits — parallel execution
       changes how fast the release is built, never who is allowed to say what is true about it.
     detail: specified
-    status: planned
+    status: released
