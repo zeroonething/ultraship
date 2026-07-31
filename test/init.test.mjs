@@ -41,6 +41,16 @@ test('init writes a config whose resource profile is entirely unknown', () => {
   }
 });
 
+test('init writes the default commit policy, so a new workspace commits at checkpoints', () => {
+  const dir = scratch();
+  try {
+    const { root } = init(dir);
+    assert.equal(readYaml(join(root, 'ultraship.yaml')).commit_policy, 'checkpoint');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('init derives a workspace id from the directory and starts UNINITIALIZED', () => {
   const dir = scratch();
   const project = join(dir, 'Freelance Tools');

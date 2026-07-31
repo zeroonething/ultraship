@@ -1,5 +1,10 @@
 # UltraShip
 
+[![CI](https://github.com/zeroonething/ultraship/actions/workflows/ci.yml/badge.svg)](https://github.com/zeroonething/ultraship/actions/workflows/ci.yml)
+[![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](https://nodejs.org)
+[![Version](https://img.shields.io/badge/version-2.0.0-blue)](CHANGELOG.md)
+[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
 **Ship at inference speed.**
 
 UltraShip is an AI-assisted rapid development framework for transforming vague
@@ -60,6 +65,7 @@ command reads and checks it. It never calls a model and never touches the networ
 | `ultraship migrate` | Move a 0.1.0 workspace's single state onto its active product's lifecycle, and bring `framework_version` up to the installed release. Run once per upgrade. |
 | `ultraship constraints set [--time T] [--budget B] [--capacity C]` | Record your real limits on the active release, as user estimates, so develop and iterate assess release fit against them. `ultraship constraints show` prints them. |
 | `ultraship deploy [product] [version]` | Run the declared `delivery_hooks` command for the release's target mode, capture its output as evidence, and exit non-zero if it fails so completion refuses the deployed mode. No hook declared → nothing to run. |
+| `ultraship commit <checkpoint> [product] [version] [--task ID]` | Commit the working skills' own output at one checkpoint. Stages only that checkpoint's declared paths, never pushes, branches, or tags. Governed by `commit_policy`; a no-op when it is `off`. |
 | `ultraship validate` | Check every canonical file against its schema and the cross-file rules. |
 | `ultraship semver next <version> <bump>` | Compute the next version. `bump` is `major`, `minor`, `patch`, `release`, or a pre-release identifier. |
 | `ultraship views` | Regenerate the readable Markdown summaries in `.ultraship/views/`. |
@@ -155,22 +161,57 @@ non-zero, completion refuses the deployed mode, and the release stays
 itself opens no network connection. Omit `delivery_hooks` and deployment is
 manual and recorded by hand, exactly as before.
 
+## Commits at every checkpoint
+
+The four working skills commit their own output. `plan` commits the roadmap and
+then the contract; `develop` commits the task set and then every task the moment
+it is done, with its evidence and its own files in the same commit; `iterate`
+commits the plan change with every file it touched; `complete` commits the
+immutable record with its lock entry and version bumps. Each message is a
+Conventional Commits subject derived from canonical state.
+
+The result is a git history that is a second, independent view of the release —
+reviewable per task, revertible per task, and resumable after an interruption
+instead of one undifferentiated working tree at the end.
+
+```yaml
+# .ultraship/ultraship.yaml
+commit_policy: checkpoint    # or: off
+```
+
+`checkpoint` is the default for a workspace created by 2.0 or later. Set `off` and
+nothing ever commits. **A workspace carried over from 1.x is pinned to `off` by
+`ultraship migrate`**, so upgrading never starts committing without you asking.
+
+The command stages and commits, and nothing else. It never pushes, never creates
+a branch, and never creates a tag — `lib/commit.mjs` permits exactly four git
+subcommands and refuses any other, so nothing it does can leave your machine.
+Pushing, tagging, and opening a pull request stay yours. It never runs
+`git add -A` either: each checkpoint stages an explicit path list, and the commit
+carries a pathspec, so your unrelated working changes are never swept in even if
+you had already staged them.
+
+The checkpoints, what each stages, and its message format are in
+[shared/commit-protocol.md](shared/commit-protocol.md).
+
 ## Stability and the public contract
 
-UltraShip 1.0 has a frozen, enumerated public contract: the ten CLI commands, the
-skills, and the ten `.ultraship/` schemas. **Changing any of them is a major
+UltraShip 2.0 has a frozen, enumerated public contract: the eleven CLI commands,
+the skills, and the ten `.ultraship/` schemas. **Changing any of them is a major
 version.** Additive, backward-compatible changes are minor; fixes are patch. The
 full surface is enumerated in [docs/CONTRACT.md](docs/CONTRACT.md).
 
 What you can rely on:
 
-- A `1.x` release never breaks a `1.x` workspace — `ultraship validate` still
-  exits 0 after an upgrade within 1.x.
+- A `2.x` release never breaks a `2.x` workspace — `ultraship validate` still
+  exits 0 after an upgrade within 2.x.
 - `ultraship migrate` carries any workspace, back to the pre-1.0 releases, up to
   the installed version with no manual edits. It is forward-only and idempotent;
   run it once after upgrading.
-- The workspace records which contract it is on as `schema_version` in
-  `ultraship.yaml` (1.0 is `schema_version: 1`).
+- The canonical state schemas are unchanged from 1.x, so `schema_version` stays
+  `1`: a 1.x workspace's *data* is still valid data on 2.0. What changed in 2.0 is
+  behaviour — the skills now commit — and `migrate` pins any pre-2.0 workspace to
+  `commit_policy: off` so that behaviour is opt-in for them.
 - Released records stay immutable — a correction is a new version, never an edit.
 
 How change is announced and deprecated is documented in

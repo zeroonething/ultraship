@@ -7,7 +7,8 @@ description: Use to implement the active release contract as complete vertical s
 
 Implement the active release contract as the smallest complete vertical slice.
 
-**Read first:** `shared/skill-contract.md`, `shared/release-contract.md`.
+**Read first:** `shared/skill-contract.md`, `shared/release-contract.md`,
+`shared/commit-protocol.md`.
 
 **Invocation:** `/ultraship:develop [product] [version]`. With no arguments, use
 the single active release. If more than one candidate exists, ask.
@@ -94,8 +95,18 @@ tasks:
     evidence: []
 ```
 
+Once `active.yaml` and `tasks.yaml` are written:
+
+```bash
+ultraship commit develop-tasks
+```
+
 `why_required` is not decoration. If you cannot say why the release fails
 without this task, the task is not release work — drop it.
+
+`files` is not decoration either. It is what the task's commit stages, so a task
+whose `files` list is incomplete produces a commit missing part of its own
+implementation. The command reports what it staged; read it.
 
 Every string in `acceptance_criteria` must appear verbatim in the contract's
 `acceptance` lists. Validation enforces this, so inventing a criterion here fails
@@ -155,6 +166,23 @@ Say it plainly:
 > records a fallback scope that drops it. Run `/ultraship:iterate` and I will
 > record the change and update the contract.
 
+## Commit each task as it finishes
+
+The moment a task reaches `done` with its evidence recorded in `tasks.yaml`, run:
+
+```bash
+ultraship commit develop-task --task <task-id>
+```
+
+That stages the task's own `files` alongside `tasks.yaml`, so its implementation
+and its evidence land in one commit — reviewable and revertible on its own, and
+safe to leave behind if the run is interrupted. Do it per task, not once at the
+end; a single commit for a whole release is the habit this replaces.
+
+Call it unconditionally. `shared/commit-protocol.md` defines every checkpoint,
+and the command is a no-op that exits 0 when the workspace's `commit_policy` is
+`off`, when there is no git repository, or when nothing under those paths changed.
+
 ## Checkpoints
 
 Checkpoint when a major task completes, an unknown surfaces, a dependency
@@ -178,6 +206,9 @@ next_task: US-CLIENT-TRACKER-0.1.0-T04
 required_context:
   - db/migrations/0001-invoices.sql
 ```
+
+Then run `ultraship commit develop-checkpoint`, so the pause point is in the
+history the next session reads.
 
 Pausing safely is a success. Do not label the version complete.
 

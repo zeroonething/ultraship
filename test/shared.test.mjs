@@ -5,6 +5,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { TRANSITIONS } from '../lib/state.mjs';
 import { load } from '../lib/schemas.mjs';
+import { CHECKPOINT_NAMES, ALLOWED_GIT } from '../lib/commit.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (name) => readFileSync(join(ROOT, 'shared', name), 'utf8');
@@ -48,6 +49,29 @@ test('all twenty principles are recorded', () => {
   for (let n = 1; n <= 20; n += 1) {
     assert.match(doc, new RegExp(`^${n}\\. `, 'm'), `principles.md omits principle ${n}`);
   }
+});
+
+// The registry in lib/commit.mjs and the table here are the same list. If they
+// drift, a skill calls a checkpoint that does not exist, or one exists that no
+// skill runs.
+test('the commit protocol documents every checkpoint the registry defines', () => {
+  const doc = read('commit-protocol.md');
+  for (const name of CHECKPOINT_NAMES) {
+    assert.match(doc, new RegExp(`\`${name}\``), `commit-protocol.md omits ${name}`);
+  }
+  for (const verb of ALLOWED_GIT) {
+    assert.match(doc, new RegExp(`\`${verb}\``), `commit-protocol.md omits the ${verb} verb`);
+  }
+});
+
+test('the commit protocol states what the command will never do', () => {
+  const doc = read('commit-protocol.md');
+  assert.match(doc, /never pushes/i);
+  assert.match(doc, /never creates a branch/i);
+  assert.match(doc, /never creates a tag/i);
+  assert.match(doc, /never runs `git add -A`/);
+  assert.match(doc, /commit_policy/);
+  assert.match(doc, /no-op/);
 });
 
 test('the skill contract lists all seven steps and forbids fabrication', () => {

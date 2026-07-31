@@ -11,6 +11,7 @@ import { addProduct, useProduct } from '../lib/product.mjs';
 import { migrate } from '../lib/migrate.mjs';
 import { setConstraints, showConstraints } from '../lib/constraints.mjs';
 import { deploy } from '../lib/deploy.mjs';
+import { commitCheckpoint, CHECKPOINT_NAMES } from '../lib/commit.mjs';
 import { validateWorkspace } from '../lib/validate.mjs';
 import { renderViews } from '../lib/views.mjs';
 
@@ -94,6 +95,27 @@ const COMMANDS = {
     const result = deploy(requireRoot(process.cwd()), { product, version });
     out(result);
     return result.ok ? 0 : 1;
+  },
+
+  commit(argv) {
+    const positional = [];
+    let task;
+    for (let i = 0; i < argv.length; i += 1) {
+      if (argv[i] === '--task') {
+        task = argv[i + 1];
+        i += 1;
+      } else positional.push(argv[i]);
+    }
+    const [checkpoint, product, version] = positional;
+    if (!checkpoint) {
+      return fail(
+        `Usage: ultraship commit <checkpoint> [product] [version] [--task ID]\n\nCheckpoints:\n  ${CHECKPOINT_NAMES.join('\n  ')}`,
+      );
+    }
+    const result = commitCheckpoint(requireRoot(process.cwd()), { checkpoint, product, version, task });
+    out(result);
+    // A no-op is a success: only a commit the policy asked for and git refused fails.
+    return result.ok === false ? 1 : 0;
   },
 
   validate() {

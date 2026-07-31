@@ -11,6 +11,10 @@
       "type": "string",
       "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?$"
     },
+    "commit_policy": {
+      "description": "Optional. Whether the working skills commit their own output at the checkpoints in shared/commit-protocol.md. `checkpoint` commits; `off` never does. Absent means `checkpoint` for a workspace created by 2.0 or later, and `off` for one carried over from 1.x — so an existing project never starts committing without being asked. `ultraship migrate` writes `off` into any workspace that omits it.",
+      "enum": ["off", "checkpoint"]
+    },
     "version_files": {
       "description": "Optional. Files outside .ultraship that carry the project's version. validate checks every one matches the greatest released version, so the version cannot drift across manifests. path is relative to the project root; key is a dot-path into the parsed JSON (numeric segments index arrays).",
       "type": "array",
