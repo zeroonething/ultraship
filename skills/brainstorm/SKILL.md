@@ -10,6 +10,11 @@ clarity to plan complete releases.
 
 **Read first:** `shared/skill-contract.md`, `shared/state-model.md`.
 
+Independent discovery questions can be fanned out through `/ultraship:subagent`
+when the developer has asked for it — `shared/subagent-protocol.md` has the
+signals. The questions you ask them are still yours, and `product.yaml` is still
+written here, only after explicit approval.
+
 ## Runs when
 
 The workspace state is `UNINITIALIZED` or `BRAINSTORMING`.
