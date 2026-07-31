@@ -33,6 +33,11 @@ CLI enforces — if you change one, change both.
 No build step, no install step, no lint config. The one dependency (`yaml`) is
 vendored under `vendor/`, so there is nothing to `npm install`.
 
+Never edit a file under `vendor/` — it is unmodified upstream code. A dependency
+change means re-vendoring it, following [`vendor/README.md`](vendor/README.md).
+That is also why `vendor/` is excluded from this repo's code scanning; the policy
+is in [`SECURITY.md`](SECURITY.md).
+
 Requirements: **Node 20 or newer**.
 
 ```bash

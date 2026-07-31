@@ -97,14 +97,35 @@ tasks:
       The exclusion is only honest if the reason is written down. Without it a reader cannot tell an
       accepted risk from an unattended one, which is the ownerless-fact failure the whole framework
       exists to prevent.
-    status: todo
+    status: done
     depends_on: []
     acceptance_criteria:
       - SECURITY.md, the contributor guidance, and CLAUDE.md each state that vendored third-party code is excluded from scanning, tracked by version, and answered by re-vendoring rather than patching
     files:
       - SECURITY.md
       - CONTRIBUTING.md
-    evidence: []
+    evidence:
+      - >
+        SECURITY.md gains a "Vendored dependencies" section stating that vendor/ holds unmodified
+        third-party code — today npm yaml at the exact published version, to keep the zero-install
+        guarantee — that vendor/README.md documents the procedure, that the directory is excluded
+        from code scanning by .github/codeql/codeql-config.yml because alerts against code the
+        project cannot patch are not actionable, that it is tracked by pinned version instead, and
+        that an advisory is answered by re-vendoring the fixed upstream release and rerunning
+        npm test rather than editing anything under vendor/.
+      - >
+        CONTRIBUTING.md gains four lines beside its existing vendoring paragraph — never edit under
+        vendor/, a dependency change means re-vendoring per vendor/README.md, and that is also why
+        vendor/ is excluded from code scanning — pointing at SECURITY.md for the full policy rather
+        than restating it.
+      - >
+        Every path, command, and version named was verified before being written — ls vendor/ shows
+        yaml and README.md; vendor/yaml/package.json reads version 2.9.0; vendor/README.md:10 carries
+        `npm pack yaml@2.9.0` and :12 records that browser/ and the source maps were removed and
+        nothing was edited; .github/codeql/codeql-config.yml:7-8 carries paths-ignore with vendor/;
+        package.json defines the test script; and vendor/yaml/browser does not exist, consistent with
+        the documented procedure.
+      - npm test — 274 passing, 0 failing; no documentation-shape test broke
   - id: US-ULTRASHIP-2.2.0-T05
     summary: Bring CLAUDE.md up to date and add the security-scanning and vendoring rule to it.
     why_required: >
