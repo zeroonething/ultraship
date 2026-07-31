@@ -74,10 +74,16 @@ versions:
     status: released
   - version: 2.1.0
     outcome: >
-      A developer's release finishes in fewer wall-clock passes because /ultraship:develop
-      dispatches the tasks whose dependencies are already satisfied and whose files do not overlap
-      to parallel subagents in one wave, records each returned evidence against its task, commits
-      each completed task, and then computes the next wave — with the existing allow_parallel_agents
-      preference deciding whether any of it happens.
-    detail: outline
+      A developer asks for parallel work and gets it, on their own terms. A sixth skill,
+      /ultraship:subagent, is the one place UltraShip fans work out to concurrent agents, and the
+      workflow skills call it instead of each inventing a dispatch recipe: develop hands it a wave
+      of tasks that ultraship wave proved independent — dependencies satisfied, declared files
+      disjoint — and plan hands it independent research briefs. It never runs on its own: it
+      activates only when the developer invokes it directly, tells the running skill to use
+      subagents, or has recorded that preference in their project instructions, memory, or the
+      allow_parallel_agents flag, which is how they make it their default. Every subagent returns
+      evidence and files changed and writes no canonical state, so the calling skill stays the
+      single owner of tasks.yaml, of the transitions, and of the commits — parallel execution
+      changes how fast the release is built, never who is allowed to say what is true about it.
+    detail: specified
     status: planned
