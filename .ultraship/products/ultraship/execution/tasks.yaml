@@ -7,7 +7,7 @@ tasks:
       Every other task depends on there being a policy to read. Without it the commit command has
       nothing to obey, and without the migrate guard the release cannot honestly claim that no
       existing project starts committing without being asked.
-    status: todo
+    status: done
     depends_on: []
     acceptance_criteria:
       - schemas/ultraship.schema.json accepts an optional `commit_policy` string of `off` or `checkpoint`, rejects any other value, and validates a workspace that omits the field entirely
@@ -22,7 +22,12 @@ tasks:
       - test/migrate.test.mjs
       - test/init.test.mjs
       - test/schemas-workspace.test.mjs
-    evidence: []
+    evidence:
+      - schemas/ultraship.schema.json — optional `commit_policy` enum of off/checkpoint; test/schemas-workspace.test.mjs asserts both values, omission, and that `always` is rejected as an unknown enum value
+      - lib/init.mjs — exports DEFAULT_COMMIT_POLICY = 'checkpoint' and writes it into a fresh ultraship.yaml; test/init.test.mjs asserts a new workspace reads `checkpoint`
+      - lib/migrate.mjs — syncCommitPolicy runs before syncFrameworkVersion (which would erase the evidence of a pre-2.0 workspace) and writes `off` only when the field is absent; test/migrate.test.mjs asserts from null to off, idempotency on rerun, that an explicit `checkpoint` is never downgraded, and that a 1.x-shaped workspace validates before any migration
+      - node --test test/schemas-workspace.test.mjs test/init.test.mjs test/migrate.test.mjs — 38 passing, 0 failing
+      - npm test — 233 passing, 0 failing (227 before this task)
   - id: US-ULTRASHIP-2.0.0-T02
     summary: Implement lib/commit.mjs and the ultraship commit command with its checkpoint registry and no-op paths.
     why_required: >
