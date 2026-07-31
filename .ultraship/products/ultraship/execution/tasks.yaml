@@ -8,7 +8,7 @@ tasks:
       containing a backslash before a pipe renders as a literal backslash followed by a
       cell-terminating pipe, so the generated Markdown table breaks. Without this the release fixes
       nothing that is actually wrong with the framework.
-    status: todo
+    status: done
     depends_on: []
     acceptance_criteria:
       - "`cell()` renders a value containing a literal backslash immediately before a pipe as an escaped backslash followed by an escaped pipe, so neither character terminates the Markdown cell"
@@ -36,7 +36,7 @@ tasks:
       With no permissions block the workflow inherits whatever the repository or organisation
       default is, which for anything created before February 2023 is read-write. The alert is a real
       weakness even though nothing in the workflow currently writes.
-    status: todo
+    status: done
     depends_on: []
     acceptance_criteria:
       - ".github/workflows/ci.yml declares `permissions: contents: read` and CI still passes on Node 20 and 22"
