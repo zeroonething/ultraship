@@ -61,16 +61,18 @@ versions:
       UltraShip's five skills as a Minimum Complete Release.
     detail: specified
     status: released
-  - version: 1.2.0
+  - version: 2.0.0
     outcome: >
-      A developer opts in to a commit policy and their lifecycle work commits itself: plan, develop,
-      iterate, and complete each run ultraship commit at defined checkpoints, so the roadmap, the
-      contract, every finished task, every recorded plan change, and the immutable release record
-      land as separate, readable, conventionally-formatted commits instead of one undifferentiated
-      blob at the end — and a completion refuses to ship while canonical state is still uncommitted.
+      A developer's lifecycle work commits itself by default. Plan, develop, iterate, and complete
+      each run ultraship commit at defined checkpoints, so the roadmap, the contract, every finished
+      task, every recorded plan change, and the immutable release record land as separate, readable,
+      conventionally-formatted commits instead of one undifferentiated blob at the end. A developer
+      who does not want the framework touching git sets commit_policy to off, and any workspace
+      upgraded from 1.x has that written for it by ultraship migrate, so no existing project changes
+      behaviour without asking. This is the 2.0 public contract.
     detail: specified
     status: planned
-  - version: 1.3.0
+  - version: 2.1.0
     outcome: >
       A developer's release finishes in fewer wall-clock passes because /ultraship:develop dispatches
       the tasks whose dependencies are already satisfied and whose files do not overlap to parallel
