@@ -1,149 +1,149 @@
 product: ultraship
-version: 2.0.0
+version: 2.1.0
 tasks:
-  - id: US-ULTRASHIP-2.0.0-T01
-    summary: Add the commit_policy field, its default resolution, and the init and migrate paths that decide it.
+  - id: US-ULTRASHIP-2.1.0-T01
+    summary: Add lib/wave.mjs and the twelfth CLI command, ultraship wave, with its test file.
     why_required: >
-      Every other task depends on there being a policy to read. Without it the commit command has
-      nothing to obey, and without the migrate guard the release cannot honestly claim that no
-      existing project starts committing without being asked.
-    status: done
+      The wave is the only mechanical part of this release. Without a deterministic, CLI-computed
+      dispatchable set, the subagent skill would be asking an agent to decide which tasks are safe
+      to run at once, which is exactly the guessing the framework exists to replace.
+    status: todo
     depends_on: []
     acceptance_criteria:
-      - schemas/ultraship.schema.json accepts an optional `commit_policy` string of `off` or `checkpoint`, rejects any other value, and validates a workspace that omits the field entirely
-      - "`ultraship migrate` carries a 1.1.0 workspace to framework_version 2.0.0 and writes `commit_policy: off` into its ultraship.yaml, and rerunning it changes nothing"
-      - "`ultraship init` on a fresh directory writes a workspace whose commit policy is the default `checkpoint`"
-      - A workspace written by 1.0.0 or 1.1.0 still passes `ultraship validate` on 2.0.0 — its data is unchanged and only the default behaviour differs, which migrate pins to `off`
-      - "`ultraship migrate` remains forward-only and idempotent, and no manual edit of canonical state is ever required to move a workspace from 1.x to 2.0"
+      - "`ultraship wave [product] [version]` prints JSON naming the dispatchable task ids and, for every task not in the wave, the reason it was excluded"
+      - "A task is admitted to the wave only when its status is `todo`, every id in `depends_on` has status `done`, and its `files` are disjoint from those of every task already in the wave and every task whose status is `in-progress`"
+      - "Two independent runs of `ultraship wave` against the same unchanged tasks.yaml return the same wave in the same order, ties broken by ascending task id"
+      - "`ultraship wave` returns an empty wave with a reason per task when every remaining task is blocked, and an empty wave when every task is `done`; it exits non-zero when there is no active release or no tasks file"
+      - No `.ultraship/...` path is hardcoded in lib/wave.mjs; every path is derived from `paths(root)`
+      - No runtime npm dependency is added; lib/wave.mjs uses Node 20+ stdlib and the vendored YAML parser through lib/yaml.mjs
     files:
-      - schemas/ultraship.schema.json
-      - lib/init.mjs
-      - lib/migrate.mjs
-      - test/migrate.test.mjs
-      - test/init.test.mjs
-      - test/schemas-workspace.test.mjs
-    evidence:
-      - schemas/ultraship.schema.json — optional `commit_policy` enum of off/checkpoint; test/schemas-workspace.test.mjs asserts both values, omission, and that `always` is rejected as an unknown enum value
-      - lib/init.mjs — exports DEFAULT_COMMIT_POLICY = 'checkpoint' and writes it into a fresh ultraship.yaml; test/init.test.mjs asserts a new workspace reads `checkpoint`
-      - lib/migrate.mjs — syncCommitPolicy runs before syncFrameworkVersion (which would erase the evidence of a pre-2.0 workspace) and writes `off` only when the field is absent; test/migrate.test.mjs asserts from null to off, idempotency on rerun, that an explicit `checkpoint` is never downgraded, and that a 1.x-shaped workspace validates before any migration
-      - node --test test/schemas-workspace.test.mjs test/init.test.mjs test/migrate.test.mjs — 38 passing, 0 failing
-      - npm test — 233 passing, 0 failing (227 before this task)
-  - id: US-ULTRASHIP-2.0.0-T02
-    summary: Add lib/commit.mjs and the ultraship commit command.
-    why_required: >
-      This is the release. Without the command there is no commit protocol, only a configuration
-      field describing one that does not exist.
-    status: done
-    depends_on:
-      - US-ULTRASHIP-2.0.0-T01
-    acceptance_criteria:
-      - A workspace that omits `commit_policy` commits at checkpoints, and a workspace setting it to `off` does not — the default is on, and a test asserts both directions
-      - "`ultraship commit <checkpoint>` exits 0 and prints JSON reporting `committed: false` when the policy is `off`, when the checkpoint's paths hold no changes, when the directory is not a git repository, and when git is not on PATH"
-      - "`ultraship commit <checkpoint>` under the default policy creates exactly one commit containing only the paths that checkpoint declares, and prints the resulting commit SHA as JSON"
-      - The commit message is a Conventional Commits subject derived from the product, version, and checkpoint in canonical state, and carries no co-author or tool-attribution trailer
-      - "`ultraship commit` never runs `git push`, `git branch`, `git tag`, or any network operation, asserted by a test that inspects the git invocations the module makes"
-      - No runtime npm dependency is added; git is invoked through Node 20+ stdlib child_process only, and the vendored-parser zero-install guarantee holds
-      - The CLI still makes no network call and still never calls a model
-    files:
-      - lib/commit.mjs
+      - lib/wave.mjs
       - bin/ultraship.mjs
-      - test/commit.test.mjs
-      - test/cli.test.mjs
-      - test/install.test.mjs
-      - README.md
-    evidence:
-      - lib/commit.mjs — resolvePolicy gives an explicit policy priority and otherwise compares the recorded framework_version against POLICY_FLOOR; commitCheckpoint returns committed false with a reason for every ordinary no-op and never throws for one
-      - lib/commit.mjs — ALLOWED_GIT is a frozen list of rev-parse, status, add, and commit; runGit throws on any other subcommand, so push, branch, and tag are unreachable by construction rather than by convention. git is spawned with an argument array and no shell
-      - lib/commit.mjs — seven checkpoints, each deriving its staged paths and its Conventional Commits subject from canonical state. git commit is called with --only and an explicit pathspec, so a developer's unrelated staged work is never swept in
-      - bin/ultraship.mjs — eleventh command; parses --task out of the positional arguments, prints the JSON result, and exits non-zero only when a commit the policy required was refused
-      - test/commit.test.mjs — 13 tests covering policy resolution in both directions, the four no-op paths (off, 1.x carry-over, no change, not a git repository, git absent from PATH), a real commit and its SHA, the absence of any attribution trailer, that an unrelated staged file stays uncommitted, and that develop-task carries the task's own files
-      - "node --test test/commit.test.mjs — 13 passing, 0 failing"
-      - test/install.test.mjs — the frozen command list now reads eleven commands and still asserts the README documents each one
-      - npm test — 248 passing, 0 failing (233 after T01)
-      - "Defect found by running the complete-release checkpoint for real: the version was derived only from active.yaml, which transition RELEASED has already archived by then, so the subject rendered \"ultraship undefined\". Fixed by falling back to the greatest version filed under releases/, plus a guard that throws rather than committing any subject containing an underived fact"
-      - npm test — 254 passing, 0 failing after the fix, including a SemVer-order test (0.10.0 beats 0.2.0) and a test that an underived version fails loudly instead of committing
-  - id: US-ULTRASHIP-2.0.0-T03
-    summary: Write the commit protocol and wire it into the four skills.
+      - test/wave.test.mjs
+    evidence: []
+
+  - id: US-ULTRASHIP-2.1.0-T02
+    summary: Write shared/subagent-protocol.md as the single contract every skill reads.
     why_required: >
-      The command is only reachable through the skills. Without the checkpoint calls the feature
-      ships as a CLI command nobody runs, and the release outcome — that lifecycle work commits
-      itself — is not delivered.
-    status: done
-    depends_on:
-      - US-ULTRASHIP-2.0.0-T02
+      Six skill files must obey the same activation, brief, return, and prohibition rules. Written
+      once here they stay one contract; restated per skill they drift, which is the failure
+      CLAUDE.md names for shared prose contracts.
+    status: todo
+    depends_on: []
     acceptance_criteria:
-      - shared/commit-protocol.md names every checkpoint, the paths it stages, and the message format, and skills/plan, skills/develop, skills/iterate, and skills/complete each call the checkpoints it defines
-      - Develop's task checkpoint stages the completing task's `files` entries from tasks.yaml together with tasks.yaml itself
-      - Complete's release checkpoint runs after the release record, .ultraship/releases.lock, and the version_files bumps are all written
+      - "shared/subagent-protocol.md states the three activation paths, their precedence order, the brief format, the required return format, and the four prohibitions, and skills/plan and skills/develop reference it rather than restating it"
+      - "A subagent writes no file under .ultraship/ and runs no `ultraship transition`, `ultraship commit`, or `ultraship deploy`; the protocol states this and the calling skill performs all four"
+      - "`allow_parallel_agents: true` in .ultraship/ultraship.yaml activates the skill with no further instruction, which is how a developer makes parallel work their default"
+      - The release reports no token, dollar, or time figure for parallel execution, because none is measured
     files:
-      - shared/commit-protocol.md
-      - skills/plan/SKILL.md
+      - shared/subagent-protocol.md
+    evidence: []
+
+  - id: US-ULTRASHIP-2.1.0-T03
+    summary: Write skills/subagent/SKILL.md, the sixth skill, as a supporting skill.
+    why_required: >
+      This is the release's user-facing surface. Without it there is no `/ultraship:subagent` to
+      invoke and the first of the three activation paths does not exist.
+    status: todo
+    depends_on:
+      - US-ULTRASHIP-2.1.0-T02
+    acceptance_criteria:
+      - "skills/subagent/SKILL.md exists, carries the standard name and description frontmatter, and is invocable as `/ultraship:subagent`"
+      - "An explicit in-session instruction to use subagents activates the skill even when `allow_parallel_agents` is false, and the skill names that instruction as the activation source before dispatching"
+      - "The skill announces the matched activation source and the number of agents it is about to dispatch before dispatching any of them"
+    files:
+      - skills/subagent/SKILL.md
+    evidence: []
+
+  - id: US-ULTRASHIP-2.1.0-T04
+    summary: Wire the develop skill to compute waves, dispatch them, and check returned files.
+    why_required: >
+      Develop generates the independent work this release exists to parallelise. Without the
+      wiring the wave command has no caller and the outcome is unreachable.
+    status: todo
+    depends_on:
+      - US-ULTRASHIP-2.1.0-T01
+      - US-ULTRASHIP-2.1.0-T03
+    acceptance_criteria:
+      - "With none of the three activation signals present, `/ultraship:develop` produces the same sequential behaviour as 2.0.0 and dispatches no subagent"
+      - "Develop records each subagent's returned evidence against that subagent's own task in tasks.yaml and runs `ultraship commit develop-task --task <id>` per finished task, so the existing commit protocol is unchanged"
+      - "Develop halts the run and reports rather than computing another wave when a subagent returns a changed file that was not in that task's declared `files`"
+    files:
       - skills/develop/SKILL.md
+    evidence: []
+
+  - id: US-ULTRASHIP-2.1.0-T05
+    summary: Reference the protocol from plan, and from brainstorm, iterate, and complete.
+    why_required: >
+      The contract promises the skill is reachable from all five workflow skills, with plan able to
+      hand out independent research briefs. A skill only develop can reach is half the release.
+    status: todo
+    depends_on:
+      - US-ULTRASHIP-2.1.0-T03
+    acceptance_criteria:
+      - The CLI still calls no model and touches no network — `ultraship wave` reads local YAML and prints JSON, and every dispatch decision is made by the agent, not the CLI
+      - No command, skill, schema, or field is removed or renamed; a 2.0.0 workspace passes `ultraship validate` unchanged on 2.1.0, so this is a minor release owing no deprecation window under docs/COMPATIBILITY.md
+    files:
+      - skills/plan/SKILL.md
+      - skills/brainstorm/SKILL.md
       - skills/iterate/SKILL.md
       - skills/complete/SKILL.md
-      - test/shared.test.mjs
-      - test/skills.test.mjs
-    evidence:
-      - shared/commit-protocol.md — a table of all seven checkpoints with when to run each, what it stages, and its subject; a section on how the policy decides whether anything happens; a section on what the command will never do; and the JSON result shape with the advice to read `staged` when a task's files list is uncertain
-      - skills/plan/SKILL.md — plan-roadmap after the roadmap is written, plan-contract after the contract validates; both called unconditionally
-      - skills/develop/SKILL.md — develop-tasks after the task set is generated, develop-task per finished task with a new "Commit each task as it finishes" section, develop-checkpoint after a pause point; also states that `files` is what the task's commit stages
-      - skills/iterate/SKILL.md — a new step 11 running the iterate checkpoint after validate and views
-      - skills/complete/SKILL.md — a new step 12 running complete-release last, after the record, the lock entry, and the version_files bumps
-      - All four skills now name shared/commit-protocol.md in their Read first line
-      - test/skills.test.mjs — asserts each working skill reads the protocol and literally runs every checkpoint it owns, so a skill that stopped calling one fails the build
-      - test/shared.test.mjs — asserts commit-protocol.md documents every name in CHECKPOINT_NAMES and every verb in ALLOWED_GIT, so the doc and the registry cannot drift apart
-      - npm test — 252 passing, 0 failing (249 after T02)
-  - id: US-ULTRASHIP-2.0.0-T04
-    summary: Restate the docs for the 2.0 contract and add README badges.
+    evidence: []
+
+  - id: US-ULTRASHIP-2.1.0-T06
+    summary: Add the migrate step carrying a 2.0.0 workspace to framework_version 2.1.0.
     why_required: >
-      A major version whose break is undocumented is the failure docs/COMPATIBILITY.md exists to
-      prevent. A user upgrading needs to find the break, the remedy, and the eleventh command
-      without reading the source.
-    status: done
-    depends_on:
-      - US-ULTRASHIP-2.0.0-T03
+      migrate must stay forward-only and idempotent for every released version. A 2.1.0 that no
+      workspace can be carried up to breaks the guarantee docs/CONTRACT.md makes.
+    status: todo
+    depends_on: []
     acceptance_criteria:
-      - README shows CI status, Node version, version, and license badges, documents `commit_policy`, and lists `ultraship commit` in the command table
-      - docs/CONTRACT.md is stated as the 2.0 contract and lists eleven CLI commands including `ultraship commit`, and docs/COMPATIBILITY.md records the default inversion as the 2.0 break with the migrate step that absorbs it
-      - The 2.0.0 break is confined to one default and is announced in CHANGELOG.md as a BREAKING CHANGE with the one-line remedy; no 1.x command, skill, or field is removed or renamed, so nothing required a prior deprecation release
-      - CHANGELOG.md and CONTRIBUTING.md describe the commit protocol accurately, and every path and command named in the documentation exists
+      - "`ultraship migrate` carries a 2.0.0 workspace to framework_version 2.1.0, adds no field, and changes nothing when rerun"
+      - "`ultraship migrate` remains forward-only and idempotent"
     files:
-      - README.md
+      - lib/migrate.mjs
+      - test/migrate.test.mjs
+    evidence: []
+
+  - id: US-ULTRASHIP-2.1.0-T07
+    summary: Update CONTRACT, COMPATIBILITY, README, and CHANGELOG for twelve commands and the sixth skill.
+    why_required: >
+      The public contract is enumerated by hand in docs/CONTRACT.md. A command and a skill that
+      ship without appearing there are outside the contract and unsupported by definition.
+    status: todo
+    depends_on:
+      - US-ULTRASHIP-2.1.0-T01
+      - US-ULTRASHIP-2.1.0-T03
+    acceptance_criteria:
+      - "docs/CONTRACT.md lists twelve CLI commands including `ultraship wave` and names `subagent` among the supporting skills"
+      - README, CHANGELOG.md, docs/CONTRACT.md, and docs/COMPATIBILITY.md describe the skill and the command accurately, and every path and command they name exists
+    files:
       - docs/CONTRACT.md
       - docs/COMPATIBILITY.md
+      - README.md
       - CHANGELOG.md
-      - CONTRIBUTING.md
-      - docs/CONTRIBUTING-WITH-ULTRASHIP.md
-    evidence:
-      - README.md — CI status, Node >=20, version, and license badges at the top; a new "Commits at every checkpoint" section documenting commit_policy, the default, the migrate pin, and what the command will never do; ultraship commit in the command table
-      - docs/CONTRACT.md — restated as the 2.0 public contract with eleven CLI commands; the ultraship.schema row now names commit_policy; the guarantee section reads 2.x and states that migrate pins commit_policy to off
-      - docs/COMPATIBILITY.md — a new "What changed in 2.0" section naming the break as one default, the migrate step that absorbs it, that nothing was removed or renamed so no deprecation window was owed, that schema_version stays 1, and the one-line remedy
-      - CHANGELOG.md — a 2.0.0 entry with an explicit BREAKING CHANGE heading, the remedy, and Added/Changed sections for the command, the field, the protocol doc, and the badges
-      - CONTRIBUTING.md — the contract is described as 2.0 with eleven commands, the minor rule is no longer worded as 1.x-only, and a new "The skills commit as they go" subsection tells a contributor what to expect and how to opt out locally
-      - docs/CONTRIBUTING-WITH-ULTRASHIP.md — plan, develop, and the repository-conventions section now describe the checkpoints, and note that the skills never push, branch, or tag
-      - Every local Markdown link across README, CONTRIBUTING, CHANGELOG, docs/, and shared/ resolves to a file that exists (checked programmatically); LICENSE exists for the license badge; docs/CONTRACT.md lists exactly 11 ultraship command rows
-      - npm test — 252 passing, 0 failing
-  - id: US-ULTRASHIP-2.0.0-T05
-    summary: Turn the commit policy on and verify the release end to end.
+    evidence: []
+
+  - id: US-ULTRASHIP-2.1.0-T08
+    summary: Bump every declared version file to 2.1.0 and run the full suite and validate.
     why_required: >
-      UltraShip dogfoods itself. If the release cannot be developed and completed using its own
-      commit protocol, the protocol is not shippable, and the git history that is this release's
-      primary evidence would not exist.
-    status: done
+      validate holds every file in version_files to the greatest released version, so the release
+      cannot complete until they all read 2.1.0. This is the release's own gate.
+    status: todo
     depends_on:
-      - US-ULTRASHIP-2.0.0-T04
+      - US-ULTRASHIP-2.1.0-T01
+      - US-ULTRASHIP-2.1.0-T02
+      - US-ULTRASHIP-2.1.0-T03
+      - US-ULTRASHIP-2.1.0-T04
+      - US-ULTRASHIP-2.1.0-T05
+      - US-ULTRASHIP-2.1.0-T06
+      - US-ULTRASHIP-2.1.0-T07
     acceptance_criteria:
-      - "`npm test` passes locally and in CI, including test/commit.test.mjs and the migrate idempotency test"
+      - "`npm test` passes locally and in CI, including test/wave.test.mjs and the migrate test for the 2.0.0 to 2.1.0 step"
       - "`node bin/ultraship.mjs validate` exits 0 on this workspace"
-      - This repository develops and completes 2.0.0 using the default commit policy, so its own git history is the release's primary evidence
+      - version_files (package.json, .claude-plugin/plugin.json, .claude-plugin/marketplace.json) all read 2.1.0 at release
     files:
-      - .ultraship/ultraship.yaml
-      - .ultraship/views
-      - test/cli.test.mjs
-    evidence:
-      - .ultraship/ultraship.yaml — commit_policy set to checkpoint, so every task in this release after T01 was committed by ultraship commit itself rather than by hand
-      - node bin/ultraship.mjs migrate — run against this repository's real workspace; reported commit_policy unchanged (explicit checkpoint is never downgraded) and corrected a stale framework_version from 0.1.0 to 1.1.0, proving the upgrade path on live state
-      - "git log — the branch history shows chore(develop) commits for T02, T03, and T04 each produced by ultraship commit develop-task, each staging exactly that task's declared files plus tasks.yaml"
-      - Defect found and fixed during verification — the new CLI test ran ultraship commit against process.cwd(), which is this repository, and made a real stray commit. test/cli.test.mjs now runs the dispatcher in a scratch workspace with the policy off. Reverted the stray commit and confirmed HEAD does not move across a full npm test run
-      - npm test — 252 passing, 0 failing
-      - node bin/ultraship.mjs validate — exit 0, 18 files checked
+      - package.json
+      - .claude-plugin/plugin.json
+      - .claude-plugin/marketplace.json
+    evidence: []

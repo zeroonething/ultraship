@@ -1,0 +1,37 @@
+product: ultraship
+version: 2.1.0
+execution_state: DEVELOPING
+checkpoint: null
+blockers: []
+release_fit:
+  assessment: probable
+  reasons:
+    - >
+      No constraints are recorded on this release, so the assessment is grounded in the resource
+      preferences the workspace does record — minimize_cost is true and allow_additional_spend is
+      false — which argue for one small deterministic module rather than a broad refactor. The
+      scope matches that: one new lib module, one dispatch entry, one new skill, one shared
+      contract, and edits to five existing skill files.
+    - >
+      The release changes no canonical schema and removes nothing, so there is no migration risk
+      beyond a framework_version line and no compatibility surface to defend.
+    - >
+      The mechanical half is a pure function over tasks.yaml — status, depends_on, and files are
+      already recorded on every task — so the wave rule is testable without any agent in the loop.
+    - >
+      The 2.0.0 commit protocol already gives each task its own commit boundary, which is the
+      prerequisite parallel dispatch needed; this release consumes it rather than building it.
+  major_cost_drivers:
+    - >
+      Writing the activation precedence once, correctly, since it decides when the framework
+      spawns agents in someone else's repository.
+    - >
+      The declared-versus-actual files check, which is the point where an incomplete files list
+      stops being cosmetic and becomes a correctness problem.
+    - >
+      Threading one prose contract through six skill files without any of them restating it, which
+      is the drift failure CLAUDE.md warns about for shared contracts.
+    - >
+      Edge-case coverage for the wave rule — dependency cycles, dependencies on deferred or
+      blocked tasks, and three-way file overlap.
+  recommended_scope_change: null
