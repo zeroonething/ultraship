@@ -1,0 +1,112 @@
+id: US-ULTRASHIP-2.2.0-I02
+timestamp: 2026-07-31T19:04:00Z
+category:
+  - release-level
+  - implementation-level
+  - dependency-level
+trigger: >
+  The release's chosen mechanism for excluding vendored code from scanning cannot run on this
+  repository. GitHub refuses a CodeQL advanced configuration while default setup is enabled, and
+  default setup here is enforced by an organisation-level security configuration this token cannot
+  detach the repository from.
+evidence:
+  - >
+    The checked-in workflow was pushed and run on pull request 17. Both matrix legs failed at the
+    upload step with GitHub's own message: "Code Scanning could not process the submitted SARIF file:
+    CodeQL analyses from advanced configurations cannot be processed when the default setup is
+    enabled". Run 30657467790 on branch feat/2.2.0. The analysis itself completed; only the upload
+    was refused, so this is a platform rule and not a defect in the workflow.
+  - >
+    PATCH repos/zeroonething/ultraship/code-scanning/default-setup with state not-configured returns
+    HTTP 422, "Code scanning default setup cannot be modified. This setting is controlled by
+    organization administrators."
+  - >
+    repos/zeroonething/ultraship/code-security-configuration reports the repository attached to the
+    organisation configuration "zeroonething-org-config-1" with status enforced and
+    code_scanning_default_setup enabled. The account is an active org admin, but detaching a
+    repository from an organisation configuration needs a token with write:org, and the token in use
+    carries admin:public_key, gist, read:org, repo, and workflow only.
+  - >
+    Loosening the organisation configuration would change code scanning for every repository in the
+    organisation in order to fix one. That is a larger blast radius than the finding warrants and is
+    not this release's decision to make.
+  - >
+    The remaining mechanism was verified before being planned rather than after. Dismissing alert 3
+    through the API succeeded and returned state dismissed with reason "won't fix", so the token can
+    carry the exclusion even though it cannot carry the path filter.
+before:
+  scope:
+    - A checked-in CodeQL advanced setup — .github/workflows/codeql.yml running the javascript-typescript and actions analyses on push to main, on pull requests, and on a weekly schedule, with its own least-privilege permissions block and SHA-pinned actions matching the convention ci.yml already uses
+    - .github/codeql/codeql-config.yml declaring `paths-ignore` for `vendor/`, which is the whole reason for moving off default setup — default setup accepts no path filter, so vendored third-party code cannot be excluded while it is in force
+    - Disabling GitHub's CodeQL default setup for the repository, since default and advanced setup cannot both be in force, and confirming the advanced workflow ran green on main afterwards
+  assumptions:
+    - >
+      Code scanning setup is a repository-level setting the repository's own admin can change, so
+      moving from default to advanced setup is this release's to make.
+    - >
+      Dismissing alerts through the API is the inferior option because it is a click no reviewer can
+      see in a diff, while a checked-in paths-ignore is reviewable and revertible.
+  implementation: >
+    Two new files under .github/, plus one repository setting flipped through the API, replacing
+    default setup with an advanced configuration whose config file excludes vendor/.
+change:
+  summary: >
+    Keep the outcome, change the mechanism. The vendored findings are still excluded, and the reason
+    is still written down in the repository — but the exclusion is carried by an API dismissal
+    against each alert, each one carrying a comment pointing at SECURITY.md, because the platform
+    will not accept the path filter while the organisation enforces default setup. The two files
+    that cannot run are removed rather than shipped broken, and SECURITY.md gains the reason the
+    weaker mechanism is in use plus the exact steps to adopt the stronger one if the organisation
+    configuration ever changes.
+  added:
+    - "The four js/polynomial-redos alerts dismissed through the API as `won't fix`, each with a comment naming vendor/yaml as an unmodified copy of npm yaml 2.9.0 and pointing at SECURITY.md"
+    - "SECURITY.md records why the exclusion is a dismissal rather than a paths-ignore — the organisation enforces code scanning default setup, which accepts no path filter — and states what to do if that changes: detach the repository from the organisation configuration, then add an advanced CodeQL workflow whose config carries paths-ignore for vendor/"
+    - "A tenth task, US-ULTRASHIP-2.2.0-T10, removing the two unusable files and correcting every reference to them across SECURITY.md, CONTRIBUTING.md, CLAUDE.md, README.md, CHANGELOG.md, and docs/COMPATIBILITY.md"
+  removed:
+    - .github/workflows/codeql.yml and .github/codeql/codeql-config.yml, which cannot run here and would fail on every pull request if shipped
+    - Disabling GitHub's CodeQL default setup, which this repository is not permitted to do
+  deferred:
+    - >
+      Adopting a checked-in CodeQL advanced setup with paths-ignore for vendor/. It is not lost —
+      SECURITY.md now records the exact prerequisite and the steps, so whoever holds write:org can
+      carry it out. It needs no new UltraShip release; it is a repository-configuration change whose
+      instructions now live in the repository.
+  replaced:
+    - "The mechanism only. The outcome the release promised — every open alert either fixed or ruled out of scope in writing — is unchanged, and so is the vendored-code policy in SECURITY.md and CONTRIBUTING.md."
+impact:
+  products:
+    - ultraship
+  versions:
+    - 2.2.0
+  tasks:
+    - US-ULTRASHIP-2.2.0-T03
+    - US-ULTRASHIP-2.2.0-T04
+    - US-ULTRASHIP-2.2.0-T05
+    - US-ULTRASHIP-2.2.0-T07
+    - US-ULTRASHIP-2.2.0-T09
+    - US-ULTRASHIP-2.2.0-T10
+  dependencies:
+    - "Removed — the release no longer depends on being able to modify the repository's code-scanning setup, which it turned out not to control"
+    - "Added — the release depends on the API permitting alert dismissal, which was verified before this change was recorded rather than assumed"
+  resource_effect: >
+    T03's output is discarded and one task is added. The work is deleting two files and correcting
+    references in six documents, with no new code and no new test. The recorded preference
+    minimize_cost is respected: the alternative — obtaining write:org, detaching the repository, and
+    reworking an organisation-wide security configuration — is larger, outside this release, and
+    outside this token's authority.
+versioning:
+  previous_target: 2.2.0
+  new_target: 2.2.0
+  consequence: no-version-change
+approval:
+  source: agent
+  reference: >
+    Recorded by the agent under the developer's standing instruction for this session to fix all six
+    alerts, take the release through to publication, and not wait for approval. The outcome, the
+    version, and the product definition are unchanged — only the mechanism moved, and it moved
+    because the platform refused the planned one. The weaker mechanism and the reason for it are
+    stated plainly in SECURITY.md and in this record so the developer can reverse the decision with
+    the steps written down.
+canonical_updates:
+  - products/ultraship/releases/2.2.0.yaml
+  - products/ultraship/execution/tasks.yaml

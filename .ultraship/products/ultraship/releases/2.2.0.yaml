@@ -12,13 +12,16 @@ outcome:
     the only Markdown-emitting function in lib/ — and the existing views test, whose assertion was
     too weak to catch it, is strengthened with a backslash-bearing fixture. The CI workflow declares
     an explicit least-privilege `permissions: contents: read` instead of inheriting whatever the
-    repository or organisation default happens to be. Code scanning moves off GitHub's default setup
-    onto a checked-in `.github/workflows/codeql.yml` with a `.github/codeql/codeql-config.yml` that
-    excludes `vendor/`, because default setup accepts no path filter and UltraShip ships a verbatim
-    copy of the `yaml` package it does not own and must not patch. The rule for third-party code —
-    excluded from scanning, tracked by version, upgraded rather than patched when an advisory names
-    it — is written into CONTRIBUTING and SECURITY, and CLAUDE.md gains the same rule so an agent
-    working in this repository does not reintroduce the pattern.
+    repository or organisation default happens to be. The four remaining findings sit inside a
+    verbatim copy of the `yaml` package UltraShip does not own and must not patch; they are dismissed
+    as out of scope, each dismissal carrying a comment that points at the written policy. The
+    stronger mechanism — a checked-in CodeQL config with `paths-ignore: vendor/` — was built, tried,
+    and could not run: GitHub refuses an advanced configuration while default setup is enabled, and
+    default setup here is enforced organisation-wide (`US-ULTRASHIP-2.2.0-I02`). SECURITY.md records
+    that, and the steps to adopt the stronger mechanism if it ever becomes available. The rule for
+    third-party code — excluded from scanning, tracked by version, upgraded rather than patched when
+    an advisory names it — is written into CONTRIBUTING and SECURITY, and CLAUDE.md gains the same
+    rule so an agent working in this repository does not reintroduce the pattern.
   business_value: >
     UltraShip asks developers to trust it with their release records. A public repository whose
     security tab shows six unexplained open alerts undercuts that on the first look a prospective
@@ -26,17 +29,18 @@ outcome:
     inside the vendored YAML parser, and one is a workflow-permissions warning — but nothing in the
     repository says so, so a reader cannot tell an accepted risk from an unattended one. That is the
     same failure mode the whole framework exists to prevent: a fact with no canonical owner. Fixing
-    the one genuine bug, writing down the vendoring policy, and making the scanner configuration a
-    reviewable file in the repository rather than a setting in a web UI turns the security tab from
-    noise into a gate — and the gate is what a 1.1.0 contributor guide and a frozen public contract
-    were already promising.
+    the one genuine bug, closing the workflow-permissions weakness, and writing down the vendoring
+    policy turns the security tab from noise into a gate — and the gate is what a 1.1.0 contributor
+    guide and a frozen public contract were already promising. Where the platform refused the
+    mechanism this release wanted, the repository says so in writing rather than leaving a reader to
+    guess why four alerts are dismissed.
   evidence_of_value: >
-    `gh api repos/zeroonething/ultraship/code-scanning/alerts` reports no open alert after the
-    workflow's first run on main. `lib/views.mjs` escapes backslash and pipe in one pass and
+    `gh api repos/zeroonething/ultraship/code-scanning/alerts` reports no open alert.
+    `lib/views.mjs` escapes backslash and pipe in one pass and
     test/views.test.mjs asserts the exact rendered form of a `\|` input rather than merely that some
     escaped pipe exists. `.github/workflows/ci.yml` declares `permissions: contents: read`.
-    `.github/workflows/codeql.yml` and `.github/codeql/codeql-config.yml` exist, are checked in, and
-    exclude `vendor/`. SECURITY.md, docs/CONTRIBUTING-WITH-ULTRASHIP.md or CONTRIBUTING.md, and
+    Each of the four vendored findings is dismissed with a comment naming vendor/yaml and pointing at
+    SECURITY.md, and the repository carries no workflow that cannot run. SECURITY.md, docs/CONTRIBUTING-WITH-ULTRASHIP.md or CONTRIBUTING.md, and
     CLAUDE.md all state the vendored-code policy. `npm test` passes and
     `node bin/ultraship.mjs validate` exits 0.
 scope:
@@ -44,9 +48,8 @@ scope:
     - "A correct `cell()` in lib/views.mjs — one pass escaping both meta-characters, `String(value).replace(/\\s+/g, ' ').trim().replace(/[\\\\|]/g, '\\\\$&')`, so a backslash is escaped before a pipe can be re-exposed by it. It is the only Markdown-emitting function in lib/, so there is no sibling caller to patch."
     - A strengthened regression test in test/views.test.mjs — the existing 'multi-line and pipe-bearing values stay inside their table cell' case gains a fixture whose value contains a literal backslash immediately before a pipe, and an assertion on the exact rendered escape rather than the current weak match on any escaped pipe
     - "`permissions: contents: read` declared at the top level of .github/workflows/ci.yml, so the workflow's GITHUB_TOKEN is least-privilege regardless of the repository or organisation default"
-    - A checked-in CodeQL advanced setup — .github/workflows/codeql.yml running the javascript-typescript and actions analyses on push to main, on pull requests, and on a weekly schedule, with its own least-privilege permissions block and SHA-pinned actions matching the convention ci.yml already uses
-    - .github/codeql/codeql-config.yml declaring `paths-ignore` for `vendor/`, which is the whole reason for moving off default setup — default setup accepts no path filter, so vendored third-party code cannot be excluded while it is in force
-    - Disabling GitHub's CodeQL default setup for the repository, since default and advanced setup cannot both be in force, and confirming the advanced workflow ran green on main afterwards
+    - "The four js/polynomial-redos findings inside vendor/yaml dismissed as out of scope, each dismissal carrying a comment that names vendor/yaml as an unmodified copy of npm yaml 2.9.0 and points at SECURITY.md, so the reason travels with the alert rather than living only in someone's memory"
+    - "SECURITY.md recording why the exclusion is a dismissal rather than a path filter — GitHub refuses a CodeQL advanced configuration while default setup is enabled, and default setup on this repository is enforced by an organisation-level security configuration — together with the steps to adopt the stronger mechanism if that ever changes: detach the repository from the organisation configuration, then add a CodeQL workflow whose config carries paths-ignore for vendor/. Changed by US-ULTRASHIP-2.2.0-I02 after the built workflow was pushed and refused."
     - A written third-party-code policy — vendored dependencies are excluded from this repository's code scanning because UltraShip ships them verbatim and patching them would break re-vendoring; they are tracked by pinned version, and an advisory naming one is answered by re-vendoring the fixed upstream release, never by editing vendor/
     - That policy stated in SECURITY.md and in the contributor guidance, and mirrored into CLAUDE.md so an agent working in this repository inherits it
     - CLAUDE.md brought up to date generally — the security-scanning and vendoring rule, and any stale statement about the repository's CI or contract surface found while making the change
@@ -56,7 +59,8 @@ scope:
   excluded:
     - "Editing anything under vendor/. The four `js/polynomial-redos` alerts are in the `yaml` package's own dist output; patching them would fork a vendored copy from its upstream and silently break the next re-vendor, which is a worse defect than the finding."
     - Upgrading or re-vendoring the `yaml` package as part of this release. Nothing in the scanning result is an advisory against it, and a parser swap is its own release with its own test evidence.
-    - "Dismissing alerts through the GitHub API as `won't fix`. A dismissal is a click in a web UI that no reviewer can see in a diff; the same decision expressed as a checked-in `paths-ignore` plus a written policy is reviewable, revertible, and survives the next repository."
+    - "Shipping a workflow that cannot run. The CodeQL workflow and its config were written, pushed, and refused by GitHub — analysis completed, upload rejected — so they are removed rather than left to fail on every pull request. A red check that is expected to be red teaches a reviewer to ignore red checks."
+    - "Loosening the organisation-level security configuration. It would change code scanning for every repository in the organisation to settle one repository's four third-party findings, and it needs a token scope this release does not have."
     - Any change to the twelve CLI commands, the ten schemas, or the skills. `cell()` is a module-private helper that docs/CONTRACT.md does not freeze, so no public surface moves and no migration is owed beyond the framework_version line.
     - Escaping or sanitising the non-table Markdown in lib/views.mjs — the list items and bold lines at :95, :143-146, :157, and :189 interpolate free text without `cell()`, but a pipe is harmless outside a table row. Recorded as a known limitation rather than fixed under a security release it does not belong to.
     - Adding a linter, a secret-scanning workflow, a dependency-review action, or any scanner beyond the CodeQL analysis the repository already had
@@ -70,9 +74,9 @@ acceptance:
     - test/views.test.mjs contains a fixture whose value includes `\|` and asserts the exact rendered escape sequence rather than matching any escaped pipe
     - "`node bin/ultraship.mjs views` regenerates this repository's own four views with no content change other than what the escape fix requires"
     - ".github/workflows/ci.yml declares `permissions: contents: read` and CI still passes on Node 20 and 22"
-    - .github/workflows/codeql.yml exists, analyses javascript-typescript and actions, references .github/codeql/codeql-config.yml, declares its own permissions block, and pins every action by commit SHA
-    - .github/codeql/codeql-config.yml excludes vendor/ via paths-ignore
-    - GitHub CodeQL default setup is disabled for the repository and the advanced workflow has completed a green run on main
+    - Each of the four js/polynomial-redos alerts is dismissed with a comment naming vendor/yaml as an unmodified copy of npm yaml 2.9.0 and pointing at SECURITY.md
+    - The repository contains no CodeQL workflow or config that cannot run, and no reference anywhere in the documentation to a file this release does not ship
+    - SECURITY.md states why the exclusion is a dismissal rather than a path filter, and the steps to adopt the stronger mechanism if the organisation configuration changes
     - "`gh api repos/zeroonething/ultraship/code-scanning/alerts --jq '[.[] | select(.state == \"open\")] | length'` returns 0 after that run"
     - SECURITY.md, the contributor guidance, and CLAUDE.md each state that vendored third-party code is excluded from scanning, tracked by version, and answered by re-vendoring rather than patching
     - CLAUDE.md is accurate against the repository as it stands at 2.2.0 — every path, command, and count it names exists
@@ -109,20 +113,21 @@ delivery:
     Revert the pull-request merge commit. The library change is one line and reverting it restores
     the previous escape behaviour exactly; no canonical file shape changed and no released record is
     affected, so a workspace that ran on 2.2.0 is still valid on 2.1.0 apart from the
-    framework_version line. Reverting the workflow files leaves the repository with no code scanning
-    until default setup is re-enabled, which is a single API call and is the documented remedy.
+    framework_version line. Code scanning itself is untouched by a revert: it runs from the
+    organisation-enforced default setup, which this release never had the authority to change. The
+    four dismissals are reversible individually through the same API that set them.
 dependencies:
   products: []
   services:
     - GitHub Actions for CI and for the CodeQL analysis
-    - GitHub code scanning, whose default setup must be disabled through the API before the checked-in workflow can take effect
+    - "GitHub code scanning, whose alert-dismissal API carries the exclusion. Verified before being planned: dismissing an alert returns state dismissed with reason \"won't fix\". The repository cannot change its own code-scanning setup — that is an organisation-enforced setting."
     - The gh CLI, already in use for the published delivery hook
   human_approvals:
-    - The maintainer accepts moving code scanning from default setup to a checked-in workflow, since that changes who owns the scanner configuration
+    - "The maintainer accepts that the vendored findings are excluded by dismissal rather than by a checked-in path filter, and that the reason for the weaker mechanism is written into SECURITY.md rather than argued away"
     - The maintainer accepts that vendored third-party code is excluded from scanning rather than patched or dismissed
 risks:
-  - "Disabling default setup leaves a window in which the repository has no code scanning at all, and if the advanced workflow is misconfigured the window does not close. Mitigated by adding and merging the workflow before flipping the setting, and by treating a green run on main plus a zero open-alert count as the release's acceptance criterion rather than assuming it."
-  - "`paths-ignore` for vendor/ is a permanent blind spot, and a future vendored dependency with a real vulnerability would not be flagged here. Mitigated by writing the policy down in three places, by pinning the vendored version, and by making re-vendoring the stated response to any advisory — the alternative, per-alert dismissal, has the same blind spot with none of the writing."
+  - "A dismissal lives in GitHub's alert store, not in the repository, so a reader of the diff cannot see it and a future maintainer could reverse it without noticing there was a reason. This is the weakness the release originally planned around and could not avoid. Mitigated by putting the reason in the dismissal comment on every alert, by writing the full policy into SECURITY.md, CONTRIBUTING.md, and CLAUDE.md, and by recording in SECURITY.md the exact steps to replace the dismissal with a checked-in path filter."
+  - "Excluding vendor/ by any mechanism is a permanent blind spot, and a future vendored dependency with a real vulnerability would not be flagged here. Mitigated by pinning the vendored version, by making re-vendoring the stated response to any advisory, and by the fact that the alternative — scanning code the project cannot patch — produces alerts nobody can act on rather than safety."
   - "The escape fix changes generated output, and a view regenerated on 2.2.0 will differ from one generated on 2.1.0 for any value containing a backslash. Mitigated by views being derived and never authoritative, by regenerating this repository's own views in the same release, and by the change being a strict no-op for values with no backslash."
   - "CLAUDE.md drifts from the repository the moment either changes, and a stale instruction file misleads every future agent session more quietly than stale prose misleads a human. Mitigated by making CLAUDE.md accuracy an acceptance criterion with an explicit path-and-command check rather than a read-through."
   - "A security-titled release invites scope creep into scanners, linters, and repository settings nobody asked for. Mitigated by an explicit excluded list naming each of them."
@@ -140,5 +145,5 @@ resource_profile:
     - Nothing under vendor/ may be modified
     - No public-contract surface may move, so this stays a minor release
 open_questions:
-  - Whether the CodeQL workflow should also analyse on a schedule or only on push and pull request. Leaning weekly, matching what default setup already did, so a newly published query still finds old code. Decided in develop.
+  - "Resolved in develop, against the plan: whether this repository could run a CodeQL advanced configuration at all. It cannot — GitHub refuses the SARIF upload while default setup is enabled, and default setup is enforced organisation-wide. Recorded in US-ULTRASHIP-2.2.0-I02 with the run that proved it."
   - Whether the vendoring policy belongs in SECURITY.md, CONTRIBUTING, or both. Leaning both, with SECURITY.md owning the wording and the contributor guide pointing at it. Decided in develop.

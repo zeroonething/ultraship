@@ -53,17 +53,16 @@ tasks:
       - npm test — 273 passing, 0 failing
       - node bin/ultraship.mjs validate — exit 0, 20 files checked
   - id: US-ULTRASHIP-2.2.0-T03
-    summary: Add a checked-in CodeQL workflow and a config that excludes vendor/.
+    summary: "Add a checked-in CodeQL workflow and a config that excludes vendor/. Deferred by US-ULTRASHIP-2.2.0-I02 — built correctly, pushed, and refused by the platform."
     why_required: >
       GitHub's default setup accepts no path filter, so while it is in force the vendored yaml copy
       cannot be excluded and keeps producing alerts against code this project does not own. Moving
       the scanner configuration into the repository is what makes the exclusion reviewable in a diff
       instead of a click in a web UI.
-    status: done
+    status: deferred
     depends_on: []
     acceptance_criteria:
-      - .github/workflows/codeql.yml exists, analyses javascript-typescript and actions, references .github/codeql/codeql-config.yml, declares its own permissions block, and pins every action by commit SHA
-      - .github/codeql/codeql-config.yml excludes vendor/ via paths-ignore
+      - The repository contains no CodeQL workflow or config that cannot run, and no reference anywhere in the documentation to a file this release does not ship
     files:
       - .github/workflows/codeql.yml
       - .github/codeql/codeql-config.yml
@@ -91,6 +90,14 @@ tasks:
         and analyze.
       - "Both files parse through the vendored YAML parser, and grep of every `uses:` line shows three 40-hex SHAs"
       - npm test — 274 passing, 0 failing
+      - >
+        Outcome — both files were correct and both were refused. Pushed on pull request 17, run
+        30657467790: each matrix leg completed its analysis and failed at the upload with "Code
+        Scanning could not process the submitted SARIF file: CodeQL analyses from advanced
+        configurations cannot be processed when the default setup is enabled". Default setup here is
+        enforced by the organisation configuration zeroonething-org-config-1 and cannot be disabled
+        with the available token scopes. Deferred by US-ULTRASHIP-2.2.0-I02; the files are removed by
+        US-ULTRASHIP-2.2.0-T10, and SECURITY.md records the steps to adopt this mechanism later.
   - id: US-ULTRASHIP-2.2.0-T04
     summary: Write the vendored third-party code policy into SECURITY.md and CONTRIBUTING.md.
     why_required: >
@@ -208,16 +215,16 @@ tasks:
         gate: the bump is only reconciled when /ultraship:complete writes the 2.2.0 release record.
       - npm test — 274 passing, 0 failing
   - id: US-ULTRASHIP-2.2.0-T07
-    summary: Disable CodeQL default setup, push the branch, and confirm the checked-in workflow runs green.
+    summary: Dismiss the four vendored findings with a comment pointing at the written policy, and confirm no alert stays open.
     why_required: >
-      Default and advanced setup cannot both be in force — while default setup is enabled the
-      checked-in workflow fails outright, so the exclusion never takes effect and the release
-      delivers nothing. This is also the only step in the release that no local check can verify.
-    status: done
+      Rewritten by US-ULTRASHIP-2.2.0-I02. The path filter this release planned cannot be applied
+      here, so the dismissal is the only mechanism left. A dismissal with no stated reason is exactly
+      the ownerless fact this release exists to remove, so each one carries its reason.
+    status: todo
     depends_on:
-      - US-ULTRASHIP-2.2.0-T03
+      - US-ULTRASHIP-2.2.0-T10
     acceptance_criteria:
-      - GitHub CodeQL default setup is disabled for the repository and the advanced workflow has completed a green run on main
+      - Each of the four js/polynomial-redos alerts is dismissed with a comment naming vendor/yaml as an unmodified copy of npm yaml 2.9.0 and pointing at SECURITY.md
       - "`gh api repos/zeroonething/ultraship/code-scanning/alerts --jq '[.[] | select(.state == \"open\")] | length'` returns 0 after that run"
     files: []
     evidence: []
@@ -231,6 +238,7 @@ tasks:
       - US-ULTRASHIP-2.2.0-T06
       - US-ULTRASHIP-2.2.0-T07
       - US-ULTRASHIP-2.2.0-T09
+      - US-ULTRASHIP-2.2.0-T10
     acceptance_criteria:
       - "`npm test` passes locally and in CI, with the strengthened views test failing against the pre-fix `cell()` and passing after it"
       - "`node bin/ultraship.mjs validate` exits 0 on this workspace"
@@ -249,7 +257,7 @@ tasks:
       release, so shipping the CLAUDE.md fix alone would leave the same drift where more people see
       it. This release also adds two files a reader has to be told about and a policy they have to
       be able to find.
-    status: todo
+    status: done
     depends_on:
       - US-ULTRASHIP-2.2.0-T04
       - US-ULTRASHIP-2.2.0-T05
@@ -293,3 +301,25 @@ tasks:
       - >
         node bin/ultraship.mjs validate — the same three expected version_files complaints as T06 and
         nothing else, identical before and after these edits against a captured baseline.
+  - id: US-ULTRASHIP-2.2.0-T10
+    summary: Remove the CodeQL workflow and config that cannot run, and correct every reference to them.
+    why_required: >
+      Added by US-ULTRASHIP-2.2.0-I02. The two files fail on every pull request here, and a check
+      that is expected to be red teaches a reviewer to ignore red checks. Six documents already cite
+      them as the mechanism, so deleting the files without correcting the prose would leave the
+      repository describing a setup it does not have — the drift this release was created to fix.
+    status: todo
+    depends_on: []
+    acceptance_criteria:
+      - The repository contains no CodeQL workflow or config that cannot run, and no reference anywhere in the documentation to a file this release does not ship
+      - SECURITY.md states why the exclusion is a dismissal rather than a path filter, and the steps to adopt the stronger mechanism if the organisation configuration changes
+    files:
+      - .github/workflows/codeql.yml
+      - .github/codeql/codeql-config.yml
+      - SECURITY.md
+      - CONTRIBUTING.md
+      - CLAUDE.md
+      - README.md
+      - CHANGELOG.md
+      - docs/COMPATIBILITY.md
+    evidence: []
