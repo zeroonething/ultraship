@@ -171,6 +171,51 @@ test('migrate pins a 1.x workspace to commit_policy off and syncs framework_vers
   }
 });
 
+// The 2.1 upgrade path. 2.1.0 added a command and a skill and changed no
+// canonical shape, so there is nothing to carry forward but the version line —
+// and nothing may be added to a workspace that already validates.
+test('migrate carries a 2.0.0 workspace to the installed version and adds no field', () => {
+  const { dir, root, p } = scratch();
+  try {
+    const config = readYaml(p.config);
+    config.framework_version = '2.0.0';
+    config.commit_policy = 'checkpoint'; // as 2.0 init wrote it
+    writeYaml(p.config, config);
+    const before = Object.keys(readYaml(p.config)).sort();
+
+    const result = migrate(root);
+    assert.equal(result.framework_version.from, '2.0.0');
+    assert.equal(result.framework_version.to, FRAMEWORK_VERSION);
+    assert.equal(readYaml(p.config).framework_version, FRAMEWORK_VERSION);
+    assert.equal(readYaml(p.config).commit_policy, 'checkpoint');
+    assert.equal(readYaml(p.config).schema_version, SCHEMA_VERSION);
+    assert.deepEqual(Object.keys(readYaml(p.config)).sort(), before);
+    assert.equal(validateWorkspace(root).ok, true);
+
+    // Idempotent: a second run changes nothing at all.
+    const rerun = migrate(root);
+    assert.equal(rerun.framework_version.changed, false);
+    assert.equal(rerun.schema_version.changed, false);
+    assert.equal(rerun.commit_policy.changed, false);
+    assert.deepEqual(Object.keys(readYaml(p.config)).sort(), before);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// A 2.0.0 workspace's data is valid data on 2.1: nothing was added or reshaped.
+test('a 2.0.0-shaped workspace validates on 2.1 before any migration', () => {
+  const { dir, root, p } = scratch();
+  try {
+    const config = readYaml(p.config);
+    config.framework_version = '2.0.0';
+    writeYaml(p.config, config);
+    assert.equal(validateWorkspace(root).ok, true);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('migrate leaves an explicit commit_policy alone', () => {
   const { dir, root, p } = scratch();
   try {

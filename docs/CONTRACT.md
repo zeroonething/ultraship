@@ -1,6 +1,7 @@
 # The UltraShip 2.0 public contract
 
-This is the frozen public surface of UltraShip 2.0. **Changing any item listed
+This is the frozen public surface of UltraShip 2.0, as extended by 2.1.
+**Changing any item listed
 here is a major version.** Backward-compatible additions (a new command, a new
 optional field, a new skill) are a minor version; backward-compatible fixes are a
 patch. Anything not listed here — internal module layout, private helpers, log
@@ -12,7 +13,7 @@ schemas did not break in 2.0, so a 1.x workspace's data is valid data here. The
 2.0 break is behavioural, not structural — see
 [COMPATIBILITY.md](COMPATIBILITY.md).
 
-## CLI commands (11)
+## CLI commands (12)
 
 Each command reads and checks local canonical state. None calls a model or
 touches the network.
@@ -26,6 +27,7 @@ touches the network.
 | `ultraship migrate` | Bring a workspace up to the current schema and framework version. Idempotent. |
 | `ultraship constraints <set\|show> [--time T] [--budget B] [--capacity C]` | Record or print the user's real limits on the active release, as user estimates. |
 | `ultraship commit <checkpoint> [product] [version] [--task ID]` | Commit the working skills' own output at one checkpoint, staging only that checkpoint's declared paths. Local only: never pushes, branches, or tags. A no-op when `commit_policy` is `off`. |
+| `ultraship wave [product] [version]` | Print the tasks that may run concurrently right now — every dependency `done`, declared `files` disjoint — and the reason each held task was excluded. Computes only; it dispatches nothing. |
 | `ultraship deploy [product] [version]` | Run the declared `delivery_hooks` command for the release's target mode, capture its output as evidence, and exit non-zero if it fails. |
 | `ultraship validate` | Check every canonical file against its schema and the cross-file integrity rules. Exit non-zero on any violation. |
 | `ultraship views` | Regenerate the readable Markdown summaries in `.ultraship/views/`. |
@@ -37,9 +39,15 @@ The five core skills define the workflow:
 
 `brainstorm` → `plan` → `develop` → `iterate` → `complete`.
 
-Supporting skills: `using-ultraship`, `systematic-debugging`,
+Supporting skills: `using-ultraship`, `subagent`, `systematic-debugging`,
 `test-driven-development`, `verification-before-completion`,
 `requesting-code-review`, `receiving-code-review`, `using-git-worktrees`.
+
+`subagent` (added in 2.1) is the one place UltraShip fans work out to concurrent
+agents. It is a supporting skill, not a lifecycle phase: it moves no state and
+writes no canonical file, and it runs only when the developer asks for it —
+directly, in-session, or by recording the preference. See
+[shared/subagent-protocol.md](../shared/subagent-protocol.md).
 
 ## Canonical state schemas (10)
 
