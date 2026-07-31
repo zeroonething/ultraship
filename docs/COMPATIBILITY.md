@@ -20,9 +20,10 @@ that contract is allowed to change and how change is announced.
 ## What changed in 2.2
 
 **Nothing broke.** 2.2 is security hygiene: one fix in `lib/views.mjs`, one
-least-privilege `permissions` block in the CI workflow, a checked-in code-scanning
-workflow, and the vendored-code policy written down. No command, skill, schema, or
-field was removed or renamed, `schema_version` stays `1`, and a 2.1.0 workspace
+least-privilege `permissions` block in the CI workflow, the four vendored
+code-scanning findings dismissed as out of scope, and the vendored-code policy
+written down. No command, skill, schema, or field was removed or renamed,
+`schema_version` stays `1`, and a 2.1.0 workspace
 passes `ultraship validate` on 2.2 unchanged. No item was deprecated, so no
 deprecation window is owed.
 

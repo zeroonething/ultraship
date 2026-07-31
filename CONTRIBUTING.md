@@ -35,8 +35,8 @@ vendored under `vendor/`, so there is nothing to `npm install`.
 
 Never edit a file under `vendor/` — it is unmodified upstream code. A dependency
 change means re-vendoring it, following [`vendor/README.md`](vendor/README.md).
-That is also why `vendor/` is excluded from this repo's code scanning; the policy
-is in [`SECURITY.md`](SECURITY.md).
+That is also why `vendor/` is excluded from this repo's code scanning; the policy,
+and how that exclusion is currently carried, is in [`SECURITY.md`](SECURITY.md).
 
 Requirements: **Node 20 or newer**.
 
