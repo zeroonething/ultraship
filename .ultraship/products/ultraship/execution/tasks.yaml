@@ -44,7 +44,7 @@ tasks:
       Six skill files must obey the same activation, brief, return, and prohibition rules. Written
       once here they stay one contract; restated per skill they drift, which is the failure
       CLAUDE.md names for shared prose contracts.
-    status: todo
+    status: done
     depends_on: []
     acceptance_criteria:
       - "shared/subagent-protocol.md states the three activation paths, their precedence order, the brief format, the required return format, and the four prohibitions, and skills/plan and skills/develop reference it rather than restating it"
@@ -53,7 +53,22 @@ tasks:
       - The release reports no token, dollar, or time figure for parallel execution, because none is measured
     files:
       - shared/subagent-protocol.md
-    evidence: []
+    evidence:
+      - >
+        shared/subagent-protocol.md written — states the three activation paths, a precedence table
+        that resolves any two disagreeing signals, the announce-before-dispatch rule, the two
+        dispatch modes, the brief, the return shape, the four prohibitions, and who records and
+        commits.
+      - >
+        The four prohibitions are stated as a numbered list — no write under .ultraship/, no
+        ultraship transition, no ultraship commit, no ultraship deploy — each with the reason, and
+        the calling skill is named as the party that performs all four.
+      - >
+        The honesty section forbids reporting any token, dollar, or time figure for parallel
+        execution and requires saying so plainly when the host tool cannot dispatch concurrently.
+      - >
+        The plan and develop references that complete this criterion are written under T05 and T04
+        and are verified together at T08.
 
   - id: US-ULTRASHIP-2.1.0-T03
     summary: Write skills/subagent/SKILL.md, the sixth skill, as a supporting skill.
@@ -111,15 +126,29 @@ tasks:
     why_required: >
       migrate must stay forward-only and idempotent for every released version. A 2.1.0 that no
       workspace can be carried up to breaks the guarantee docs/CONTRACT.md makes.
-    status: todo
+    status: done
     depends_on: []
     acceptance_criteria:
       - "`ultraship migrate` carries a 2.0.0 workspace to framework_version 2.1.0, adds no field, and changes nothing when rerun"
       - "`ultraship migrate` remains forward-only and idempotent"
     files:
-      - lib/migrate.mjs
       - test/migrate.test.mjs
-    evidence: []
+    evidence:
+      - node --test test/migrate.test.mjs — 12 passing, 0 failing (10 before this task; 2 added)
+      - >
+        No new code was needed. lib/migrate.mjs already syncs framework_version to
+        FRAMEWORK_VERSION, and FRAMEWORK_VERSION is read from package.json rather than being a
+        literal, so bumping the version file under T08 is the whole 2.1 upgrade step. This task's
+        declared files were corrected from lib/migrate.mjs and test/migrate.test.mjs to
+        test/migrate.test.mjs alone, so the record states what actually changed.
+      - >
+        The new test writes a 2.0.0-shaped workspace, runs migrate, and asserts framework_version
+        moves to the installed version while the sorted key set of ultraship.yaml is byte-identical
+        before and after — so no field was added — then reruns migrate and asserts all three sync
+        results report changed false and the key set is still identical.
+      - >
+        A second test asserts a 2.0.0-shaped workspace passes validateWorkspace before any
+        migration, which is the no-break guarantee docs/CONTRACT.md makes for a minor release.
 
   - id: US-ULTRASHIP-2.1.0-T07
     summary: Update CONTRACT, COMPATIBILITY, README, and CHANGELOG for twelve commands and the sixth skill.
