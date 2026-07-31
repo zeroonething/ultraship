@@ -89,7 +89,7 @@ tasks:
         github/codeql-action v4 is an annotated tag at bce182f857edf1feab116e9795a3393d21977282
         which dereferences to commit f205ea1c3313d32999d8d6a48b4f6530d4437b38, used for both init
         and analyze.
-      - Both files parse through the vendored YAML parser, and grep of every uses: line shows three 40-hex SHAs
+      - "Both files parse through the vendored YAML parser, and grep of every `uses:` line shows three 40-hex SHAs"
       - npm test — 274 passing, 0 failing
   - id: US-ULTRASHIP-2.2.0-T04
     summary: Write the vendored third-party code policy into SECURITY.md and CONTRIBUTING.md.
@@ -209,6 +209,7 @@ tasks:
     depends_on:
       - US-ULTRASHIP-2.2.0-T06
       - US-ULTRASHIP-2.2.0-T07
+      - US-ULTRASHIP-2.2.0-T09
     acceptance_criteria:
       - "`npm test` passes locally and in CI, with the strengthened views test failing against the pre-fix `cell()` and passing after it"
       - "`node bin/ultraship.mjs validate` exits 0 on this workspace"
@@ -216,4 +217,26 @@ tasks:
       - The CLI still calls no model and touches no network
       - No runtime npm dependency is added and nothing under vendor/ is modified — `git diff main -- vendor/` is empty
     files: []
+    evidence: []
+  - id: US-ULTRASHIP-2.2.0-T09
+    summary: Audit and correct README.md and the docs/ set against the repository at 2.2.0.
+    why_required: >
+      Added by US-ULTRASHIP-2.2.0-I01. The CLAUDE.md audit found that the repository's own
+      instruction file described five skills and ten CLI commands when 2.1.0 had already shipped
+      thirteen skills and twelve commands, and flagged that SECURITY.md still promises fixes against
+      the latest 1.x. README.md is the more widely read of the two surfaces and had no owner in this
+      release, so shipping the CLAUDE.md fix alone would leave the same drift where more people see
+      it. This release also adds two files a reader has to be told about and a policy they have to
+      be able to find.
+    status: todo
+    depends_on:
+      - US-ULTRASHIP-2.2.0-T04
+      - US-ULTRASHIP-2.2.0-T05
+    acceptance_criteria:
+      - README.md and every file under docs/ is accurate against the repository as it stands at 2.2.0 — every command, count, path, and version they name exists — and README.md describes the code-scanning setup and the vendored-code policy
+    files:
+      - README.md
+      - SECURITY.md
+      - docs/CONTRACT.md
+      - docs/CONTRIBUTING-WITH-ULTRASHIP.md
     evidence: []

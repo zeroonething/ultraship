@@ -50,7 +50,8 @@ scope:
     - A written third-party-code policy — vendored dependencies are excluded from this repository's code scanning because UltraShip ships them verbatim and patching them would break re-vendoring; they are tracked by pinned version, and an advisory naming one is answered by re-vendoring the fixed upstream release, never by editing vendor/
     - That policy stated in SECURITY.md and in the contributor guidance, and mirrored into CLAUDE.md so an agent working in this repository inherits it
     - CLAUDE.md brought up to date generally — the security-scanning and vendoring rule, and any stale statement about the repository's CI or contract surface found while making the change
-    - Documentation — docs/COMPATIBILITY.md records 2.2.0 as a fix-only release owing no deprecation, CHANGELOG.md gains a 2.2.0 entry, and docs/CONTRACT.md is checked and left unchanged because nothing on the frozen surface moves
+    - Documentation — docs/COMPATIBILITY.md records 2.2.0 as a fix-only release owing no deprecation, and CHANGELOG.md gains a 2.2.0 entry
+    - "README.md and every file under docs/ audited against the repository as it stands at 2.2.0 — every command, count, path, and version they name must exist — and corrected where the audit finds drift, the same standard already applied to CLAUDE.md. README.md also gains the code-scanning setup and the vendored-code policy, because it is where a reader looks first. Added by US-ULTRASHIP-2.2.0-I01 on the developer's instruction."
     - version_files bumped to 2.2.0 across package.json, .claude-plugin/plugin.json, and .claude-plugin/marketplace.json
   excluded:
     - "Editing anything under vendor/. The four `js/polynomial-redos` alerts are in the `yaml` package's own dist output; patching them would fork a vendored copy from its upstream and silently break the next re-vendor, which is a worse defect than the finding."
@@ -75,6 +76,7 @@ acceptance:
     - "`gh api repos/zeroonething/ultraship/code-scanning/alerts --jq '[.[] | select(.state == \"open\")] | length'` returns 0 after that run"
     - SECURITY.md, the contributor guidance, and CLAUDE.md each state that vendored third-party code is excluded from scanning, tracked by version, and answered by re-vendoring rather than patching
     - CLAUDE.md is accurate against the repository as it stands at 2.2.0 — every path, command, and count it names exists
+    - README.md and every file under docs/ is accurate against the repository as it stands at 2.2.0 — every command, count, path, and version they name exists — and README.md describes the code-scanning setup and the vendored-code policy
   non_functional:
     - No CLI command, skill, schema, or canonical field is added, removed, renamed, or reshaped, so a 2.1.0 workspace is valid on 2.2.0 with no migration beyond framework_version
     - The CLI still calls no model and touches no network
