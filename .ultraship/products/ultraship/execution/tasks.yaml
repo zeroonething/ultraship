@@ -1,79 +1,107 @@
 product: ultraship
-version: 1.1.0
+version: 2.0.0
 tasks:
-  - id: US-ULTRASHIP-1.1.0-T01
-    summary: Write CONTRIBUTING.md at the repo root — two halves, dev loop, SemVer classification, PR workflow.
-    why_required: Without a contributing guide a stranger cannot tell how to build, test, or classify a change; the release outcome is unreachable.
-    status: done
+  - id: US-ULTRASHIP-2.0.0-T01
+    summary: Add the commit_policy field, its default resolution, and the init and migrate paths that decide it.
+    why_required: >
+      Every other task depends on there being a policy to read. Without it the commit command has
+      nothing to obey, and without the migrate guard the release cannot honestly claim that no
+      existing project starts committing without being asked.
+    status: todo
     depends_on: []
     acceptance_criteria:
-      - CONTRIBUTING.md exists at the repo root and names both halves, the exact test commands (npm test and single-file forms), and links docs/CONTRACT.md and docs/COMPATIBILITY.md for the SemVer classification rule
+      - schemas/ultraship.schema.json accepts an optional `commit_policy` string of `off` or `checkpoint`, rejects any other value, and validates a workspace that omits the field entirely
+      - "`ultraship migrate` carries a 1.1.0 workspace to framework_version 2.0.0 and writes `commit_policy: off` into its ultraship.yaml, and rerunning it changes nothing"
+      - "`ultraship init` on a fresh directory writes a workspace whose commit policy is the default `checkpoint`"
+      - A workspace written by 1.0.0 or 1.1.0 still passes `ultraship validate` on 2.0.0 — its data is unchanged and only the default behaviour differs, which migrate pins to `off`
+      - "`ultraship migrate` remains forward-only and idempotent, and no manual edit of canonical state is ever required to move a workspace from 1.x to 2.0"
     files:
-      - CONTRIBUTING.md
-    evidence:
-      - CONTRIBUTING.md — "The two halves" section names skills vs the deterministic CLI; "Local development" gives npm test, the single-file (node --test test/validate.test.mjs) and name-pattern forms; "Classify your change" links docs/CONTRACT.md and docs/COMPATIBILITY.md with the major/minor/patch rule
-  - id: US-ULTRASHIP-1.1.0-T02
-    summary: Add CODE_OF_CONDUCT.md and SECURITY.md with a private disclosure channel and supported-version line.
-    why_required: A contributable open project must set participation terms and a private path to report a vulnerability; both are absent today.
-    status: done
-    depends_on: []
-    acceptance_criteria:
-      - CODE_OF_CONDUCT.md and SECURITY.md exist; SECURITY.md states a private disclosure channel and the supported version line
-    files:
-      - CODE_OF_CONDUCT.md
-      - SECURITY.md
-    evidence:
-      - CODE_OF_CONDUCT.md — Contributor Covenant 2.1 adaptation with an enforcement/reporting section
-      - SECURITY.md — "Supported versions" table (latest 1.x supported, older 1.x upgrade, 0.x unsupported) and "Reporting a vulnerability" routes to GitHub private vulnerability reporting, not a public issue
-  - id: US-ULTRASHIP-1.1.0-T03
-    summary: Add .github pull-request and issue (bug + feature) templates.
-    why_required: Templates are what make a submission arrive in a mergeable shape with the SemVer classification and test evidence a reviewer needs.
-    status: done
-    depends_on: []
-    acceptance_criteria:
-      - .github/PULL_REQUEST_TEMPLATE.md and .github/ISSUE_TEMPLATE/ (a bug and a feature template) exist and render on GitHub
-    files:
-      - .github/PULL_REQUEST_TEMPLATE.md
-      - .github/ISSUE_TEMPLATE/bug_report.md
-      - .github/ISSUE_TEMPLATE/feature_request.md
-    evidence:
-      - .github/PULL_REQUEST_TEMPLATE.md — prompts for what changed, a SemVer-classification checkbox set with the migrate question, and test-evidence checkboxes (npm test, validate)
-      - .github/ISSUE_TEMPLATE/bug_report.md and feature_request.md — standard GitHub issue-template front matter (name/about/title/labels) so they render in the New Issue chooser
-  - id: US-ULTRASHIP-1.1.0-T04
-    summary: Add a GitHub Actions workflow running npm test on pull_request and push, Node 20+, zero deps.
-    why_required: Without CI the "tests must pass" promise is prose only; CI enforces it on every pull request.
-    status: done
-    depends_on: []
-    acceptance_criteria:
-      - .github/workflows/ci.yml runs npm test on pull_request and push, on Node 20+, and passes on the current tree
-    files:
-      - .github/workflows/ci.yml
-    evidence:
-      - .github/workflows/ci.yml — triggers on push (main) and pull_request; matrix node [20, 22]; steps are checkout + setup-node + npm test + ultraship validate; no install step (yaml is vendored), preserving the zero-install guarantee
-      - npm test — 227 passing, 0 failing on the current tree (the exact command CI runs)
-      - node bin/ultraship.mjs validate — exit 0 (the second CI step)
-  - id: US-ULTRASHIP-1.1.0-T05
-    summary: Write docs/CONTRIBUTING-WITH-ULTRASHIP.md — the five-skill walkthrough for a change to this repo.
-    why_required: The distinctive half of the outcome — showing a contributor how to use UltraShip on UltraShip — has no home without this guide.
-    status: done
+      - schemas/ultraship.schema.json
+      - lib/init.mjs
+      - lib/migrate.mjs
+      - test/migrate.test.mjs
+      - test/init.test.mjs
+      - test/schemas-workspace.test.mjs
+    evidence: []
+  - id: US-ULTRASHIP-2.0.0-T02
+    summary: Implement lib/commit.mjs and the ultraship commit command with its checkpoint registry and no-op paths.
+    why_required: >
+      This is the release. Without the command there is no commit protocol, only a configuration
+      field describing one that does not exist.
+    status: todo
     depends_on:
-      - US-ULTRASHIP-1.1.0-T01
+      - US-ULTRASHIP-2.0.0-T01
     acceptance_criteria:
-      - docs/CONTRIBUTING-WITH-ULTRASHIP.md walks brainstorm → plan → develop → iterate → complete for a change to this repository
+      - A workspace that omits `commit_policy` commits at checkpoints, and a workspace setting it to `off` does not — the default is on, and a test asserts both directions
+      - "`ultraship commit <checkpoint>` exits 0 and prints JSON reporting `committed: false` when the policy is `off`, when the checkpoint's paths hold no changes, when the directory is not a git repository, and when git is not on PATH"
+      - "`ultraship commit <checkpoint>` under the default policy creates exactly one commit containing only the paths that checkpoint declares, and prints the resulting commit SHA as JSON"
+      - The commit message is a Conventional Commits subject derived from the product, version, and checkpoint in canonical state, and carries no co-author or tool-attribution trailer
+      - "`ultraship commit` never runs `git push`, `git branch`, `git tag`, or any network operation, asserted by a test that inspects the git invocations the module makes"
+      - No runtime npm dependency is added; git is invoked through Node 20+ stdlib child_process only, and the vendored-parser zero-install guarantee holds
+      - The CLI still makes no network call and still never calls a model
     files:
-      - docs/CONTRIBUTING-WITH-ULTRASHIP.md
-    evidence:
-      - docs/CONTRIBUTING-WITH-ULTRASHIP.md — "The five skills" section walks brainstorm → plan → develop → iterate → complete using this 1.1.0 release as the worked example; includes the repo conventions complete assumes (branch/tag/PR, release-after-merge, clean repo, no AI attribution) and a note on the dogfooded workspace
-  - id: US-ULTRASHIP-1.1.0-T06
-    summary: Link CONTRIBUTING, CODE_OF_CONDUCT, and SECURITY from the README.
-    why_required: The entry points must be discoverable from the front page or a contributor never finds them.
-    status: done
+      - lib/commit.mjs
+      - bin/ultraship.mjs
+      - test/commit.test.mjs
+      - test/cli.test.mjs
+    evidence: []
+  - id: US-ULTRASHIP-2.0.0-T03
+    summary: Write shared/commit-protocol.md and wire its checkpoints into the plan, develop, iterate, and complete skills.
+    why_required: >
+      The command is only reachable through the skills. Without the checkpoint calls the feature
+      ships as a CLI command nobody runs, and the release outcome — that lifecycle work commits
+      itself — is not delivered.
+    status: todo
     depends_on:
-      - US-ULTRASHIP-1.1.0-T01
-      - US-ULTRASHIP-1.1.0-T02
+      - US-ULTRASHIP-2.0.0-T02
     acceptance_criteria:
-      - README links CONTRIBUTING.md, CODE_OF_CONDUCT.md, and SECURITY.md
+      - shared/commit-protocol.md names every checkpoint, the paths it stages, and the message format, and skills/plan, skills/develop, skills/iterate, and skills/complete each call the checkpoints it defines
+      - Develop's task checkpoint stages the completing task's `files` entries from tasks.yaml together with tasks.yaml itself
+      - Complete's release checkpoint runs after the release record, .ultraship/releases.lock, and the version_files bumps are all written
+    files:
+      - shared/commit-protocol.md
+      - skills/plan/SKILL.md
+      - skills/develop/SKILL.md
+      - skills/iterate/SKILL.md
+      - skills/complete/SKILL.md
+      - test/shared.test.mjs
+      - test/skills.test.mjs
+    evidence: []
+  - id: US-ULTRASHIP-2.0.0-T04
+    summary: Restate the documentation for a 2.0 contract and add the README badges.
+    why_required: >
+      A major version whose break is undocumented is the failure docs/COMPATIBILITY.md exists to
+      prevent. A user upgrading needs to find the break, the remedy, and the eleventh command
+      without reading the source.
+    status: todo
+    depends_on:
+      - US-ULTRASHIP-2.0.0-T03
+    acceptance_criteria:
+      - README shows CI status, Node version, version, and license badges, documents `commit_policy`, and lists `ultraship commit` in the command table
+      - docs/CONTRACT.md is stated as the 2.0 contract and lists eleven CLI commands including `ultraship commit`, and docs/COMPATIBILITY.md records the default inversion as the 2.0 break with the migrate step that absorbs it
+      - The 2.0.0 break is confined to one default and is announced in CHANGELOG.md as a BREAKING CHANGE with the one-line remedy; no 1.x command, skill, or field is removed or renamed, so nothing required a prior deprecation release
+      - CHANGELOG.md and CONTRIBUTING.md describe the commit protocol accurately, and every path and command named in the documentation exists
     files:
       - README.md
-    evidence:
-      - README.md — new "Contributing" section links CONTRIBUTING.md, SECURITY.md, CODE_OF_CONDUCT.md, and docs/CONTRIBUTING-WITH-ULTRASHIP.md
+      - docs/CONTRACT.md
+      - docs/COMPATIBILITY.md
+      - CHANGELOG.md
+      - CONTRIBUTING.md
+      - docs/CONTRIBUTING-WITH-ULTRASHIP.md
+    evidence: []
+  - id: US-ULTRASHIP-2.0.0-T05
+    summary: Turn the commit policy on in this repository and verify the whole release end to end.
+    why_required: >
+      UltraShip dogfoods itself. If the release cannot be developed and completed using its own
+      commit protocol, the protocol is not shippable, and the git history that is this release's
+      primary evidence would not exist.
+    status: todo
+    depends_on:
+      - US-ULTRASHIP-2.0.0-T04
+    acceptance_criteria:
+      - "`npm test` passes locally and in CI, including test/commit.test.mjs and the migrate idempotency test"
+      - "`node bin/ultraship.mjs validate` exits 0 on this workspace"
+      - This repository develops and completes 2.0.0 using the default commit policy, so its own git history is the release's primary evidence
+    files:
+      - .ultraship/ultraship.yaml
+    evidence: []
