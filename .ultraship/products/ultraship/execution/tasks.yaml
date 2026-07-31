@@ -220,14 +220,34 @@ tasks:
       Rewritten by US-ULTRASHIP-2.2.0-I02. The path filter this release planned cannot be applied
       here, so the dismissal is the only mechanism left. A dismissal with no stated reason is exactly
       the ownerless fact this release exists to remove, so each one carries its reason.
-    status: todo
+    status: done
     depends_on:
       - US-ULTRASHIP-2.2.0-T10
     acceptance_criteria:
       - Each of the four js/polynomial-redos alerts is dismissed with a comment naming vendor/yaml as an unmodified copy of npm yaml 2.9.0 and pointing at SECURITY.md
       - "`gh api repos/zeroonething/ultraship/code-scanning/alerts --jq '[.[] | select(.state == \"open\")] | length'` returns 0 after that run"
     files: []
-    evidence: []
+    evidence:
+      - >
+        All four js/polynomial-redos alerts — 3 and 4 in
+        vendor/yaml/dist/compose/resolve-flow-scalar.js, 5 and 6 in
+        vendor/yaml/dist/stringify/stringifyString.js — are dismissed with reason "won't fix" and an
+        identical 270-character comment naming vendor/yaml as an unmodified copy of npm yaml 2.9.0
+        that UltraShip ships verbatim and must not patch, pointing at SECURITY.md, and recording
+        that upstream carries these regexes unchanged and no advisory covers them.
+      - >
+        The dismissal API caps a comment at 280 characters, which the first wording exceeded at 282
+        and was rejected with HTTP 422. Alert 3 had been dismissed earlier with a shorter probe
+        comment, sent to verify the mechanism was permitted at all before the plan change was
+        recorded; it was reopened and re-dismissed so all four carry the same reason rather than two
+        different ones.
+      - >
+        Not yet zero open, and not claimed to be. Alerts 2 (js/incomplete-sanitization in
+        lib/views.mjs) and 7 (actions/missing-workflow-permissions in .github/workflows/ci.yml) are
+        fixed in code on this branch but stay open until code scanning re-analyses main, which
+        happens after the pull request merges. Alert 1 — the same workflow-permissions rule from an
+        earlier fix — reads state fixed, which is the precedent for how those two close. Verified
+        after merge.
   - id: US-ULTRASHIP-2.2.0-T08
     summary: Run the full suite, validate, and regenerate this repository's own views.
     why_required: >
