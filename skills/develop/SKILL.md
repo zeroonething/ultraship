@@ -8,7 +8,7 @@ description: Use to implement the active release contract as complete vertical s
 Implement the active release contract as the smallest complete vertical slice.
 
 **Read first:** `shared/skill-contract.md`, `shared/release-contract.md`,
-`shared/commit-protocol.md`.
+`shared/commit-protocol.md`, `shared/subagent-protocol.md`.
 
 **Invocation:** `/ultraship:develop [product] [version]`. With no arguments, use
 the single active release. If more than one candidate exists, ask.
@@ -111,6 +111,42 @@ implementation. The command reports what it staged; read it.
 Every string in `acceptance_criteria` must appear verbatim in the contract's
 `acceptance` lists. Validation enforces this, so inventing a criterion here fails
 the build rather than quietly widening scope.
+
+## Parallel work, only when it is asked for
+
+By default this skill builds one task at a time. Nothing below happens unless the
+developer asked for it — directly, in this session, or by recording the
+preference. `shared/subagent-protocol.md` holds the three signals and the order
+they resolve in; read it there rather than guessing here.
+
+When one of them does speak, invoke `/ultraship:subagent` and work in waves:
+
+```bash
+ultraship wave
+```
+
+That returns the tasks that are provably safe to run at once — every dependency
+already `done`, declared `files` disjoint from the rest of the wave and from
+anything in progress — and the reason it held each of the others. Dispatch that
+set and nothing else. **Do not work out a "probably independent" set yourself;**
+the command exists so no one has to.
+
+For each returned result:
+
+1. Write its evidence into that task's `evidence` in `tasks.yaml` and set its
+   `status` to `done`. Do this in ascending task-id order, not the order the
+   results arrived, so two identical runs produce identical canonical state.
+2. Run the same per-task checkpoint a sequential run uses:
+   `ultraship commit develop-task --task <id>`.
+3. Then run `ultraship wave` again for the next wave.
+
+Recording, status, and commits stay here. A subagent does none of them.
+
+**Check what came back.** Each agent reports the files it actually changed. If a
+returned file was not in that task's declared `files`, the disjointness the wave
+rested on was never true. Halt, report it, and do not compute another wave — a
+wrong `files` list is a real defect, and quietly widening it is how two agents end
+up editing one file.
 
 ## Build vertically
 
