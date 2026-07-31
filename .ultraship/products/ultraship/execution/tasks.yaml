@@ -18,7 +18,18 @@ tasks:
     files:
       - lib/views.mjs
       - test/views.test.mjs
-    evidence: []
+    evidence:
+      - >
+        cell() now escapes both meta-characters in one pass —
+        String(value).replace(/\s+/g, ' ').trim().replace(/[\\|]/g, '\\$&') — so a backslash cannot
+        re-expose the pipe it precedes. The whitespace collapse and the em-dash empty case are
+        unchanged, and the comment above it records why the backslash is escaped too.
+      - >
+        Test-first proof — the strengthened test was written before the fix and failed against the
+        old implementation with "workspace-brief.md must escape the backslash as well as the pipe",
+        actual `... end to end \\| start to finish |`, expected /\\\\\\\|/. 9 tests, 8 pass, 1 fail.
+      - node --test test/views.test.mjs after the fix — 9 passing, 0 failing
+      - npm test — 274 passing, 0 failing (273 before this task; 1 added)
   - id: US-ULTRASHIP-2.2.0-T02
     summary: Declare a least-privilege GITHUB_TOKEN in the CI workflow.
     why_required: >
@@ -31,7 +42,16 @@ tasks:
       - ".github/workflows/ci.yml declares `permissions: contents: read` and CI still passes on Node 20 and 22"
     files:
       - .github/workflows/ci.yml
-    evidence: []
+    evidence:
+      - >
+        A top-level `permissions: contents: read` block added after `on:` and before `jobs:`, with a
+        one-line comment stating it is least privilege regardless of the repository default. The
+        triggers, the Node 20/22 matrix, the SHA-pinned actions, and the steps are unchanged.
+      - >
+        Parse check through the vendored YAML parser — permissions reads {"contents":"read"}, the
+        job set is still ['test'], and the matrix is still {"node":[20,22]}.
+      - npm test — 273 passing, 0 failing
+      - node bin/ultraship.mjs validate — exit 0, 20 files checked
   - id: US-ULTRASHIP-2.2.0-T03
     summary: Add a checked-in CodeQL workflow and a config that excludes vendor/.
     why_required: >
