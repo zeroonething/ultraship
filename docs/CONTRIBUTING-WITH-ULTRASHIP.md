@@ -3,8 +3,8 @@
 UltraShip is built with UltraShip. This repo **dogfoods itself**:
 `.ultraship/products/ultraship/` is UltraShip's own live product state, and every
 release since `0.1.0` was planned, developed, and recorded through the five
-skills. You can contribute the same way — and it is the most honest way to learn
-the framework.
+lifecycle skills. You can contribute the same way — and it is the most honest
+way to learn the framework.
 
 This guide walks the lifecycle for a change *to this repository*, using a real
 example: the `1.1.0` contributor-readiness release that added the very file you
@@ -16,7 +16,7 @@ are reading.
 > new command, a documentation set like this one — that deserves to be a Minimum
 > Complete Release with its own version.
 
-## The five skills
+## The five lifecycle skills
 
 `brainstorm → plan → develop → iterate → complete`. Each is a Claude Code skill
 you invoke with `/ultraship:<skill>`. The deterministic `ultraship` CLI is the

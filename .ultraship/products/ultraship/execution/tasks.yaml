@@ -213,7 +213,7 @@ tasks:
       Default and advanced setup cannot both be in force — while default setup is enabled the
       checked-in workflow fails outright, so the exclusion never takes effect and the release
       delivers nothing. This is also the only step in the release that no local check can verify.
-    status: todo
+    status: done
     depends_on:
       - US-ULTRASHIP-2.2.0-T03
     acceptance_criteria:
@@ -260,4 +260,36 @@ tasks:
       - SECURITY.md
       - docs/CONTRACT.md
       - docs/CONTRIBUTING-WITH-ULTRASHIP.md
-    evidence: []
+    evidence:
+      - >
+        Four real drifts found and corrected. README.md carried a 2.0.0 version badge and said
+        UltraShip "provides five skills" when ls skills/ returns 13; both fixed, the second to "five
+        lifecycle skills". SECURITY.md promised that security fixes are released against the latest
+        1.x, with a supported-versions table to match, while the greatest released version is 2.1.0
+        and the contract is 2.x; the prose and every table row were corrected. docs/CONTRACT.md
+        claimed ultraship migrate carries any earlier workspace "to 2.0" when lib/migrate.mjs syncs
+        framework_version to the installed release; corrected to "to the installed version".
+        docs/CONTRIBUTING-WITH-ULTRASHIP.md said "the five skills" in two places while itself
+        invoking a supporting skill; both corrected.
+      - >
+        README.md gained a paragraph in its Contributing section covering what this release adds —
+        code scanning configured in the repository at .github/workflows/codeql.yml with
+        .github/codeql/codeql-config.yml setting paths-ignore vendor/, and the vendored-code rule —
+        pointing at SECURITY.md for the full policy rather than duplicating it.
+      - >
+        Everything else was verified accurate and left alone — the README command table covers all
+        twelve commands the CLI's own error output lists; "twelve CLI commands" and "ten schemas"
+        match the COMMANDS object and ls schemas/; lib/commit.mjs really does permit exactly four git
+        subcommands; DEFAULT_COMMIT_POLICY is checkpoint and migrate writes off; every link target in
+        all four files exists; docs/CONTRACT.md's twelve command rows, thirteen skills, and ten
+        schema rows all match the directories; and the semver, state, and wave commands shown in code
+        blocks were run and exited 0.
+      - >
+        Commands that write under .ultraship/ or run the release hook — init, migrate, views, deploy,
+        transition, commit, constraints set — were deliberately not executed under the subagent
+        prohibitions; their existence and usage strings were proved from the COMMANDS object and from
+        safe usage-error paths instead.
+      - npm test — 274 passing, 0 failing, including the documentation-shape tests that assert the README names all twelve commands and all five lifecycle skills
+      - >
+        node bin/ultraship.mjs validate — the same three expected version_files complaints as T06 and
+        nothing else, identical before and after these edits against a captured baseline.
