@@ -29,11 +29,11 @@ tasks:
       - node --test test/schemas-workspace.test.mjs test/init.test.mjs test/migrate.test.mjs — 38 passing, 0 failing
       - npm test — 233 passing, 0 failing (227 before this task)
   - id: US-ULTRASHIP-2.0.0-T02
-    summary: Implement lib/commit.mjs and the ultraship commit command with its checkpoint registry and no-op paths.
+    summary: Add lib/commit.mjs and the ultraship commit command.
     why_required: >
       This is the release. Without the command there is no commit protocol, only a configuration
       field describing one that does not exist.
-    status: todo
+    status: done
     depends_on:
       - US-ULTRASHIP-2.0.0-T01
     acceptance_criteria:
@@ -49,9 +49,19 @@ tasks:
       - bin/ultraship.mjs
       - test/commit.test.mjs
       - test/cli.test.mjs
-    evidence: []
+      - test/install.test.mjs
+      - README.md
+    evidence:
+      - lib/commit.mjs — resolvePolicy gives an explicit policy priority and otherwise compares the recorded framework_version against POLICY_FLOOR; commitCheckpoint returns committed false with a reason for every ordinary no-op and never throws for one
+      - lib/commit.mjs — ALLOWED_GIT is a frozen list of rev-parse, status, add, and commit; runGit throws on any other subcommand, so push, branch, and tag are unreachable by construction rather than by convention. git is spawned with an argument array and no shell
+      - lib/commit.mjs — seven checkpoints, each deriving its staged paths and its Conventional Commits subject from canonical state. git commit is called with --only and an explicit pathspec, so a developer's unrelated staged work is never swept in
+      - bin/ultraship.mjs — eleventh command; parses --task out of the positional arguments, prints the JSON result, and exits non-zero only when a commit the policy required was refused
+      - test/commit.test.mjs — 13 tests covering policy resolution in both directions, the four no-op paths (off, 1.x carry-over, no change, not a git repository, git absent from PATH), a real commit and its SHA, the absence of any attribution trailer, that an unrelated staged file stays uncommitted, and that develop-task carries the task's own files
+      - "node --test test/commit.test.mjs — 13 passing, 0 failing"
+      - test/install.test.mjs — the frozen command list now reads eleven commands and still asserts the README documents each one
+      - npm test — 248 passing, 0 failing (233 after T01)
   - id: US-ULTRASHIP-2.0.0-T03
-    summary: Write shared/commit-protocol.md and wire its checkpoints into the plan, develop, iterate, and complete skills.
+    summary: Write the commit protocol and wire it into the four skills.
     why_required: >
       The command is only reachable through the skills. Without the checkpoint calls the feature
       ships as a CLI command nobody runs, and the release outcome — that lifecycle work commits
@@ -73,7 +83,7 @@ tasks:
       - test/skills.test.mjs
     evidence: []
   - id: US-ULTRASHIP-2.0.0-T04
-    summary: Restate the documentation for a 2.0 contract and add the README badges.
+    summary: Restate the docs for the 2.0 contract and add README badges.
     why_required: >
       A major version whose break is undocumented is the failure docs/COMPATIBILITY.md exists to
       prevent. A user upgrading needs to find the break, the remedy, and the eleventh command
@@ -95,7 +105,7 @@ tasks:
       - docs/CONTRIBUTING-WITH-ULTRASHIP.md
     evidence: []
   - id: US-ULTRASHIP-2.0.0-T05
-    summary: Turn the commit policy on in this repository and verify the whole release end to end.
+    summary: Turn the commit policy on and verify the release end to end.
     why_required: >
       UltraShip dogfoods itself. If the release cannot be developed and completed using its own
       commit protocol, the protocol is not shippable, and the git history that is this release's

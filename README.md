@@ -60,6 +60,7 @@ command reads and checks it. It never calls a model and never touches the networ
 | `ultraship migrate` | Move a 0.1.0 workspace's single state onto its active product's lifecycle, and bring `framework_version` up to the installed release. Run once per upgrade. |
 | `ultraship constraints set [--time T] [--budget B] [--capacity C]` | Record your real limits on the active release, as user estimates, so develop and iterate assess release fit against them. `ultraship constraints show` prints them. |
 | `ultraship deploy [product] [version]` | Run the declared `delivery_hooks` command for the release's target mode, capture its output as evidence, and exit non-zero if it fails so completion refuses the deployed mode. No hook declared → nothing to run. |
+| `ultraship commit <checkpoint> [product] [version] [--task ID]` | Commit the working skills' own output at one checkpoint. Stages only that checkpoint's declared paths, never pushes, branches, or tags. Governed by `commit_policy`; a no-op when it is `off`. |
 | `ultraship validate` | Check every canonical file against its schema and the cross-file rules. |
 | `ultraship semver next <version> <bump>` | Compute the next version. `bump` is `major`, `minor`, `patch`, `release`, or a pre-release identifier. |
 | `ultraship views` | Regenerate the readable Markdown summaries in `.ultraship/views/`. |
