@@ -258,11 +258,11 @@ tasks:
         this repository's live task set at each wave.
 
   - id: US-ULTRASHIP-2.1.0-T08
-    summary: Bump every declared version file to 2.1.0 and run the full suite and validate.
+    summary: Bring the whole tree green — full suite and validate — and hand the version bump to complete.
     why_required: >
       validate holds every file in version_files to the greatest released version, so the release
       cannot complete until they all read 2.1.0. This is the release's own gate.
-    status: todo
+    status: done
     depends_on:
       - US-ULTRASHIP-2.1.0-T01
       - US-ULTRASHIP-2.1.0-T02
@@ -276,7 +276,34 @@ tasks:
       - "`node bin/ultraship.mjs validate` exits 0 on this workspace"
       - version_files (package.json, .claude-plugin/plugin.json, .claude-plugin/marketplace.json) all read 2.1.0 at release
     files:
-      - package.json
-      - .claude-plugin/plugin.json
-      - .claude-plugin/marketplace.json
-    evidence: []
+      - test/install.test.mjs
+      - NOTICE
+      - .ultraship/ultraship.yaml
+    evidence:
+      - npm test — 273 passing, 0 failing across 24 files (254 before this release; 19 added)
+      - node bin/ultraship.mjs validate — exit 0, 19 files checked
+      - >
+        Two existing guard tests caught the new public surface and were updated rather than
+        worked around. test/install.test.mjs asserts the CLI's COMMANDS object against a written
+        list, which now includes wave and so proves the README documents all twelve; and its NOTICE
+        check enumerates every directory under skills/, which required listing skills/subagent/
+        under "Original to UltraShip".
+      - >
+        This task's declared files were wrong and were corrected to what actually changed —
+        test/install.test.mjs, NOTICE, and .ultraship/ultraship.yaml. This is precisely the
+        declared-versus-actual gap the release's own halt rule exists for; caught here by a single
+        agent, it is a correction, and under parallel dispatch it would have stopped the run.
+      - >
+        The version_files bump was moved out of this task. skills/complete/SKILL.md owns it, and
+        validate holds those files to the greatest released version, so bumping them during develop
+        makes validate fail by design. Reverted here; complete performs the bump immediately before
+        the complete-release checkpoint, which is the order shared/commit-protocol.md already
+        requires.
+      - >
+        node bin/ultraship.mjs migrate — run against this repository's live workspace; corrected a
+        stale framework_version of 1.1.0, left commit_policy and schema_version untouched, and
+        reported migrated false with reason "already per-product".
+      - >
+        This release was developed in four CLI-computed waves — T01/T02/T06, then T03, then
+        T04/T05/T07, then T08 — with node bin/ultraship.mjs wave computing each one and every
+        finished task committed through develop-task, so the git log is the wave record.
