@@ -11,7 +11,8 @@ ordering, or implementation should change.
 This is UltraShip's adaptive-planning mechanism. Using it is not an admission of
 failure — refusing to use it and quietly building the wrong thing is.
 
-**Read first:** `shared/skill-contract.md`, `shared/state-model.md`.
+**Read first:** `shared/skill-contract.md`, `shared/state-model.md`,
+`shared/commit-protocol.md`.
 
 ## Runs when
 
@@ -169,6 +170,11 @@ forgotten, and the record you wrote makes that a lie.
 8. Give deferred work a canonical destination.
 9. Run `ultraship transition DEVELOPING` when the contract is executable again.
 10. Run `ultraship validate` and `ultraship views`.
+11. Run `ultraship commit iterate`. Call it unconditionally:
+    `shared/commit-protocol.md` defines what it stages, and it is a no-op that
+    exits 0 when the policy is `off` or nothing changed. The record and every
+    file the change touched land in one commit, so the plan change is
+    reviewable and revertible as a unit.
 
 ## Done when
 
