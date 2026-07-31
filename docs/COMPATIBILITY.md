@@ -17,6 +17,27 @@ that contract is allowed to change and how change is announced.
   same major.
 - **Patch (`X.Y.Z`)** — fixes only. No contract change.
 
+## What changed in 2.2
+
+**Nothing broke.** 2.2 is security hygiene: one fix in `lib/views.mjs`, one
+least-privilege `permissions` block in the CI workflow, the four vendored
+code-scanning findings dismissed as out of scope, and the vendored-code policy
+written down. No command, skill, schema, or field was removed or renamed,
+`schema_version` stays `1`, and a 2.1.0 workspace
+passes `ultraship validate` on 2.2 unchanged. No item was deprecated, so no
+deprecation window is owed.
+
+**The fix moves no public surface.** `cell()` is a module-private helper in
+`lib/views.mjs` that [CONTRACT.md](CONTRACT.md) does not freeze. It now escapes a
+backslash as well as a pipe, so a canonical value containing `\|` stays inside its
+Markdown cell. Views are derived, never authoritative — rerunning `ultraship views`
+is the whole remedy, and a value carrying neither meta-character renders exactly as
+it did on 2.1.
+
+**`ultraship migrate` has nothing to carry but the version line.** No canonical
+shape changed, so migrating a 2.1.0 workspace updates `framework_version` and adds
+no field.
+
 ## What changed in 2.1
 
 **Nothing broke.** 2.1 adds one command (`ultraship wave`) and one supporting
