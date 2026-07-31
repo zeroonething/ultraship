@@ -145,6 +145,58 @@ test('migrate defaults an absent schema_version to the baseline and validates', 
   }
 });
 
+// The 2.0 upgrade path. A 1.x workspace has no commit_policy, so migrate pins it
+// to off: an existing project never starts committing without being asked.
+test('migrate pins a 1.x workspace to commit_policy off and syncs framework_version', () => {
+  const { dir, root, p } = scratch();
+  try {
+    const config = readYaml(p.config);
+    config.framework_version = '1.1.0';
+    delete config.commit_policy; // as a 1.x release wrote it
+    writeYaml(p.config, config);
+
+    const result = migrate(root);
+    assert.equal(result.commit_policy.from, null);
+    assert.equal(result.commit_policy.to, 'off');
+    assert.equal(result.commit_policy.changed, true);
+    assert.equal(readYaml(p.config).commit_policy, 'off');
+    assert.equal(readYaml(p.config).framework_version, FRAMEWORK_VERSION);
+    assert.equal(validateWorkspace(root).ok, true);
+
+    // Idempotent: a second run changes nothing and does not flip the policy on.
+    assert.equal(migrate(root).commit_policy.changed, false);
+    assert.equal(readYaml(p.config).commit_policy, 'off');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('migrate leaves an explicit commit_policy alone', () => {
+  const { dir, root, p } = scratch();
+  try {
+    // init already wrote checkpoint; migrate must not downgrade it to off.
+    assert.equal(readYaml(p.config).commit_policy, 'checkpoint');
+    assert.equal(migrate(root).commit_policy.changed, false);
+    assert.equal(readYaml(p.config).commit_policy, 'checkpoint');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// A 1.x workspace's data is unchanged by 2.0; only the default behaviour differs.
+test('a 1.x-shaped workspace still validates on 2.0 before any migration', () => {
+  const { dir, root, p } = scratch();
+  try {
+    const config = readYaml(p.config);
+    config.framework_version = '1.1.0';
+    delete config.commit_policy;
+    writeYaml(p.config, config);
+    assert.equal(validateWorkspace(root).ok, true);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('migrate leaves a current workspace schema_version untouched (no manual edits)', () => {
   const { dir, root, p } = scratch();
   try {
