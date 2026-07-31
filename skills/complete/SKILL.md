@@ -10,7 +10,8 @@ Verify, package, deploy or publish as authorized, record, and close one version.
 Completion is evidence-based. A release is not complete because it feels
 complete. It is complete because commands were run and their output was seen.
 
-**Read first:** `shared/skill-contract.md`, `shared/release-contract.md`.
+**Read first:** `shared/skill-contract.md`, `shared/release-contract.md`,
+`shared/commit-protocol.md`.
 
 **Invocation:** `/ultraship:complete [product] [version]`.
 
@@ -215,9 +216,15 @@ validate will report the drift.
 7. Write release notes and update the changelog.
 8. Deploy or publish, if authorized — `ultraship deploy` when a hook is declared.
 9. Verify the target environment.
-10. Write the completion record and pin it.
+10. Write the completion record and pin it. Bump every file declared in
+    `version_files` to the release version.
 11. Run `ultraship transition RELEASED`, `ultraship validate`, `ultraship views`.
-12. Recommend the next version.
+12. Run `ultraship commit complete-release` — **last**, once the record, its lock
+    entry, and every declared version file are written, or the shipped commit is
+    internally inconsistent. Call it unconditionally; `shared/commit-protocol.md`
+    defines what it stages, and it is a no-op that exits 0 when the policy is
+    `off` or nothing changed.
+13. Recommend the next version.
 
 ## Done when
 

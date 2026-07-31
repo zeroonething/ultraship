@@ -44,6 +44,32 @@ test('ultraship.yaml rejects a fabricated telemetry source', () => {
   assert.match(errors[0], /telemetry\.source: expected one of/);
 });
 
+// commit_policy is optional: a 1.x workspace omits it entirely and must stay valid.
+function config(extra = {}) {
+  return {
+    schema_version: 1,
+    framework_version: '2.0.0',
+    resource_profile: {
+      provider_tool: null, billing_mode: null, model_policy: 'auto',
+      available: { time_minutes: null, token_budget: null, monetary_budget_usd: null, human_review_minutes: null },
+      preferences: { minimize_cost: true, allow_additional_spend: false, allow_model_routing: true, allow_parallel_agents: false },
+      telemetry: { source: 'unknown', confidence: 'low' },
+    },
+    ...extra,
+  };
+}
+
+test('ultraship.yaml accepts both commit_policy values and their omission', () => {
+  assert.deepEqual(validate(load('ultraship'), config()), []);
+  assert.deepEqual(validate(load('ultraship'), config({ commit_policy: 'off' })), []);
+  assert.deepEqual(validate(load('ultraship'), config({ commit_policy: 'checkpoint' })), []);
+});
+
+test('ultraship.yaml rejects an unknown commit_policy', () => {
+  const errors = validate(load('ultraship'), config({ commit_policy: 'always' }));
+  assert.match(errors[0], /commit_policy: expected one of/);
+});
+
 test('workspace.yaml accepts a freshly initialized workspace', () => {
   const errors = validate(load('workspace'), {
     id: 'freelance-tools',

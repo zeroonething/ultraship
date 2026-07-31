@@ -36,6 +36,28 @@ function frontmatter(name) {
   return { fields, body: text.slice(match[0].length), text };
 }
 
+// The four working skills commit their own output. A skill that stopped calling
+// its checkpoints would ship the feature as a command nobody runs.
+test('each working skill calls the checkpoints it owns', () => {
+  const owned = {
+    plan: ['plan-roadmap', 'plan-contract'],
+    develop: ['develop-tasks', 'develop-task', 'develop-checkpoint'],
+    iterate: ['iterate'],
+    complete: ['complete-release'],
+  };
+  for (const [skill, checkpoints] of Object.entries(owned)) {
+    const { text } = frontmatter(skill);
+    assert.match(text, /shared\/commit-protocol\.md/, `${skill} must read the commit protocol`);
+    for (const checkpoint of checkpoints) {
+      assert.match(
+        text,
+        new RegExp(`ultraship commit ${checkpoint}\\b`),
+        `skills/${skill} never runs "ultraship commit ${checkpoint}"`,
+      );
+    }
+  }
+});
+
 test('every inherited skill is present', () => {
   const present = skillDirs();
   for (const name of INHERITED) {
