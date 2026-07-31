@@ -13,6 +13,11 @@ complete. It is complete because commands were run and their output was seen.
 **Read first:** `shared/skill-contract.md`, `shared/release-contract.md`,
 `shared/commit-protocol.md`.
 
+Independent gate checks can be run in parallel through `/ultraship:subagent` when
+the developer has asked for it — `shared/subagent-protocol.md` has the signals.
+Nothing there changes what a gate requires, and the evidence is still recorded
+here.
+
 **Invocation:** `/ultraship:complete [product] [version]`.
 
 ## Runs when
