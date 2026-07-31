@@ -253,7 +253,7 @@ tasks:
     why_required: >
       The escape fix changes generated output, so the repository's own views have to be regenerated
       in the same release or the checked-in views disagree with the code that produces them.
-    status: todo
+    status: done
     depends_on:
       - US-ULTRASHIP-2.2.0-T06
       - US-ULTRASHIP-2.2.0-T07
@@ -266,7 +266,29 @@ tasks:
       - The CLI still calls no model and touches no network
       - No runtime npm dependency is added and nothing under vendor/ is modified — `git diff main -- vendor/` is empty
     files: []
-    evidence: []
+    evidence:
+      - npm test — 274 passing, 0 failing across 24 files, run on the finished branch
+      - >
+        node bin/ultraship.mjs views — regenerated and produced no diff, so the checked-in views
+        already agree with the corrected cell(). The escape fix changed no view content in this
+        workspace because no canonical value here contains a backslash; the fix is a strict no-op
+        for such values, which is what the contract required of it.
+      - >
+        node bin/ultraship.mjs validate — three errors, all of them the version_files gate holding
+        2.2.0 against the greatest released version of 2.1.0. That is the gate working: it clears
+        the moment /ultraship:complete writes the 2.2.0 release record, and nothing else is
+        outstanding.
+      - >
+        Scope gate — git diff main..HEAD -- vendor/ is empty, so nothing under vendor/ was modified,
+        and git diff main..HEAD -- package.json shows exactly one changed line, the version. No
+        runtime dependency was added.
+      - >
+        Scope gate — the only child_process use in lib/ is the pre-existing spawnSync in deploy.mjs
+        and commit.mjs, both from earlier releases, and no module in lib/ makes a network call. The
+        CLI still calls no model and touches no network.
+      - >
+        lib/views.mjs carries the fix in the shipped tree —
+        String(value).replace(/\s+/g, ' ').trim().replace(/[\\|]/g, '\\$&').
   - id: US-ULTRASHIP-2.2.0-T09
     summary: Audit and correct README.md and the docs/ set against the repository at 2.2.0.
     why_required: >
