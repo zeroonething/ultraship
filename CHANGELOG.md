@@ -3,6 +3,62 @@
 All notable changes to UltraShip are recorded here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [2.2.0] — 2026-08-01
+
+Security hygiene. Every open code-scanning alert on the repository is now either
+fixed in the code or ruled out of scope in writing. One was a real defect in
+UltraShip's own code; one was a workflow weakness; the remaining four are inside
+the vendored `yaml` copy this project ships verbatim and must not patch, so the
+scanner is now configured — in a checked-in file, not a web UI setting — to stop
+looking there, and the reason is written down. No CLI command, skill, schema, or
+canonical field changed.
+
+### Fixed
+
+- `cell()` in `lib/views.mjs` escaped `|` to `\|` without escaping backslashes
+  first, so a canonical value containing `\|` rendered as a literal backslash
+  beside a live cell-terminating pipe and broke the generated Markdown table. It
+  now escapes both meta-characters in one pass (`.replace(/[\\|]/g, '\\$&')`).
+  CodeQL rule `js/incomplete-sanitization`. `cell()` is the only Markdown-emitting
+  function in `lib/`, so the fix has no sibling caller to repeat.
+- `test/views.test.mjs` gained a fixture whose value carries a backslash
+  immediately before a pipe and asserts the exact rendered escape sequence. The
+  old assertion matched any escaped pipe, which the bug satisfied.
+
+### Added
+
+- `.github/workflows/codeql.yml` and `.github/codeql/codeql-config.yml`. Code
+  scanning moves off GitHub's default setup, which accepts no path filter, onto a
+  checked-in workflow whose config sets `paths-ignore: vendor/`. The workflow runs
+  the `javascript-typescript` and `actions` analyses on push to `main`, on pull
+  requests, and weekly, declares its own least-privilege permissions, and pins
+  every action by commit SHA.
+- The vendored-code policy, written into [SECURITY.md](SECURITY.md) and
+  [CONTRIBUTING.md](CONTRIBUTING.md): `vendor/` is unmodified third-party code,
+  excluded from this repository's scanning, tracked by pinned version, and
+  answered by re-vendoring the fixed upstream release — never by editing a file
+  under `vendor/`, which would fork the copy from its upstream and break the next
+  re-vendor. The four `js/polynomial-redos` findings sit in `yaml` 2.9.0's own
+  dist output; 2.9.0 is the newest published stable, upstream `main` carries those
+  regexes unchanged, and no advisory covers them.
+
+### Changed
+
+- `.github/workflows/ci.yml` declares `permissions: contents: read`, so its
+  `GITHUB_TOKEN` is least-privilege regardless of the repository or organisation
+  default. CodeQL rule `actions/missing-workflow-permissions`.
+- [CLAUDE.md](CLAUDE.md) audited and corrected. It still described five skills and
+  ten CLI commands; the repository has thirteen skills and twelve commands. It also
+  gained the vendoring and code-scanning rule, so an agent working here does not
+  reintroduce the pattern.
+
+### Compatibility
+
+Nothing was removed or renamed and no canonical shape changed, so a 2.1.0
+workspace passes `ultraship validate` on 2.2 unchanged and `schema_version` stays
+`1`. `cell()` is a module-private helper the contract does not freeze. `ultraship
+migrate` carries `framework_version` to 2.2.0 and adds no field.
+
 ## [2.1.0] — 2026-07-31
 
 Parallel work, on your terms. A sixth skill, `/ultraship:subagent`, is the one
