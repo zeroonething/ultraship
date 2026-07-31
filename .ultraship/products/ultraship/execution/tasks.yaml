@@ -75,7 +75,7 @@ tasks:
     why_required: >
       This is the release's user-facing surface. Without it there is no `/ultraship:subagent` to
       invoke and the first of the three activation paths does not exist.
-    status: todo
+    status: done
     depends_on:
       - US-ULTRASHIP-2.1.0-T02
     acceptance_criteria:
@@ -84,7 +84,28 @@ tasks:
       - "The skill announces the matched activation source and the number of agents it is about to dispatch before dispatching any of them"
     files:
       - skills/subagent/SKILL.md
-    evidence: []
+    evidence:
+      - >
+        skills/subagent/SKILL.md written with the standard name and description frontmatter, so it
+        is invocable as /ultraship:subagent and discoverable the same way the other eleven skills
+        are.
+      - >
+        Step 1 states that a recorded allow_parallel_agents false does not override someone asking
+        for parallel work in this session, and that the developer is the higher authority in both
+        directions.
+      - >
+        Step 3 requires naming the authorising signal and the agent count before the first agent
+        starts, and carries a worked example of that announcement.
+      - >
+        The skill declares it owns no file under .ultraship/ and writes none; the "What this skill
+        owns" section names the calling skill as the party that records, sets status, and commits.
+      - >
+        It defers to shared/subagent-protocol.md for activation, precedence, the brief, the return
+        shape, and the four prohibitions rather than restating them, so there is one contract.
+      - >
+        Guardrails forbid dispatching on the skill's own initiative, computing a wave set itself,
+        reporting any unmeasured figure, fabricating a dispatch the host cannot make, and marking a
+        task done.
 
   - id: US-ULTRASHIP-2.1.0-T04
     summary: Wire the develop skill to compute waves, dispatch them, and check returned files.
