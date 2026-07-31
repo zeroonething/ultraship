@@ -59,7 +59,7 @@ tasks:
       cannot be excluded and keeps producing alerts against code this project does not own. Moving
       the scanner configuration into the repository is what makes the exclusion reviewable in a diff
       instead of a click in a web UI.
-    status: todo
+    status: done
     depends_on: []
     acceptance_criteria:
       - .github/workflows/codeql.yml exists, analyses javascript-typescript and actions, references .github/codeql/codeql-config.yml, declares its own permissions block, and pins every action by commit SHA
@@ -67,7 +67,30 @@ tasks:
     files:
       - .github/workflows/codeql.yml
       - .github/codeql/codeql-config.yml
-    evidence: []
+    evidence:
+      - >
+        .github/codeql/codeql-config.yml sets paths-ignore to vendor/ and carries no queries key, so
+        GitHub's default suite is kept. Its comment records why: vendor/ is unmodified third-party
+        code upgraded by re-vendoring per vendor/README.md, never patched, so an alert there is not
+        actionable in this repository.
+      - >
+        .github/workflows/codeql.yml runs on push to main, on pull requests, and weekly at cron
+        '17 4 * * 1', matching the schedule default setup already used. Top-level permissions are
+        contents: read, and the analyze job adds security-events: write, packages: read, and
+        actions: read. The matrix is javascript-typescript and actions — javascript-typescript is
+        the single identifier covering both JS and TS, so listing them separately would duplicate
+        the analysis. fail-fast is false and each leg uploads under its own category so the two
+        SARIF results do not overwrite each other. There is no install or build step, because the
+        one dependency is vendored.
+      - >
+        Every action is pinned by full commit SHA with a version comment, matching ci.yml's
+        convention. Resolved read-only — actions/checkout v7 is a lightweight tag at
+        3d3c42e5aac5ba805825da76410c181273ba90b1, identical to the pin already in ci.yml;
+        github/codeql-action v4 is an annotated tag at bce182f857edf1feab116e9795a3393d21977282
+        which dereferences to commit f205ea1c3313d32999d8d6a48b4f6530d4437b38, used for both init
+        and analyze.
+      - Both files parse through the vendored YAML parser, and grep of every uses: line shows three 40-hex SHAs
+      - npm test — 274 passing, 0 failing
   - id: US-ULTRASHIP-2.2.0-T04
     summary: Write the vendored third-party code policy into SECURITY.md and CONTRIBUTING.md.
     why_required: >
