@@ -7,7 +7,7 @@ tasks:
       The wave is the only mechanical part of this release. Without a deterministic, CLI-computed
       dispatchable set, the subagent skill would be asking an agent to decide which tasks are safe
       to run at once, which is exactly the guessing the framework exists to replace.
-    status: todo
+    status: done
     depends_on: []
     acceptance_criteria:
       - "`ultraship wave [product] [version]` prints JSON naming the dispatchable task ids and, for every task not in the wave, the reason it was excluded"
@@ -20,7 +20,23 @@ tasks:
       - lib/wave.mjs
       - bin/ultraship.mjs
       - test/wave.test.mjs
-    evidence: []
+    evidence:
+      - node --test test/wave.test.mjs — 17 passing, 0 failing
+      - >
+        Covers dependency gating, dependencies that are deferred or blocked, a dependency id
+        matching no task, file-overlap holding, an in-progress task holding its files, a task
+        declaring no files running alone, a reported dependency cycle, the all-blocked and all-done
+        empty waves, deterministic ordering across two runs, and the four CLI paths including both
+        non-zero exits.
+      - >
+        node bin/ultraship.mjs wave — run against this repository's live 2.1.0 task set; admitted
+        T01, T02, and T06 and named the unmet dependency for each of the other five.
+      - >
+        Scope gate — a test reads lib/wave.mjs and asserts it references no child_process, fetch,
+        http, spawn, or exec, so the module computes and never dispatches.
+      - >
+        Scope gate — lib/wave.mjs derives every path from paths(root) and imports YAML only through
+        lib/yaml.mjs; no .ultraship path is hardcoded and no dependency was added.
 
   - id: US-ULTRASHIP-2.1.0-T02
     summary: Write shared/subagent-protocol.md as the single contract every skill reads.
