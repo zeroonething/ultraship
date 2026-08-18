@@ -42,8 +42,10 @@ code (`bin/ultraship.mjs:2`). `validate` and `deploy` exit non-zero on failure; 
 
 **Workspace state lives in `.ultraship/` in the user's repo**, not here — except that this repo
 **dogfoods itself**: `.ultraship/products/ultraship/` is UltraShip's own live product state,
-managed by its own CLI. `lib/paths.mjs` is the single source of truth for every path inside a
-workspace; never hardcode a `.ultraship/...` path, derive it from `paths(root)`.
+managed by its own CLI. That workspace is gitignored and local-only: it is never pushed, so a
+fresh clone has none of it and CI cannot run `ultraship validate` — run it yourself.
+`lib/paths.mjs` is the single source of truth for every path inside a workspace; never
+hardcode a `.ultraship/...` path, derive it from `paths(root)`.
 
 **One state per product, changed only through the transition table.** `lib/state.mjs` holds the
 frozen `TRANSITIONS` map (`UNINITIALIZED → BRAINSTORMING → … → RELEASED`); `transition` refuses

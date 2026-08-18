@@ -50,14 +50,17 @@ node bin/ultraship.mjs validate             # check every canonical file + cross
 ```
 
 This repo **dogfoods itself**: `.ultraship/products/ultraship/` is UltraShip's own
-live product state, managed by its own CLI. `ultraship validate` must exit `0`
-before you open a pull request.
+live product state, managed by its own CLI. That workspace is **local-only** — it
+is gitignored and never pushed, so a fresh clone has no `.ultraship/` until you
+run `ultraship init`. `ultraship validate` must still exit `0` in your own
+checkout before you open a pull request; CI cannot run it for you.
 
 ### The skills commit as they go
 
 This workspace runs with `commit_policy: checkpoint`, so if you drive your change
 through the skills they will commit their own output — one commit per finished
-task, carrying that task's files and its recorded evidence together. See
+task. Only the code and docs a task touched land in those commits: `.ultraship/`
+is gitignored here, so the canonical state a checkpoint writes stays local. See
 [`shared/commit-protocol.md`](shared/commit-protocol.md) for the checkpoints.
 
 It only ever stages the paths a checkpoint declares, and it never pushes,
