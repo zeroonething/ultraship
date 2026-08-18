@@ -3,7 +3,9 @@
 UltraShip is built with UltraShip. This repo **dogfoods itself**:
 `.ultraship/products/ultraship/` is UltraShip's own live product state, and every
 release since `0.1.0` was planned, developed, and recorded through the five
-lifecycle skills. You can contribute the same way — and it is the most honest
+lifecycle skills. That workspace is **local-only** — `.ultraship/` is gitignored
+and never pushed, so a fresh clone has none of it (see
+[A note on the dogfooded workspace](#a-note-on-the-dogfooded-workspace)). You can contribute the same way — and it is the most honest
 way to learn the framework.
 
 This guide walks the lifecycle for a change *to this repository*, using a real
@@ -53,7 +55,9 @@ From the `RELEASED` state, planning the next version is the expected path. Plan:
 The key discipline: every acceptance criterion is checkable, and the version
 delivers a coherent outcome on its own. Plan ends by running
 `ultraship validate` and `ultraship views`, then committing the roadmap and the
-contract as two separate checkpoints.
+contract as two separate checkpoints. In *this* repo both files are gitignored,
+so those checkpoints commit nothing and report `No change under this
+checkpoint's paths.` — the state still moves, it just stays local.
 
 ### 3. `/ultraship:develop` — build the smallest complete slice
 
@@ -75,7 +79,8 @@ Rules develop enforces on you:
 - Record acceptance **evidence** against each task as you finish it, then run
   `ultraship commit develop-task --task <id>`. That stages the task's own `files`
   alongside `tasks.yaml`, so its implementation and its evidence land in one
-  commit you can review or revert on its own. Keep `files` accurate — it is what
+  commit you can review or revert on its own. (Here `tasks.yaml` is gitignored,
+  so only the task's own files are committed.) Keep `files` accurate — it is what
   the commit stages, and the command reports what it staged.
 - Never mark anything `released` or `immutable` — that is complete's job.
 
@@ -113,16 +118,21 @@ contribution lands cleanly:
   still yours.
 - **Release after merge.** The GitHub release and any plugin re-publish happen
   from the `main` merge commit *after* the PR merges, not from the branch.
-- **Keep the repo clean after a release.** `git status` must be empty; deploy
-  evidence under `.ultraship/products/*/evidence/` is gitignored.
+- **Keep the repo clean after a release.** `git status` must be empty; the whole
+  `.ultraship/` workspace is gitignored, so nothing under it ever shows up there.
 - **No AI attribution** in commit messages or PR bodies.
 
 ## A note on the dogfooded workspace
 
-Because `.ultraship/` here is real state, running the lifecycle **moves this
-repository's state** (for example, from `RELEASED` to `PLANNING` to `DEVELOPING`).
-That is expected for a genuine feature contribution. But if your change is
+`.ultraship/` here is real state, but it is **gitignored and local to whoever runs
+it**. Nothing under it is tracked, pushed, or reviewable in a pull request, and a
+fresh clone starts with no workspace at all — run `ultraship init` to create your
+own before driving the lifecycle. Because the state is local, `ultraship validate`
+cannot run in CI either; run it in your own checkout before opening a PR.
+
+Running the lifecycle **moves your local copy of this repository's state** (for
+example, from `RELEASED` to `PLANNING` to `DEVELOPING`). That is expected for a
+genuine feature contribution, and it stays on your machine. If your change is
 *documentation-only or a small fix that is not a new version*, do **not** run the
-lifecycle or commit competing canonical state — just make the change on a branch
-and open a PR. Only reach for the skills when you are genuinely shipping a new
-Minimum Complete Release.
+lifecycle at all — just make the change on a branch and open a PR. Only reach for
+the skills when you are genuinely shipping a new Minimum Complete Release.
