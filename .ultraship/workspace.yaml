@@ -1,7 +1,0 @@
-id: ultraship
-name: UltraShip
-vision: An AI-assisted rapid development framework for shipping Minimum Complete Releases.
-constraints:
-  - Zero runtime dependencies
-  - Provider-neutral methodology; adapters stay thin
-active_product: ultraship
