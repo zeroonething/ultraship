@@ -2,6 +2,6 @@ UltraShip-Product-and-Implementation-Specification.md
 node_modules/
 .DS_Store
 
-# Deploy/publish hook output is transient audit; the immutable record
-# carries the command + exit. Keep the repo clean after a release.
-.ultraship/products/*/evidence/
+# The UltraShip workspace is local-only: this repo dogfoods itself, but its
+# product state, release records and lock file are never pushed.
+.ultraship/
