@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -66,4 +67,63 @@ test('every branch injects the using-ultraship skill itself', () => {
     assert.match(context, /name: using-ultraship/);
     assert.doesNotMatch(context, /Error reading using-ultraship skill/);
   }
+});
+
+// The Codex mapping is the only thing standing between a Codex session and the
+// first instruction of every lifecycle skill. Its own coverage list is the
+// contract: an action listed there with no row is an action a skill will name
+// and Codex will have no answer for.
+const MAPPING = join(ROOT, 'skills', 'using-ultraship', 'references', 'codex-tools.md');
+
+function mapping() {
+  const text = readFileSync(MAPPING, 'utf8');
+  const list = /## Coverage\n([\s\S]*?)\n## /.exec(text);
+  assert.ok(list, 'codex-tools.md must carry a Coverage section');
+  const actions = [...list[1].matchAll(/^- (.+)$/gm)].map((m) => m[1].trim());
+  const rows = [...text.matchAll(/^\| ([^|]+?) \| .+ \|$/gm)]
+    .map((m) => m[1].trim())
+    .filter((cell) => cell !== 'Action' && !/^-+$/.test(cell));
+  return { text, actions, rows };
+}
+
+test('the Codex mapping answers every action in its own coverage list', () => {
+  const { actions, rows } = mapping();
+  assert.ok(actions.length >= 8, `the coverage list is suspiciously short: ${actions.length}`);
+  for (const action of actions) {
+    assert.ok(rows.includes(action), `codex-tools.md lists "${action}" with no mapping row`);
+  }
+});
+
+// The list itself is derived from what the skills actually name, so trimming an
+// action out of the coverage list cannot hide a gap.
+test('the coverage list names every action the skills provably use', () => {
+  const skills = join(ROOT, 'skills');
+  const bodies = readdirSync(skills)
+    .map((name) => join(skills, name, 'SKILL.md'))
+    .map((path) => readFileSync(path, 'utf8'))
+    .join('\n');
+  const { actions } = mapping();
+
+  const required = [
+    [/\bultraship [a-z-]+/, 'run the ultraship CLI'],
+    [/worktree/i, 'create an isolated workspace'],
+    [/subagent/i, 'dispatch a subagent'],
+    [/\btodo\b/i, 'track a todo'],
+  ];
+  for (const [signal, action] of required) {
+    if (!signal.test(bodies)) continue;
+    assert.ok(
+      actions.includes(action),
+      `the skills name ${signal} but codex-tools.md does not cover "${action}"`,
+    );
+  }
+});
+
+// The CLI is what no other skills framework has to map, and it is the action the
+// skills name most. A mapping that does not say how to run it is the two-row file
+// this one replaced.
+test('the Codex mapping says how to run the CLI and where it lives', () => {
+  const { text } = mapping();
+  assert.match(text, /bin\/ultraship\.mjs/);
+  assert.match(text, /~\/\.codex\/plugins\/cache/);
 });
