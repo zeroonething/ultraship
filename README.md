@@ -31,13 +31,46 @@ canonical source of truth.
 
 ## Install
 
+Requires Node 20 or newer. The one dependency is vendored, so there is no `npm
+install` — but the `ultraship` command does need to be reachable, and the last
+step below is how.
+
+### Claude Code
+
 ```
 /plugin marketplace add zeroonething/ultraship
 /plugin install ultraship
 ```
 
-Requires Node 20 or newer. There is nothing else to install — the one dependency
-is vendored.
+### Codex
+
+```
+codex plugin marketplace add zeroonething/ultraship
+codex plugin add ultraship@ultraship
+```
+
+Codex discovers the skills natively and runs the same session-start hook.
+
+### Make `ultraship` reachable
+
+The skills invoke the `ultraship` CLI, and both harnesses install it inside the
+plugin, not on your `PATH`. It runs from the install root with no further setup:
+
+```bash
+# Claude Code
+node "$(printf '%s\n' ~/.claude/plugins/cache/ultraship/ultraship/* | sort -V | tail -1)/bin/ultraship.mjs" state
+# Codex
+node "$(printf '%s\n' ~/.codex/plugins/cache/*/ultraship/* | sort -V | tail -1)/bin/ultraship.mjs" state
+```
+
+To type `ultraship` instead, link it once into a directory already on your
+`PATH`:
+
+```bash
+ln -sf "$(printf '%s\n' ~/.claude/plugins/cache/ultraship/ultraship/* | sort -V | tail -1)/bin/ultraship.mjs" ~/.local/bin/ultraship
+```
+
+Optional, and re-run it after an upgrade so the link points at the new version.
 
 ## The workflow
 
@@ -75,8 +108,9 @@ command reads and checks it. It never calls a model and never touches the networ
 | `ultraship semver next <version> <bump>` | Compute the next version. `bump` is `major`, `minor`, `patch`, `release`, or a pre-release identifier. |
 | `ultraship views` | Regenerate the readable Markdown summaries in `.ultraship/views/`. |
 
-Requires Node 20 or newer. There is nothing to install: the one dependency is
-vendored.
+Requires Node 20 or newer. There is no `npm install` — the one dependency is
+vendored — but see [Make `ultraship` reachable](#make-ultraship-reachable) for
+how the command resolves.
 
 ## Several products in one workspace
 
