@@ -166,3 +166,21 @@ test('the release workflow gates on the tag, the suite, and the CLI before publi
   assert.match(release, /CHANGELOG\.md > notes\.md/);
   assert.match(release, /\$0 ~ "\^## \\\\\[" v/);
 });
+
+// The release procedure lived in one person's habit and one machine's gitignored
+// workspace file. Written down, it has to stay complete: a missing step is a
+// release someone cannot reproduce.
+test('the release procedure is written down end to end', () => {
+  const doc = readFileSync(join(ROOT, 'docs', 'RELEASING.md'), 'utf8');
+
+  for (const step of [
+    '/ultraship:complete', 'version_files', 'CHANGELOG', 'develop', 'main',
+    'git push origin v', 'release.yml',
+  ]) {
+    assert.ok(doc.includes(step), `docs/RELEASING.md does not mention ${step}`);
+  }
+  // One mechanism creates the release; the delivery hook only verifies it.
+  assert.match(doc, /never create it/);
+  assert.match(doc, /gh release view/);
+  assert.doesNotMatch(doc, /gh release create/);
+});
