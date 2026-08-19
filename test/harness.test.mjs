@@ -184,3 +184,20 @@ test('the release procedure is written down end to end', () => {
   assert.match(doc, /gh release view/);
   assert.doesNotMatch(doc, /gh release create/);
 });
+
+// A port is where a skill body gets quietly reworded to suit one harness, which
+// breaks every other harness invisibly. The rule has to be written where the
+// next person doing a port will read it.
+test('the porting rule is written down where a contributor and an agent will read it', () => {
+  for (const path of ['CLAUDE.md', 'CONTRIBUTING.md']) {
+    const doc = readFileSync(join(ROOT, path), 'utf8');
+    assert.match(doc, /entry point/i, `${path} does not state what a port adds`);
+    assert.match(doc, /bootstrap/i, `${path} does not mention a bootstrap`);
+    assert.match(doc, /mapping/i, `${path} does not mention the mapping`);
+    assert.match(doc, /never edits? a skill body/i, `${path} does not forbid editing a skill body`);
+  }
+
+  const contract = readFileSync(join(ROOT, 'docs', 'CONTRACT.md'), 'utf8');
+  assert.match(contract, /distribution artifacts/i);
+  assert.match(contract, /\.codex-plugin\/plugin\.json/);
+});
