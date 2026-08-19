@@ -1,0 +1,35 @@
+{
+  "name": "ultraship",
+  "version": "2.2.0",
+  "description": "Ship at inference speed. Turn vague ideas into complete, releasable software through brainstorm, plan, develop, iterate, and complete.",
+  "author": {
+    "name": "Aakash Pawar (zeroonething)",
+    "url": "https://github.com/zeroonething"
+  },
+  "homepage": "https://github.com/zeroonething/ultraship",
+  "repository": "https://github.com/zeroonething/ultraship",
+  "license": "MIT",
+  "keywords": [
+    "skills",
+    "release-management",
+    "semver",
+    "product-development",
+    "workflows"
+  ],
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json",
+  "interface": {
+    "displayName": "UltraShip",
+    "shortDescription": "Ship at inference speed",
+    "longDescription": "A rapid-development framework that turns ideas into shippable Minimum Complete Releases through brainstorm, plan, develop, iterate, and complete, backed by a deterministic state engine.",
+    "developerName": "Aakash Pawar (zeroonething)",
+    "category": "Productivity",
+    "capabilities": ["Instructions", "Lifecycle hooks"],
+    "websiteURL": "https://github.com/zeroonething/ultraship",
+    "defaultPrompt": [
+      "Start a new product with UltraShip.",
+      "Plan the next release with UltraShip.",
+      "Develop the active UltraShip release."
+    ]
+  }
+}
