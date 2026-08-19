@@ -127,3 +127,42 @@ test('the Codex mapping says how to run the CLI and where it lives', () => {
   assert.match(text, /bin\/ultraship\.mjs/);
   assert.match(text, /~\/\.codex\/plugins\/cache/);
 });
+
+// The release is cut by a workflow, not by a person running a command on one
+// machine. That only holds if the workflow is least-privilege, pinned, and
+// actually gated on the tag agreeing with the manifests.
+test('the workflows keep least privilege and pin every action by SHA', () => {
+  const ci = readFileSync(join(ROOT, '.github', 'workflows', 'ci.yml'), 'utf8');
+  const release = readFileSync(join(ROOT, '.github', 'workflows', 'release.yml'), 'utf8');
+
+  assert.match(ci, /^permissions:\n  contents: read$/m, 'ci.yml must stay read-only');
+  assert.match(release, /^permissions:\n  contents: write$/m, 'release.yml needs contents: write');
+
+  for (const [name, text] of [['ci.yml', ci], ['release.yml', release]]) {
+    for (const [, ref] of text.matchAll(/^\s*- uses: (.+)$/gm)) {
+      assert.match(ref, /@[0-9a-f]{40}\s+#/, `${name} pins ${ref} by tag, not commit SHA`);
+    }
+  }
+});
+
+test('the release workflow gates on the tag, the suite, and the CLI before publishing', () => {
+  const release = readFileSync(join(ROOT, '.github', 'workflows', 'release.yml'), 'utf8');
+
+  assert.match(release, /tags: \["v\*"\]/);
+  assert.match(release, /workflow_dispatch:/);
+  // Every manifest that carries a version is checked against the tag.
+  for (const manifest of [
+    'package.json', '.claude-plugin/plugin.json', '.claude-plugin/marketplace.json',
+    '.codex-plugin/plugin.json',
+  ]) {
+    assert.ok(release.includes(manifest), `release.yml does not check ${manifest} against the tag`);
+  }
+  assert.match(release, /- run: npm test/);
+  assert.match(release, /ultraship\.mjs" validate/);
+  // The publish job cannot start until all of that passed.
+  assert.match(release, /needs: verify/);
+  // Notes are this version's CHANGELOG section, matched by version rather than
+  // by position, so a tag can never publish another release's notes.
+  assert.match(release, /CHANGELOG\.md > notes\.md/);
+  assert.match(release, /\$0 ~ "\^## \\\\\[" v/);
+});
