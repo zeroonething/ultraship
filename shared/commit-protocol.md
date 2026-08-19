@@ -20,8 +20,11 @@ registry in `lib/commit.mjs` are the same list; change both together.
   project therefore never starts committing without being asked.
 
 When the policy is `off`, every checkpoint is a no-op that exits 0. So are a
-directory that is not a git repository, a machine with no `git` on `PATH`, and a
-checkpoint whose paths hold no change. **Call the checkpoints unconditionally.**
+directory that is not a git repository, a machine with no `git` on `PATH`, a
+checkpoint whose paths hold no change, and a checkpoint whose paths the project
+gitignores — a workspace that keeps `.ultraship/` local-only is the usual case,
+and the ignored paths are dropped rather than staged. **Call the checkpoints
+unconditionally.**
 Do not check the policy first and do not branch on it — the command already does,
 and a skill that guesses will guess wrong.
 
@@ -53,9 +56,9 @@ must already be written, or the shipped commit is internally inconsistent.
 ## What the command will not do
 
 `ultraship commit` stages and commits. It never pushes, never creates a branch,
-and never creates a tag: `lib/commit.mjs` permits exactly four git subcommands
-(`rev-parse`, `status`, `add`, `commit`) and refuses any other, so nothing it does
-can leave the machine. Pushing, tagging, and opening a pull request stay the
+and never creates a tag: `lib/commit.mjs` permits exactly five git subcommands
+(`rev-parse`, `status`, `add`, `check-ignore`, `commit`) and refuses any other, so
+nothing it does can leave the machine. Pushing, tagging, and opening a pull request stay the
 developer's own authorized steps.
 
 It never runs `git add -A`. Each checkpoint stages an explicit path list derived
@@ -83,6 +86,9 @@ Every checkpoint prints JSON. `committed` says whether a commit was made,
   "sha": "…"
 }
 ```
+
+`staged` lists what the checkpoint may actually stage, which is its declared
+paths minus anything the project gitignores.
 
 Read `staged` when a task's `files` list is uncertain. A task whose implementation
 is missing from the commit had an incomplete `files` list, and the JSON makes that

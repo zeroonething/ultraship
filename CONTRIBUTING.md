@@ -68,6 +68,33 @@ branches, or tags — those stay yours. If you would rather commit by hand, set
 `commit_policy: off` in `.ultraship/ultraship.yaml` locally and leave that change
 out of your pull request.
 
+## Porting UltraShip to another harness
+
+A skill body names actions, never tools: "invoke the CLI", "create an isolated
+workspace", "dispatch a subagent". That property is the only reason one skill
+body runs on every harness, and a port is the most tempting place to break it.
+
+A port adds exactly three things, and never edits a skill body:
+
+1. **An entry point** the harness recognises — `.claude-plugin/plugin.json` for
+   Claude Code, `.codex-plugin/plugin.json` plus `.agents/plugins/marketplace.json`
+   for Codex.
+2. **A bootstrap**, where the harness needs one. Both current harnesses run
+   `hooks/hooks.json` and read the same `hookSpecificOutput.additionalContext`
+   field, so neither needs its own.
+3. **A mapping** at `skills/using-ultraship/references/<harness>-tools.md`,
+   answering every action the skills name — including how that harness runs the
+   `ultraship` CLI, which ships inside the install artifact and is on no `PATH`.
+
+Rewording a skill so one harness behaves better breaks the others invisibly, and
+`git diff <last tag> -- skills/` should show only the mapping file you added.
+Support only harnesses you can actually run: a manifest that looks correct can
+silently never load, and only a live session proves otherwise.
+
+Entry points and bootstraps are distribution artifacts, outside the frozen public
+contract — see [docs/CONTRACT.md](docs/CONTRACT.md). Cutting a release is
+[docs/RELEASING.md](docs/RELEASING.md).
+
 ## Classify your change — it decides the version bump
 
 UltraShip 2.0 has a **frozen, enumerated public contract**

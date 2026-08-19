@@ -1,0 +1,98 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+# Scoped to this workflow alone: ci.yml stays at contents: read. Creating a
+# release is the only write this repository's automation performs.
+permissions:
+  contents: write
+
+jobs:
+  # The tag is the only thing that says which version this release is. Without
+  # this, a v2.3.0 tag on a tree whose manifests still read 2.2.0 would publish a
+  # release the plugin does not match — and a reinstall would silently keep the
+  # old version, which is the failure that shipped in 0.3.0's first cut.
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 20
+
+      - name: Tag matches every version manifest
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          echo "tag: $tag"
+          bad=0
+          check() {
+            # A manifest that is not in the tree is not a manifest this release
+            # carries: the Codex entry point is additive and a branch without it
+            # must still be releasable.
+            [ -f "$1" ] || { echo "skip: $1 is not in the tree"; return; }
+            found=$(node -e "
+              const v = require('./$1');
+              process.stdout.write(String('$2' === 'marketplace' ? v.plugins[0].version : v.version));
+            ")
+            echo "$1: $found"
+            if [ "$found" != "$tag" ]; then
+              echo "::error file=$1::$1 declares $found but the tag says $tag"
+              bad=1
+            fi
+          }
+          check package.json version
+          check .claude-plugin/plugin.json version
+          check .claude-plugin/marketplace.json marketplace
+          check .codex-plugin/plugin.json version
+          exit $bad
+
+      # No install step: the one dependency (yaml) is vendored under vendor/.
+      - run: npm test
+
+      # `validate` cannot run against this repository's own workspace here:
+      # .ultraship/ is gitignored, so a fresh clone has none and the command
+      # exits 1. Prove the shipped binary instead — scaffold a workspace and
+      # validate that. A broken CLI fails this before anything is published.
+      - name: CLI smoke test
+        run: |
+          scratch=$(mktemp -d)
+          cd "$scratch"
+          node "$GITHUB_WORKSPACE/bin/ultraship.mjs" init > /dev/null
+          node "$GITHUB_WORKSPACE/bin/ultraship.mjs" validate
+
+  release:
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      # Release titles drop the tag's leading "v": "UltraShip 2.3.0".
+      - name: Version
+        id: version
+        run: echo "number=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      # The release body is this version's CHANGELOG section verbatim, so the
+      # notes say what changed instead of linking to it. Matching on the version
+      # rather than taking the first section means a tag can never be published
+      # with another release's notes.
+      - name: Notes
+        run: |
+          awk -v v="${{ steps.version.outputs.number }}" '
+            $0 ~ "^## \\[" v "\\]" { on = 1; next }
+            on && /^## \[/ { exit }
+            on && !/^\[[^]]*\]:/ { print }
+          ' CHANGELOG.md > notes.md
+          if [ ! -s notes.md ]; then
+            echo "::error file=CHANGELOG.md::CHANGELOG.md has no section for ${{ steps.version.outputs.number }}"
+            exit 1
+          fi
+          cat notes.md
+
+      - uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3
+        with:
+          name: UltraShip ${{ steps.version.outputs.number }}
+          body_path: notes.md
+          make_latest: true
