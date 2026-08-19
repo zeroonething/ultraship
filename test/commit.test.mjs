@@ -54,7 +54,7 @@ test('push, branch, and tag are structurally unreachable', () => {
   for (const forbidden of ['push', 'branch', 'tag', 'remote', 'fetch', 'clone', 'reset']) {
     assert.ok(!ALLOWED_GIT.includes(forbidden), `${forbidden} must not be allowed`);
   }
-  assert.deepEqual([...ALLOWED_GIT].sort(), ['add', 'commit', 'rev-parse', 'status']);
+  assert.deepEqual([...ALLOWED_GIT].sort(), ['add', 'check-ignore', 'commit', 'rev-parse', 'status']);
 });
 
 test('commit_policy off is a no-op that still exits successfully', () => {
@@ -228,6 +228,72 @@ test('the develop-task checkpoint commits a task with its own files', () => {
     assert.ok(files.includes('src/invoice.mjs'), 'the task\'s own file is committed with it');
     assert.ok(files.some((f) => f.endsWith('tasks.yaml')), 'the recorded evidence rides along');
     assert.ok(!files.includes('src/unrelated.mjs'), 'a file the task does not declare is not');
+  } finally {
+    cleanup(dir);
+  }
+});
+
+// Every workspace gitignores `.ultraship/` since it became local-only, so every
+// checkpoint stages at least one ignored path. `git add` refuses an ignored path
+// outright and fails the whole call, which turned the documented no-op into a
+// hard error for the framework's own releases.
+test('a gitignored workspace does not fail the checkpoint, and its own files still commit', () => {
+  const { dir, root, p } = scratch();
+  try {
+    writeFileSync(join(dir, '.gitignore'), '.ultraship/\n', 'utf8');
+    git(dir, 'add', '-A');
+    git(dir, 'commit', '-q', '-m', 'ignore the workspace');
+
+    mkdirSync(join(dir, 'src'), { recursive: true });
+    writeFileSync(join(dir, 'src', 'invoice.mjs'), 'export const invoice = 1;\n', 'utf8');
+    mkdirSync(join(root, 'products', 'client-tracker', 'execution'), { recursive: true });
+    writeYaml(p.tasks('client-tracker'), {
+      product: 'client-tracker',
+      version: '0.1.0',
+      tasks: [{
+        id: 'US-CLIENT-TRACKER-0.1.0-T01',
+        summary: 'Create the invoices table.',
+        why_required: 'Every acceptance criterion reads or writes an invoice.',
+        status: 'done',
+        depends_on: [],
+        acceptance_criteria: [],
+        files: ['src/invoice.mjs'],
+        evidence: [],
+      }],
+    });
+
+    const result = commitCheckpoint(root, {
+      checkpoint: 'develop-task', task: 'US-CLIENT-TRACKER-0.1.0-T01',
+    });
+    assert.notEqual(result.ok, false, `the checkpoint failed: ${result.reason}`);
+    assert.equal(result.committed, true);
+    assert.deepEqual(result.staged, ['src/invoice.mjs'], 'the ignored workspace file is dropped');
+    assert.equal(
+      git(dir, 'show', '--name-only', '--pretty=', 'HEAD').out,
+      'src/invoice.mjs',
+    );
+  } finally {
+    cleanup(dir);
+  }
+});
+
+test('a checkpoint whose every path is gitignored succeeds and says so', () => {
+  const { dir, root } = scratch();
+  try {
+    // The workspace is untracked as well as ignored, which is what a project
+    // that gitignores `.ultraship/` actually looks like. git check-ignore
+    // reports nothing for a path still in the index.
+    writeFileSync(join(dir, '.gitignore'), '.ultraship/\n', 'utf8');
+    git(dir, 'rm', '-r', '-q', '--cached', '.ultraship');
+    git(dir, 'add', '-A');
+    git(dir, 'commit', '-q', '-m', 'ignore the workspace');
+
+    // plan-roadmap stages only workspace paths, so nothing survives the filter.
+    const result = commitCheckpoint(root, { checkpoint: 'plan-roadmap' });
+    assert.notEqual(result.ok, false, `the checkpoint failed: ${result.reason}`);
+    assert.equal(result.committed, false);
+    assert.match(result.reason, /gitignore/i);
+    assert.equal(git(dir, 'log', '-1', '--pretty=%s').out, 'ignore the workspace');
   } finally {
     cleanup(dir);
   }
