@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/zeroonething/ultraship/actions/workflows/ci.yml/badge.svg)](https://github.com/zeroonething/ultraship/actions/workflows/ci.yml)
 [![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](https://nodejs.org)
-[![Version](https://img.shields.io/badge/version-2.2.0-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.3.0-blue)](CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 **Ship at inference speed.**
