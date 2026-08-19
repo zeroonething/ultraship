@@ -67,6 +67,23 @@ to exactly one file; writing it elsewhere fails validation.
 | `iteration.schema.json` | A recorded plan change with its evidence and approval. |
 | `checkpoint.schema.json` | A safe pause point. |
 
+## What is not part of the contract
+
+**Harness entry points and bootstraps are distribution artifacts, not contract
+items.** `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`,
+`.codex-plugin/plugin.json`, `.agents/plugins/marketplace.json`, `hooks/`, and
+the per-harness mapping files under
+`skills/using-ultraship/references/` describe how UltraShip is installed and how
+one harness names the actions the skills call for. They are owned by the harness
+vendors, who change their own manifest formats without asking this project.
+
+So a change forced by a harness — a renamed manifest field, a new required block,
+a different install route — is a patch or a minor release. It never forces a
+major bump on the twelve commands, the skills, or the ten schemas, none of which
+moved. Adding support for a new harness is likewise a minor release: it adds an
+entry point, a bootstrap where the harness needs one, and a mapping, and it never
+edits a skill body.
+
 ## What is guaranteed
 
 - A 2.x release never breaks a 2.x workspace. `ultraship validate` on a workspace

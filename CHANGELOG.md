@@ -3,6 +3,71 @@
 All notable changes to UltraShip are recorded here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [2.3.0] — 2026-08-19
+
+Two harnesses, a CLI that resolves, and a release that cuts itself. UltraShip now
+installs on Codex as well as Claude Code, and on both the `ultraship` command is
+reachable from a documented install instead of a hand-written shell function. The
+release procedure moves out of one machine's gitignored workspace file into a
+reviewed workflow. No CLI command, skill behaviour, schema, or canonical field
+changed, so a 2.2.0 workspace is valid on 2.3.0 with no migration beyond
+`framework_version`.
+
+### Added
+
+- **Codex support.** `.codex-plugin/plugin.json` declares the skills directory,
+  the session-start hook, and the `interface` block Codex requires;
+  `.agents/plugins/marketplace.json` is the marketplace entry Codex installs
+  through (`codex plugin marketplace add zeroonething/ultraship`, then
+  `codex plugin add ultraship@ultraship`). Codex runs the same `hooks/hooks.json`
+  and reads the same `hookSpecificOutput.additionalContext` field Claude Code
+  does, so the existing hook serves both harnesses and no Codex-specific
+  bootstrap ships.
+- **A real Codex tool mapping.** `skills/using-ultraship/references/codex-tools.md`
+  had no table rows. It now answers all eight actions the skills name — running
+  the CLI, creating an isolated workspace, dispatching a subagent, loading a
+  skill, tracking a todo, reading, writing, and running a command — with its own
+  coverage list checked by test. The two actions no mapping in this repository
+  covered are the two the skills name most: the CLI, invoked 61 times across 11
+  commands, and isolated workspaces.
+- **`.github/workflows/release.yml`.** Pushing a `v*` tag verifies the tag against
+  every version manifest, runs `npm test` and a CLI smoke test, and creates the
+  GitHub release with that version's CHANGELOG section as its body. A mismatched
+  tag or a red suite stops the release instead of shipping through it.
+  `permissions: contents: write` is scoped to this workflow alone, `ci.yml` stays
+  at `contents: read`, and every action in both is pinned by commit SHA.
+- **`docs/RELEASING.md`.** The release procedure end to end, including that the
+  release is created exactly once and by one mechanism — the `published` delivery
+  hook now verifies the workflow's release rather than creating a second one.
+- **The porting rule**, in CLAUDE.md and CONTRIBUTING.md: a harness port adds an
+  entry point, a bootstrap where the harness needs one, and a mapping, and never
+  edits a skill body. docs/CONTRACT.md records that entry points and bootstraps
+  are distribution artifacts outside the frozen contract, so a harness changing
+  its own manifest format never forces a major bump.
+
+### Fixed
+
+- **`ultraship commit` failed in any repository that gitignores `.ultraship/`** —
+  every repository since 2.2.0 made the workspace local-only, including this one.
+  `git add` refuses an ignored path and fails the whole call, so a checkpoint with
+  real work in it errored instead of committing. It now drops gitignored paths
+  before staging, and reports `Every path under this checkpoint is gitignored.`
+  when nothing remains, which is the documented no-op. `check-ignore` joins the
+  git allowlist, which stays read-only apart from `add` and `commit`.
+- **README claimed there was nothing else to install** while `ultraship state` was
+  `command not found` on a fresh install. It now carries an install section per
+  harness and documents how the CLI resolves, with an optional one-line `PATH`
+  shim.
+
+### Testing
+
+- The session-start hook's per-harness output is covered across all four
+  branches, which was untested logic deciding whether the skill is injected at
+  all.
+- Manifest versions, the Codex manifest's shape, the mapping's coverage list,
+  both workflows' permissions and SHA pinning, and the release procedure are
+  asserted. 274 tests at 2.2.0; 292 now.
+
 ## [2.2.0] — 2026-08-01
 
 Security hygiene. Every open code-scanning alert on the repository is now either

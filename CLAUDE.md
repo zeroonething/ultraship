@@ -96,6 +96,15 @@ whether it needs a `migrate` step and a deprecation window (`docs/COMPATIBILITY.
   currently carried.
 - **`ponytail:` comments mark deliberate simplifications** with their upgrade seam (e.g. the ajv
   seam in `lib/schema.mjs`). Respect the seam; don't pre-build past it.
+- **A harness port adds an entry point, a bootstrap where the harness needs one, and a
+  mapping — and never edits a skill body.** Skill bodies name actions ("invoke the CLI",
+  "create an isolated workspace"), not tools; that is what lets one body run everywhere.
+  The per-harness answer lives in `skills/using-ultraship/references/<harness>-tools.md`.
+  Entry points and bootstraps (`.claude-plugin/`, `.codex-plugin/`, `.agents/plugins/`,
+  `hooks/`) are distribution artifacts outside the frozen contract, so a harness changing
+  its own manifest format is a patch or minor release, never a major one
+  (`docs/CONTRACT.md`). Releases are cut by `.github/workflows/release.yml` from a pushed
+  tag; the procedure is `docs/RELEASING.md`.
 - Skills in `skills/` share prose contracts in `shared/` (`principles.md`, `state-model.md`,
   `release-contract.md`, `skill-contract.md`, `commit-protocol.md`, `subagent-protocol.md`).
   Behavior described there is the contract the CLI enforces — change both together.

@@ -81,6 +81,27 @@ still valid data.
 The remedy, if you want the 1.x behaviour: run `ultraship migrate`, or set
 `commit_policy: off` in `.ultraship/ultraship.yaml` by hand.
 
+## 2.3.0 — additive, no deprecation owed
+
+2.3.0 adds a second harness, makes the CLI reachable from a documented install,
+and moves the release procedure into a workflow. Nothing on the frozen surface
+moved: the twelve commands, the skills, and the ten schemas are unchanged, and no
+canonical field was added, removed, or reshaped.
+
+- A 2.2.0 workspace is valid on 2.3.0. `ultraship migrate` carries it forward on
+  the `framework_version` line alone; there is nothing else to migrate.
+- `.codex-plugin/plugin.json` joins `version_files` in this repository. That is
+  this project's own workspace configuration, not a schema change — a project
+  declares whichever manifests it carries.
+- `ultraship commit` now drops gitignored paths instead of failing on them. That
+  is a fix to the documented behaviour, not a change to it: the protocol always
+  said a checkpoint with nothing it may stage is a no-op that exits 0.
+- Harness entry points and bootstraps are distribution artifacts, outside the
+  frozen contract — see [CONTRACT.md](CONTRACT.md). A future harness, or a change
+  a harness vendor forces on its own manifest, is a minor or patch release.
+
+Nothing is deprecated, so no overlap window opens.
+
 ## The compatibility guarantee
 
 - A workspace written by any `2.x` release passes `ultraship validate` on any

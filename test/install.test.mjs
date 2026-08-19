@@ -41,6 +41,22 @@ test('the README documents every command the CLI exposes', () => {
   }
 });
 
+// UltraShip runs on two harnesses and ships a binary neither puts on PATH. A
+// README that documents one install, or claims there is nothing else to install,
+// leaves a developer at the first instruction of the first skill with
+// `ultraship: command not found`.
+test('the README installs on both harnesses and does not claim there is nothing else to install', () => {
+  const readme = read('README.md');
+  assert.match(readme, /\/plugin marketplace add zeroonething\/ultraship/, 'no Claude Code install');
+  assert.match(readme, /codex plugin marketplace add zeroonething\/ultraship/, 'no Codex install');
+  assert.doesNotMatch(readme, /nothing else to install/i);
+  assert.doesNotMatch(readme, /There is nothing to install/i);
+  // The CLI has to be reachable from a documented install, on both harnesses.
+  assert.match(readme, /~\/\.claude\/plugins\/cache\/ultraship/);
+  assert.match(readme, /~\/\.codex\/plugins\/cache/);
+  assert.match(readme, /bin\/ultraship\.mjs/);
+});
+
 test('the README documents every UltraShip skill that ships', () => {
   const readme = read('README.md');
   for (const name of ['brainstorm', 'plan', 'develop', 'iterate', 'complete']) {
