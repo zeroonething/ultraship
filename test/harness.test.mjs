@@ -189,7 +189,7 @@ test('the release procedure is written down end to end', () => {
 // breaks every other harness invisibly. The rule has to be written where the
 // next person doing a port will read it.
 test('the porting rule is written down where a contributor and an agent will read it', () => {
-  for (const path of ['CLAUDE.md', 'CONTRIBUTING.md']) {
+  for (const path of ['AGENTS.md', 'CONTRIBUTING.md']) {
     const doc = readFileSync(join(ROOT, path), 'utf8');
     assert.match(doc, /entry point/i, `${path} does not state what a port adds`);
     assert.match(doc, /bootstrap/i, `${path} does not mention a bootstrap`);

@@ -2,7 +2,7 @@
 
 Thanks for wanting to improve UltraShip. This guide gets you from a clone to a
 mergeable pull request. It is short on purpose — the deep detail lives in
-[`CLAUDE.md`](CLAUDE.md), [`docs/CONTRACT.md`](docs/CONTRACT.md), and
+[`AGENTS.md`](AGENTS.md), [`docs/CONTRACT.md`](docs/CONTRACT.md), and
 [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md), and this guide points at them
 rather than repeating them.
 
